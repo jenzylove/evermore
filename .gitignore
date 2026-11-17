@@ -1,0 +1,17 @@
+# env and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+wallet*.json
+keys/
+seed*.txt
+# build output
+node_modules/
+dist/
+build/
+.next/
+.vercel/
+coverage/
+*.log
