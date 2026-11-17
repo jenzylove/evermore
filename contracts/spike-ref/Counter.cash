@@ -1,0 +1,15 @@
+pragma cashscript ^0.14.0;
+
+// Counter: holds the single global gear counter NFT 'C' + minted4. Same rule as the
+// Arena: only with a lane at input 0, and it must come back here at the same index as a
+// counter. The Forge enforces minted + 1 and minted < gearCap.
+contract Counter(bytes32 gameCategory) {
+    function tick() {
+        require(tx.inputs[0].tokenCategory == gameCategory + 0x02);
+        int i = this.activeInputIndex;
+        require(tx.outputs[i].lockingBytecode == tx.inputs[i].lockingBytecode);
+        require(tx.outputs[i].tokenCategory == gameCategory);
+        require(tx.outputs[i].nftCommitment.split(1)[0] == 0x43);
+        require(tx.outputs[i].value >= tx.inputs[i].value);
+    }
+}

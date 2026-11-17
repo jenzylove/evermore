@@ -1,0 +1,16 @@
+pragma cashscript ^0.14.0;
+
+// Arena: holds every ghost. Only path: a lane of the game category is input 0, and the
+// ghost comes back to this same address at the same index, still a ghost with the same
+// id ('G' + id preserved). The lane function pins the rest of the commitment. No owner
+// path and no burn path: a ghost lives as long as the chain does.
+contract Arena(bytes32 gameCategory) {
+    function fight() {
+        require(tx.inputs[0].tokenCategory == gameCategory + 0x02);
+        int i = this.activeInputIndex;
+        require(tx.outputs[i].lockingBytecode == tx.inputs[i].lockingBytecode);
+        require(tx.outputs[i].tokenCategory == gameCategory);
+        require(tx.outputs[i].nftCommitment.split(5)[0] == tx.inputs[i].nftCommitment.split(5)[0]);
+        require(tx.outputs[i].value >= tx.inputs[i].value);
+    }
+}

@@ -1,0 +1,295 @@
+pragma cashscript ^0.14.0;
+
+// Relic lane (S3 spike). 16 lanes share one game category; each lane is a minting NFT
+// 'L' lane1 ctr4 held by this covenant. Every function: the lane is input 0, every
+// output is pinned, and the lane always returns. Any lane serves any player.
+//
+// Commitments (little endian, all values below the sign bit):
+//   Lane    ( 6 B) 'L' lane1 heroCtr4                         minting, this covenant
+//   Hero    (23 B) 'H' id4 cls1 lvl1 xp4 hp2 atk2 def2 spd2 wins4          player P2PKH
+//   Ghost   (43 B) 'G' id4 cls1 lvl1 hp2 atk2 def2 spd2 owner20 beaten4 defences4   Arena
+//   Ticket  (51 B) 'T' heroId4 ghostId4 cls1 lvl1 hp2 atk2 def2 spd2 salt32   player
+//   Counter ( 5 B) 'C' gearMinted4                                         Counter
+//   Gear    ( 7 B) 'E' gearId4 kind1 tier1                                 player P2PKH
+
+// Public damage formula: max(1, atk * mult - def / 2), halved if the target guards.
+function hit(int atk, int def, int mult, int targetGuards) returns (int) {
+    int d = max(1, atk * mult - def / 2);
+    if (targetGuards == 1) {
+        d = d / 2;
+    }
+    return d;
+}
+
+contract Lane(
+    bytes20 treasuryPkh,
+    bytes arenaLock,      // locking bytecode of the Arena (ghost holder)
+    bytes counterLock,    // locking bytecode of the gear Counter
+    int raisePrice,
+    int challengeFee,
+    int forgeFee,
+    int gearCap
+) {
+    // ---------------------------------------------------------------- RAISE
+    // In: 0 lane, 1+ funding.  Out: 0 lane (ctr + 1), 1 hero (P2PKH), 2 ghost (Arena),
+    // 3 treasury >= raisePrice, 4 optional change.  Hero id = ctr * 16 + lane.
+    function raise(int cls) {
+        require(this.activeInputIndex == 0);
+        bytes laneCat = tx.inputs[0].tokenCategory;
+        bytes cat, bytes cap = laneCat.split(32);
+        require(cap == 0x02);
+        bytes lane = tx.inputs[0].nftCommitment;
+        int ctr = int(lane.slice(2, 6));
+        require(ctr < 134217727);
+        bytes id = toPaddedBytes(ctr * 16 + int(lane.slice(1, 2)), 4);
+
+        // fixed starter stats: 0 Knight, 1 Rogue, 2 Mage
+        require(cls >= 0);
+        require(cls <= 2);
+        bytes stats = 0x3c000a0008000400;                       // Knight 60 / 10 / 8 / 4
+        if (cls == 1) { stats = 0x2d000c0005000900; }           // Rogue  45 / 12 / 5 / 9
+        if (cls == 2) { stats = 0x28000f0004000600; }           // Mage   40 / 15 / 4 / 6
+        bytes head = id + toPaddedBytes(cls, 1) + 0x01;          // level 1
+
+        require(tx.outputs.length <= 5);
+        // 0 lane back with its counter + 1
+        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == laneCat);
+        require(tx.outputs[0].nftCommitment == lane.split(2)[0] + toPaddedBytes(ctr + 1, 4));
+        require(tx.outputs[0].value >= tx.inputs[0].value);
+        // 1 new hero to a P2PKH (its pkh becomes the ghost owner)
+        bytes heroLock = tx.outputs[1].lockingBytecode;
+        require(heroLock.length == 25);
+        require(heroLock.split(3)[0] == 0x76a914);
+        require(heroLock.split(23)[1] == 0x88ac);
+        require(tx.outputs[1].tokenCategory == cat);
+        require(tx.outputs[1].nftCommitment == 0x48 + head + 0x00000000 + stats + 0x00000000);
+        // 2 the hero's ghost at the Arena
+        require(tx.outputs[2].lockingBytecode == arenaLock);
+        require(tx.outputs[2].tokenCategory == cat);
+        require(tx.outputs[2].nftCommitment == 0x47 + head + stats + heroLock.slice(3, 23) + 0x0000000000000000);
+        // 3 mint price to the treasury
+        require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(treasuryPkh));
+        require(tx.outputs[3].value >= raisePrice);
+        require(tx.outputs[3].tokenCategory == 0x);
+        if (tx.outputs.length == 5) {
+            require(tx.outputs[4].tokenCategory == 0x);
+        }
+    }
+
+    // ------------------------------------------------------------ CHALLENGE
+    // In: 0 lane, 1 ghost (Arena), 2+ funding.  Out: 0 lane unchanged, 1 ghost (defences + 1),
+    // 2 fee to the ghost owner, 3 ticket, 4 optional change.
+    // The ticket snapshots the ghost's fight stats (so a ghost levelling later cannot void a
+    // solved duel) and the ghost's pre challenge outpoint hash (seed salt).
+    function challenge(int heroId) {
+        require(this.activeInputIndex == 0);
+        bytes laneCat = tx.inputs[0].tokenCategory;
+        bytes cat, bytes cap = laneCat.split(32);
+        require(cap == 0x02);
+        require(tx.inputs[1].tokenCategory == cat);
+        require(tx.inputs[1].lockingBytecode == arenaLock);
+        bytes ghost = tx.inputs[1].nftCommitment;
+        require(ghost.length == 43);
+        require(ghost.split(1)[0] == 0x47);
+        require(heroId >= 0);
+        bytes hid = toPaddedBytes(heroId, 4);
+        require(hid != ghost.slice(1, 5));                      // no fighting your own ghost
+
+        require(tx.outputs.length <= 5);
+        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == laneCat);
+        require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment);
+        require(tx.outputs[0].value >= tx.inputs[0].value);
+        // 1 ghost recreated, defences + 1
+        require(tx.outputs[1].lockingBytecode == arenaLock);
+        require(tx.outputs[1].tokenCategory == cat);
+        require(tx.outputs[1].nftCommitment == ghost.split(39)[0] + toPaddedBytes(int(ghost.slice(39, 43)) + 1, 4));
+        require(tx.outputs[1].value >= tx.inputs[1].value);
+        // 2 challenge fee to the ghost's owner
+        require(tx.outputs[2].lockingBytecode == new LockingBytecodeP2PKH(unsafe_bytes20(ghost.slice(15, 35))));
+        require(tx.outputs[2].value >= challengeFee);
+        require(tx.outputs[2].tokenCategory == 0x);
+        // 3 ticket (any lock the challenger picks)
+        require(tx.outputs[3].tokenCategory == cat);
+        require(tx.outputs[3].nftCommitment == 0x54 + hid + ghost.slice(1, 15) + tx.inputs[1].outpointTransactionHash);
+        if (tx.outputs.length == 5) {
+            require(tx.outputs[4].tokenCategory == 0x);
+        }
+    }
+
+    // ---------------------------------------------------------------- FORGE
+    // In:  0 lane, 1 hero, 2 ghost (opponent), 3 ticket (burned), [own ghost if level up],
+    //      [Counter if drop == 1], then funding.
+    // Out: 0 lane, 1 hero, 2 ghost (beaten + 1), 3 treasury, [own ghost refreshed],
+    //      [Counter + 1, gear], optional change.
+    function forge(int moves, int n, int drop) {
+        require(this.activeInputIndex == 0);
+        bytes laneCat = tx.inputs[0].tokenCategory;
+        bytes cat, bytes cap = laneCat.split(32);
+        require(cap == 0x02);
+
+        require(tx.inputs[1].tokenCategory == cat);
+        require(tx.inputs[2].tokenCategory == cat);
+        require(tx.inputs[3].tokenCategory == cat);
+        require(tx.inputs[2].lockingBytecode == arenaLock);
+        bytes hero = tx.inputs[1].nftCommitment;
+        bytes ghost = tx.inputs[2].nftCommitment;
+        bytes ticket = tx.inputs[3].nftCommitment;
+        require(hero.length == 23);
+        require(hero.split(1)[0] == 0x48);
+        require(ghost.length == 43);
+        require(ghost.split(1)[0] == 0x47);
+        require(ticket.length == 51);
+        require(ticket.split(1)[0] == 0x54);
+        require(ticket.slice(1, 5) == hero.slice(1, 5));
+        require(ticket.slice(5, 9) == ghost.slice(1, 5));
+
+        int hCls = int(hero.slice(5, 6));
+        int hLvl = int(hero.slice(6, 7));
+        int hMax = int(hero.slice(11, 13));
+        int hAtk = int(hero.slice(13, 15));
+        int hDef = int(hero.slice(15, 17));
+        int hSpd = int(hero.slice(17, 19));
+        // opponent fights with the stats it had when challenged (ticket snapshot)
+        int gLvl = int(ticket.slice(10, 11));
+        int gHp  = int(ticket.slice(11, 13));
+        int gAtk = int(ticket.slice(13, 15));
+        int gDef = int(ticket.slice(15, 17));
+        int gSpd = int(ticket.slice(17, 19));
+        int beaten = int(ghost.slice(35, 39));
+        int lvl0 = hLvl;
+
+        // style seed = hash256(challenge txid || ghost's pre challenge outpoint hash)
+        bytes32 h = hash256(tx.inputs[3].outpointTransactionHash + ticket.split(19)[1]);
+        int seed = int(h.split(3)[0] + 0x00);
+
+        // ---- replay (identical to S1)
+        require(n >= 1);
+        require(n <= 12);
+        int hHp = hMax;
+        int hCh = 0;
+        int gCh = 0;
+        int i = 0;
+        do {
+            require(hHp > 0);
+            require(gHp > 0);
+            int hm = moves % 4;
+            moves = moves / 4;
+            require(hm != 3);
+            int gm = seed % 4;
+            seed = seed / 4;
+            if (gm == 3) { gm = 0; }
+            int hG = 0;
+            if (hm == 1) { hG = 1; hCh = hCh + 1; }
+            int gG = 0;
+            if (gm == 1) { gG = 1; gCh = gCh + 1; }
+
+            int hD = 0;
+            if (hm == 0) { hD = hit(hAtk, gDef, 1, gG); }
+            if (hm == 2) {
+                if (hCh >= 2) { hD = hit(hAtk, gDef, 2, gG); hCh = 0; }
+                else { hD = hit(hAtk, gDef, 1, gG); }
+            }
+            int gD = 0;
+            if (gm == 0) { gD = hit(gAtk, hDef, 1, hG); }
+            if (gm == 2) {
+                if (gCh >= 2) { gD = hit(gAtk, hDef, 2, hG); gCh = 0; }
+                else { gD = hit(gAtk, hDef, 1, hG); }
+            }
+
+            if (hSpd >= gSpd) {
+                gHp = gHp - hD;
+                if (gHp > 0) { hHp = hHp - gD; }
+            } else {
+                hHp = hHp - gD;
+                if (hHp > 0) { gHp = gHp - hD; }
+            }
+            i = i + 1;
+        } while (i < n);
+        require(moves == 0);
+        require(gHp <= 0);
+        require(hHp > 0);
+
+        int gain = (10 + 5 * gLvl + 10 * hHp / hMax + 12 - n) * 4 / (4 + beaten);
+        int xp = int(hero.slice(7, 11)) + gain;
+        int need = 20 * hLvl;
+        if (xp >= need) {
+            xp = xp - need;
+            hLvl = hLvl + 1;
+            if (hCls == 0) { hMax = hMax + 3; hAtk = hAtk + 1; hDef = hDef + 2; }
+            if (hCls == 1) { hMax = hMax + 2; hAtk = hAtk + 2; hSpd = hSpd + 2; }
+            if (hCls == 2) { hMax = hMax + 1; hAtk = hAtk + 3; hDef = hDef + 1; hSpd = hSpd + 1; }
+        }
+        bytes newStats = toPaddedBytes(hMax, 2) + toPaddedBytes(hAtk, 2) + toPaddedBytes(hDef, 2) + toPaddedBytes(hSpd, 2);
+        bytes newHero = hero.split(6)[0] + toPaddedBytes(hLvl, 1) + toPaddedBytes(xp, 4)
+            + newStats + toPaddedBytes(int(hero.slice(19, 23)) + 1, 4);
+
+        // 0 lane back unchanged
+        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == laneCat);
+        require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment);
+        require(tx.outputs[0].value >= tx.inputs[0].value);
+        // 1 hero, same owner
+        bytes heroLock = tx.inputs[1].lockingBytecode;
+        require(tx.outputs[1].lockingBytecode == heroLock);
+        require(tx.outputs[1].tokenCategory == cat);
+        require(tx.outputs[1].nftCommitment == newHero);
+        // 2 opponent ghost, beaten + 1
+        require(tx.outputs[2].lockingBytecode == arenaLock);
+        require(tx.outputs[2].tokenCategory == cat);
+        require(tx.outputs[2].nftCommitment == ghost.split(35)[0] + toPaddedBytes(beaten + 1, 4) + ghost.split(39)[1]);
+        require(tx.outputs[2].value >= tx.inputs[2].value);
+        // 3 forge fee
+        require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(treasuryPkh));
+        require(tx.outputs[3].value >= forgeFee);
+        require(tx.outputs[3].tokenCategory == 0x);
+
+        int k = 4;
+        // ---- level up: the hero's own ghost must come along and is rewritten with the new
+        // level and stats; owner refreshed from the hero's current P2PKH (fees follow the hero).
+        if (hLvl > lvl0) {
+            bytes own = tx.inputs[4].nftCommitment;
+            require(tx.inputs[4].tokenCategory == cat);
+            require(tx.inputs[4].lockingBytecode == arenaLock);
+            require(own.split(5)[0] == 0x47 + hero.slice(1, 5));
+            require(heroLock.length == 25);
+            require(heroLock.split(3)[0] == 0x76a914);
+            require(tx.outputs[4].lockingBytecode == arenaLock);
+            require(tx.outputs[4].tokenCategory == cat);
+            require(tx.outputs[4].nftCommitment == own.split(6)[0] + toPaddedBytes(hLvl, 1) + newStats
+                + heroLock.slice(3, 23) + own.split(35)[1]);
+            require(tx.outputs[4].value >= tx.inputs[4].value);
+            k = 5;
+        }
+
+        // ---- gear drop: beat a ghost 3+ levels above you; global Counter, hard cap
+        if (drop == 1) {
+            require(gLvl >= lvl0 + 3);
+            require(tx.inputs[k].lockingBytecode == counterLock);
+            require(tx.inputs[k].tokenCategory == cat);
+            bytes c = tx.inputs[k].nftCommitment;
+            require(c.length == 5);
+            require(c.split(1)[0] == 0x43);
+            int minted = int(c.split(1)[1]);
+            require(minted < gearCap);
+            require(tx.outputs[k].lockingBytecode == counterLock);
+            require(tx.outputs[k].tokenCategory == cat);
+            require(tx.outputs[k].nftCommitment == 0x43 + toPaddedBytes(minted + 1, 4));
+            require(tx.outputs[k].value >= tx.inputs[k].value);
+            int kind = int(h.slice(3, 4) + 0x00) % 3;
+            require(tx.outputs[k + 1].lockingBytecode == heroLock);
+            require(tx.outputs[k + 1].tokenCategory == cat);
+            require(tx.outputs[k + 1].nftCommitment == 0x45 + toPaddedBytes(minted, 4)
+                + toPaddedBytes(kind, 1) + toPaddedBytes(gLvl - lvl0, 1));
+            k = k + 2;
+        } else {
+            require(drop == 0);
+        }
+
+        require(tx.outputs.length <= k + 1);
+        if (tx.outputs.length == k + 1) {
+            require(tx.outputs[k].tokenCategory == 0x);
+        }
+    }
+}

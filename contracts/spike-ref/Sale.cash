@@ -1,0 +1,19 @@
+pragma cashscript ^0.14.0;
+
+// Sale: one listing (a hero or a gear NFT) per address. Buy: the output at this input's
+// index pays the seller at least the price in plain BCH; the token goes wherever the buyer
+// puts it. Same index pairing means one payment cannot settle two listings.
+// Cancel: the seller signs.
+contract Sale(bytes20 sellerPkh, int price) {
+    function buy() {
+        int i = this.activeInputIndex;
+        require(tx.outputs[i].lockingBytecode == new LockingBytecodeP2PKH(sellerPkh));
+        require(tx.outputs[i].value >= price);
+        require(tx.outputs[i].tokenCategory == 0x);
+    }
+
+    function cancel(pubkey pk, sig s) {
+        require(hash160(pk) == sellerPkh);
+        require(checkSig(s, pk));
+    }
+}

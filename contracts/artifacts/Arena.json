@@ -1,0 +1,53 @@
+{
+  "contractName": "Arena",
+  "constructorInputs": [
+    {
+      "name": "gameCategory",
+      "type": "bytes32"
+    }
+  ],
+  "abi": [
+    {
+      "name": "fight",
+      "inputs": []
+    }
+  ],
+  "bytecode": "OP_0 OP_UTXOTOKENCATEGORY OP_OVER OP_2 OP_CAT OP_EQUALVERIFY OP_INPUTINDEX OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY OP_DUP OP_OUTPUTTOKENCATEGORY OP_ROT OP_EQUALVERIFY OP_DUP OP_OUTPUTTOKENCOMMITMENT OP_5 OP_SPLIT OP_DROP OP_OVER OP_UTXOTOKENCOMMITMENT OP_5 OP_SPLIT OP_DROP OP_EQUALVERIFY OP_DUP OP_OUTPUTVALUE OP_SWAP OP_UTXOVALUE OP_GREATERTHANOREQUAL",
+  "source": "pragma cashscript ^0.14.0;\n\n// =====================================================================================\n// Evermore Arena: holds every ghost (39 B 'G' commitments). A ghost is the copy of a hero\n// that other players challenge; its owner is paid on every challenge without being online.\n//\n// Only path, fight(): a lane of the game category (minting capability) is input 0, and the\n// ghost comes back to this same address at the SAME index, still in the category, still a\n// ghost with the same id ('G' + id preserved), value kept. The lane function at input 0\n// pins the rest of the commitment (defences + 1, beaten + 1, or the level up refresh).\n//\n// Stops:\n// - spending a ghost without the referee: no lane at input 0 -> fails.\n// - burning a ghost by slipping it into a lane path that does not expect it: every lane\n//   path pins every output index, so the output at this ghost's index is not a ghost with\n//   its id -> fails (tested for raise and challenge).\n// - swapping one ghost for another, or moving it off the Arena.\n// No owner path and no burn path: a ghost lives as long as the chain does.\n// =====================================================================================\ncontract Arena(bytes32 gameCategory) {\n    function fight() {\n        require(tx.inputs[0].tokenCategory == gameCategory + 0x02);\n        int i = this.activeInputIndex;\n        require(tx.outputs[i].lockingBytecode == tx.inputs[i].lockingBytecode);\n        require(tx.outputs[i].tokenCategory == gameCategory);\n        require(tx.outputs[i].nftCommitment.split(5)[0] == tx.inputs[i].nftCommitment.split(5)[0]);\n        require(tx.outputs[i].value >= tx.inputs[i].value);\n    }\n}\n",
+  "fingerprint": "e8c49192faa31b273601722b53f15d943212b874807ac5a6b250375f8bbaa47f",
+  "debug": {
+    "bytecode": "00ce78527e88c076cd78c78876d17b8876d2557f7578cf557f758876cc7cc6a2",
+    "sourceMap": "22:26:22:27;:16::42:1;:46::58:0;:61::65;:46:::1;:8::67;23:16:23:37:0;24:27:24:28;:16::45:1;:59::60:0;:49::77:1;:8::79;25:27:25:28:0;:16::43:1;:47::59:0;:8::61:1;26:27:26:28:0;:16::43:1;:50::51:0;:16::52:1;:::55;:69::70:0;:59::85:1;:92::93:0;:59::94:1;:::97;:8::99;27:27:27:28:0;:16::35:1;:49::50:0;:39::57:1;:8::59",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 6,
+        "line": 22
+      },
+      {
+        "ip": 12,
+        "line": 24
+      },
+      {
+        "ip": 16,
+        "line": 25
+      },
+      {
+        "ip": 27,
+        "line": 26
+      },
+      {
+        "ip": 33,
+        "line": 27
+      }
+    ]
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.14.0",
+    "options": {
+      "enforceFunctionParameterTypes": true,
+      "enforceLocktimeGuard": true
+    }
+  }
+}

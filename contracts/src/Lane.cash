@@ -1,0 +1,363 @@
+pragma cashscript ^0.14.0;
+
+// =====================================================================================
+// Evermore Lane: the game's referee.
+//
+// 16 lane UTXOs share one game category. Each holds a MINTING NFT 'L' lane1 heroCtr4 and
+// sits at this covenant. Every game verb (raise, challenge, forge) spends one lane as
+// input 0 and puts it back unchanged (or with its counter + 1 on raise). Any lane serves
+// any player; lanes never collide with each other, so 16 players can act in one block.
+//
+// The lane is the ONLY minting capability in the category (genesis mints exactly 16 lanes
+// and one Counter, nothing else). So every hero, ghost, ticket and gear NFT in existence
+// was written by one of the functions below, and their rules are the whole game.
+//
+// Commitments (little endian, every value below the sign bit). Every commitment is at
+// most 40 bytes: Selene (WizardConnect) refuses to sign a transaction whose source
+// outputs hold a longer NFT commitment.
+//   Lane    ( 6 B) 'L' lane1 heroCtr4                                     minting, Lane
+//   Hero    (23 B) 'H' id4 cls1 lvl1 xp4 hp2 atk2 def2 spd2 wins4          player P2PKH
+//   Ghost   (39 B) 'G' id4 cls1 lvl1 hp2 atk2 def2 spd2 owner20 beaten2 defences2  Arena
+//   Ticket  (23 B) 'T' heroId4 ghostId4 cls1 lvl1 hp2 atk2 def2 spd2 beaten2 defences2
+//   Counter ( 5 B) 'C' gearMinted4                                         Counter
+//   Gear    ( 7 B) 'E' gearId4 kind1 tier1                                 player P2PKH
+//
+// Ghost offsets: 0 tag | 1..5 id | 5 cls | 6 lvl | 7..15 stats | 15..35 owner pkh |
+//                35..37 beaten | 37..39 defences.  Both counters saturate at 32767.
+// Ticket offsets: 0 tag | 1..5 hero id | 5..9 ghost id | 9 cls | 10 lvl | 11..19 stats |
+//                 19..21 ghost beaten | 21..23 ghost defences (all as read BEFORE the challenge).
+//
+// Ghost style seed: hash256(heroId4 || ghostId4 || beaten2 || defences2) of the ghost as
+// read before the challenge = hash256(ticket[1..9] || ticket[19..23]). It has no txid term,
+// so nothing in it can be ground offline: the counters only move through these paths and
+// every change of `defences` is a paid challenge. Players can preview a style before paying.
+// =====================================================================================
+
+// Public damage formula: max(1, atk * mult - def / 2), halved (floor) if the target guards.
+// Defined once (OP_DEFINE) and invoked six times per round by the replay.
+function hit(int atk, int def, int mult, int targetGuards) returns (int) {
+    int d = max(1, atk * mult - def / 2);
+    if (targetGuards == 1) {
+        d = d / 2;
+    }
+    return d;
+}
+
+contract Lane(
+    bytes20 treasuryPkh,  // raise price and forge fee go here
+    bytes arenaLock,      // locking bytecode of the Arena (holds every ghost)
+    bytes counterLock,    // locking bytecode of the gear Counter
+    int raisePrice,       // sats to the treasury per hero minted
+    int challengeFee,     // sats to the ghost's owner per challenge
+    int forgeFee,         // sats to the treasury per forged win
+    int gearCap           // hard cap on gear ever minted
+) {
+    // ================================================================== RAISE
+    // Mint a level 1 hero and its ghost.
+    // In:  0 lane, 1+ funding.
+    // Out: 0 lane (ctr + 1), 1 hero (P2PKH), 2 ghost (Arena), 3 treasury >= raisePrice,
+    //      4 optional change.  Hero id = ctr * 16 + lane, so ids are unique across lanes
+    //      without shared state.
+    function raise(int cls) {
+        // Stops: running this code from any input other than the lane (a stray lane spend).
+        require(this.activeInputIndex == 0);
+        bytes laneCat = tx.inputs[0].tokenCategory;
+        bytes cat, bytes cap = laneCat.split(32);
+        // Stops: a lane UTXO that somehow lost minting being used to mint.
+        require(cap == 0x02);
+        bytes lane = tx.inputs[0].nftCommitment;
+        int ctr = int(lane.slice(2, 6));
+        // Stops: the id overflowing 4 bytes (ctr * 16 + 15 must stay below 2^31).
+        require(ctr < 134217727);
+        bytes id = toPaddedBytes(ctr * 16 + int(lane.slice(1, 2)), 4);
+
+        // Stops: invented classes. Starter stats are fixed per class, not chosen by the caller.
+        require(cls >= 0);
+        require(cls <= 2);
+        bytes stats = 0x3c000a0008000400;                       // Knight 60 / 10 / 8 / 4
+        if (cls == 1) { stats = 0x2d000c0005000900; }           // Rogue  45 / 12 / 5 / 9
+        if (cls == 2) { stats = 0x28000f0004000600; }           // Mage   40 / 15 / 4 / 6
+        bytes head = id + toPaddedBytes(cls, 1) + 0x01;          // level 1
+
+        // Stops: extra outputs, the only place an unpinned NFT could be minted.
+        require(tx.outputs.length <= 5);
+        // 0 lane back, same covenant, still minting, counter + 1.
+        // Stops: stealing the lane, dropping minting, reusing an id (counter not bumped).
+        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == laneCat);
+        require(tx.outputs[0].nftCommitment == lane.split(2)[0] + toPaddedBytes(ctr + 1, 4));
+        require(tx.outputs[0].value >= tx.inputs[0].value);
+        // 1 new hero to a P2PKH. Its pkh becomes the ghost owner (challenge fees go there).
+        // Stops: heroes minted to contracts (no ghost owner), boosted starter stats,
+        // a chosen id, a mutable or minting hero (category without a capability byte).
+        bytes heroLock = tx.outputs[1].lockingBytecode;
+        require(heroLock.length == 25);
+        require(heroLock.split(3)[0] == 0x76a914);
+        require(heroLock.split(23)[1] == 0x88ac);
+        require(tx.outputs[1].tokenCategory == cat);
+        require(tx.outputs[1].nftCommitment == 0x48 + head + 0x00000000 + stats + 0x00000000);
+        // 2 the hero's ghost at the Arena, same id, class, stats, owner = hero's pkh,
+        // beaten 0, defences 0. Stops: a hero born without a ghost, a ghost paying a third party.
+        require(tx.outputs[2].lockingBytecode == arenaLock);
+        require(tx.outputs[2].tokenCategory == cat);
+        require(tx.outputs[2].nftCommitment == 0x47 + head + stats + heroLock.slice(3, 23) + 0x00000000);
+        // 3 mint price to the treasury, plain BCH. Stops: underpaying, paying elsewhere.
+        require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(treasuryPkh));
+        require(tx.outputs[3].value >= raisePrice);
+        require(tx.outputs[3].tokenCategory == 0x);
+        // 4 optional change. Stops: a second (fake) hero minted into change.
+        if (tx.outputs.length == 5) {
+            require(tx.outputs[4].tokenCategory == 0x);
+        }
+    }
+
+    // ============================================================== CHALLENGE
+    // Pay a ghost's owner and get a ticket to fight it.
+    // In:  0 lane, 1 ghost (Arena), 2+ funding.
+    // Out: 0 lane unchanged, 1 ghost (defences + 1), 2 fee to the ghost owner, 3 ticket,
+    //      4 optional change.
+    // The ticket snapshots the ghost's fight stats (a ghost that levels later cannot void a
+    // duel you already solved) and its beaten / defences counters (the style seed).
+    function challenge(int heroId) {
+        require(this.activeInputIndex == 0);
+        bytes laneCat = tx.inputs[0].tokenCategory;
+        bytes cat, bytes cap = laneCat.split(32);
+        require(cap == 0x02);
+        // Stops: a fake ghost (another category, or a game NFT not at the Arena).
+        require(tx.inputs[1].tokenCategory == cat);
+        require(tx.inputs[1].lockingBytecode == arenaLock);
+        bytes ghost = tx.inputs[1].nftCommitment;
+        require(ghost.length == 39);
+        require(ghost.split(1)[0] == 0x47);
+        require(heroId >= 0);
+        bytes hid = toPaddedBytes(heroId, 4);
+        // Stops: fighting your own ghost for free XP (the fee would go back to you).
+        require(hid != ghost.slice(1, 5));
+
+        require(tx.outputs.length <= 5);
+        // 0 lane back unchanged. Stops: stealing or altering the lane.
+        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == laneCat);
+        require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment);
+        require(tx.outputs[0].value >= tx.inputs[0].value);
+        // 1 ghost back at the Arena with defences + 1 (saturating at 32767).
+        // Stops: taking the ghost, freezing its counters (which would freeze its style).
+        require(tx.outputs[1].lockingBytecode == arenaLock);
+        require(tx.outputs[1].tokenCategory == cat);
+        require(tx.outputs[1].nftCommitment == ghost.split(37)[0] + toPaddedBytes(min(int(ghost.slice(37, 39)) + 1, 32767), 2));
+        require(tx.outputs[1].value >= tx.inputs[1].value);
+        // 2 challenge fee to the ghost's owner. Stops: skipping or redirecting the fee.
+        require(tx.outputs[2].lockingBytecode == new LockingBytecodeP2PKH(unsafe_bytes20(ghost.slice(15, 35))));
+        require(tx.outputs[2].value >= challengeFee);
+        require(tx.outputs[2].tokenCategory == 0x);
+        // 3 ticket (any lock the challenger picks): hero id + the ghost's fight stats and
+        // counters exactly as read. Stops: a weakened snapshot, a chosen seed.
+        require(tx.outputs[3].tokenCategory == cat);
+        require(tx.outputs[3].nftCommitment == 0x54 + hid + ghost.slice(1, 15) + ghost.split(35)[1]);
+        // 4 optional change. Stops: minting extra NFTs.
+        if (tx.outputs.length == 5) {
+            require(tx.outputs[4].tokenCategory == 0x);
+        }
+    }
+
+    // ================================================================== FORGE
+    // Replay the duel from the move list; if the hero really won, write its new XP,
+    // level and stats.
+    // In:  0 lane, 1 hero, 2 ghost (opponent), 3 ticket (burned), [own ghost if level up],
+    //      [Counter if drop == 1], then funding.
+    // Out: 0 lane, 1 hero, 2 ghost (beaten + 1), 3 treasury, [own ghost refreshed],
+    //      [Counter + 1, gear], optional change.
+    // moves: 2 bits per round, round i in bits 2i..2i+1 (0 Strike, 1 Guard, 2 Special).
+    function forge(int moves, int n, int drop) {
+        require(this.activeInputIndex == 0);
+        bytes laneCat = tx.inputs[0].tokenCategory;
+        bytes cat, bytes cap = laneCat.split(32);
+        require(cap == 0x02);
+
+        // Stops: fake heroes, ghosts or tickets from another category or not at the Arena.
+        require(tx.inputs[1].tokenCategory == cat);
+        require(tx.inputs[2].tokenCategory == cat);
+        require(tx.inputs[3].tokenCategory == cat);
+        require(tx.inputs[2].lockingBytecode == arenaLock);
+        bytes hero = tx.inputs[1].nftCommitment;
+        bytes ghost = tx.inputs[2].nftCommitment;
+        bytes ticket = tx.inputs[3].nftCommitment;
+        // Stops: one kind posing as another (type tag + exact length).
+        require(hero.length == 23);
+        require(hero.split(1)[0] == 0x48);
+        require(ghost.length == 39);
+        require(ghost.split(1)[0] == 0x47);
+        require(ticket.length == 23);
+        require(ticket.split(1)[0] == 0x54);
+        // Stops: using someone else's ticket, or a ticket for another ghost.
+        require(ticket.slice(1, 5) == hero.slice(1, 5));
+        require(ticket.slice(5, 9) == ghost.slice(1, 5));
+
+        int hCls = int(hero.slice(5, 6));
+        int hLvl = int(hero.slice(6, 7));
+        int hMax = int(hero.slice(11, 13));
+        int hAtk = int(hero.slice(13, 15));
+        int hDef = int(hero.slice(15, 17));
+        int hSpd = int(hero.slice(17, 19));
+        // The opponent fights with the stats it had when challenged (ticket snapshot).
+        int gLvl = int(ticket.slice(10, 11));
+        int gHp  = int(ticket.slice(11, 13));
+        int gAtk = int(ticket.slice(13, 15));
+        int gDef = int(ticket.slice(15, 17));
+        int gSpd = int(ticket.slice(17, 19));
+        // XP decay uses the LIVE beaten counter (a ghost farmed since your challenge pays less).
+        int beaten = int(ghost.slice(35, 37));
+        int lvl0 = hLvl;
+
+        // Style seed = hash256(heroId4 || ghostId4 || beaten2 || defences2), pre challenge.
+        // Bytes 0..2 drive the ghost's moves, byte 3 the gear kind.
+        bytes32 h = hash256(ticket.slice(1, 9) + ticket.split(19)[1]);
+        int seed = int(h.split(3)[0] + 0x00);
+
+        // ---- replay. Stops: any move list that does not win, ends early or runs long.
+        require(n >= 1);
+        require(n <= 12);
+        int hHp = hMax;
+        int hCh = 0;
+        int gCh = 0;
+        int i = 0;
+        do {
+            // both alive at the start of every round: the duel must end exactly at round n
+            require(hHp > 0);
+            require(gHp > 0);
+            int hm = moves % 4;
+            moves = moves / 4;
+            require(hm != 3);                                   // 3 is not a move
+            int gm = seed % 4;
+            seed = seed / 4;
+            if (gm == 3) { gm = 0; }                            // ghost: 3 maps to Strike
+            int hG = 0;
+            if (hm == 1) { hG = 1; hCh = hCh + 1; }
+            int gG = 0;
+            if (gm == 1) { gG = 1; gCh = gCh + 1; }
+
+            // Special at 2+ charges: double damage and reset; otherwise a Strike.
+            int hD = 0;
+            if (hm == 0) { hD = hit(hAtk, gDef, 1, gG); }
+            if (hm == 2) {
+                if (hCh >= 2) { hD = hit(hAtk, gDef, 2, gG); hCh = 0; }
+                else { hD = hit(hAtk, gDef, 1, gG); }
+            }
+            int gD = 0;
+            if (gm == 0) { gD = hit(gAtk, hDef, 1, hG); }
+            if (gm == 2) {
+                if (gCh >= 2) { gD = hit(gAtk, hDef, 2, hG); gCh = 0; }
+                else { gD = hit(gAtk, hDef, 1, hG); }
+            }
+
+            // higher SPD acts first, hero wins ties; a fighter at <= 0 HP does not act
+            if (hSpd >= gSpd) {
+                gHp = gHp - hD;
+                if (gHp > 0) { hHp = hHp - gD; }
+            } else {
+                hHp = hHp - gD;
+                if (hHp > 0) { gHp = gHp - hD; }
+            }
+            i = i + 1;
+        } while (i < n);
+        // Stops: trailing moves (one canonical list per duel), a draw, or a loss.
+        require(moves == 0);
+        require(gHp <= 0);
+        require(hHp > 0);
+
+        // ---- XP, level up (at most one level per forge), class growth.
+        int gain = (10 + 5 * gLvl + 10 * hHp / hMax + 12 - n) * 4 / (4 + beaten);
+        int xp = int(hero.slice(7, 11)) + gain;
+        int need = 20 * hLvl;
+        if (xp >= need) {
+            xp = xp - need;
+            hLvl = hLvl + 1;    // 127 -> 128 does not fit 1 byte: level cap 127
+            if (hCls == 0) { hMax = hMax + 3; hAtk = hAtk + 1; hDef = hDef + 2; }
+            if (hCls == 1) { hMax = hMax + 2; hAtk = hAtk + 2; hSpd = hSpd + 2; }
+            if (hCls == 2) { hMax = hMax + 1; hAtk = hAtk + 3; hDef = hDef + 1; hSpd = hSpd + 1; }
+        }
+        bytes newStats = toPaddedBytes(hMax, 2) + toPaddedBytes(hAtk, 2) + toPaddedBytes(hDef, 2) + toPaddedBytes(hSpd, 2);
+        bytes newHero = hero.split(6)[0] + toPaddedBytes(hLvl, 1) + toPaddedBytes(xp, 4)
+            + newStats + toPaddedBytes(int(hero.slice(19, 23)) + 1, 4);
+
+        // 0 lane back unchanged.
+        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == laneCat);
+        require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment);
+        require(tx.outputs[0].value >= tx.inputs[0].value);
+        // 1 hero, same owner, exactly the replayed result.
+        // Stops: any edited level, xp, stat or wins; moving the hero to another owner.
+        bytes heroLock = tx.inputs[1].lockingBytecode;
+        require(tx.outputs[1].lockingBytecode == heroLock);
+        require(tx.outputs[1].tokenCategory == cat);
+        require(tx.outputs[1].nftCommitment == newHero);
+        // 2 opponent ghost back at the Arena, beaten + 1 (saturating), all else kept.
+        // Stops: taking the ghost, skipping the XP decay counter.
+        require(tx.outputs[2].lockingBytecode == arenaLock);
+        require(tx.outputs[2].tokenCategory == cat);
+        require(tx.outputs[2].nftCommitment == ghost.split(35)[0] + toPaddedBytes(min(beaten + 1, 32767), 2) + ghost.split(37)[1]);
+        require(tx.outputs[2].value >= tx.inputs[2].value);
+        // 3 forge fee to the treasury. Stops: underpaying.
+        require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(treasuryPkh));
+        require(tx.outputs[3].value >= forgeFee);
+        require(tx.outputs[3].tokenCategory == 0x);
+
+        int k = 4;
+        // ---- level up: the hero's own ghost must come along and is rewritten with the new
+        // level and stats; owner refreshed from the hero's current P2PKH (fees follow the hero
+        // after Send home or a sale). beaten and defences are kept.
+        // Stops: stale ghosts (weaker than their hero), someone else's ghost passed as own,
+        // challenge income stuck at a sold hero's previous owner after its next level.
+        if (hLvl > lvl0) {
+            bytes own = tx.inputs[4].nftCommitment;
+            require(tx.inputs[4].tokenCategory == cat);
+            require(tx.inputs[4].lockingBytecode == arenaLock);
+            require(own.length == 39);
+            require(own.split(5)[0] == 0x47 + hero.slice(1, 5));
+            require(heroLock.length == 25);
+            require(heroLock.split(3)[0] == 0x76a914);
+            require(tx.outputs[4].lockingBytecode == arenaLock);
+            require(tx.outputs[4].tokenCategory == cat);
+            require(tx.outputs[4].nftCommitment == own.split(6)[0] + toPaddedBytes(hLvl, 1) + newStats
+                + heroLock.slice(3, 23) + own.split(35)[1]);
+            require(tx.outputs[4].value >= tx.inputs[4].value);
+            k = 5;
+        }
+        // Without a level up the own ghost is not an input: any Arena UTXO at index 4 would meet
+        // a pinned output that is not itself (or the output count cap) and fail.
+
+        // ---- gear drop: beat a ghost 3+ levels above you; one global Counter, hard cap.
+        // Stops: drops vs weak ghosts, minting past gearCap, forged kind or tier, gear to
+        // another address, a second gear in change.
+        if (drop == 1) {
+            require(gLvl >= lvl0 + 3);
+            require(tx.inputs[k].lockingBytecode == counterLock);
+            require(tx.inputs[k].tokenCategory == cat);
+            bytes c = tx.inputs[k].nftCommitment;
+            require(c.length == 5);
+            require(c.split(1)[0] == 0x43);
+            int minted = int(c.split(1)[1]);
+            require(minted < gearCap);
+            require(tx.outputs[k].lockingBytecode == counterLock);
+            require(tx.outputs[k].tokenCategory == cat);
+            require(tx.outputs[k].nftCommitment == 0x43 + toPaddedBytes(minted + 1, 4));
+            require(tx.outputs[k].value >= tx.inputs[k].value);
+            int kind = int(h.slice(3, 4) + 0x00) % 3;
+            require(tx.outputs[k + 1].lockingBytecode == heroLock);
+            require(tx.outputs[k + 1].tokenCategory == cat);
+            require(tx.outputs[k + 1].nftCommitment == 0x45 + toPaddedBytes(minted, 4)
+                + toPaddedBytes(kind, 1) + toPaddedBytes(gLvl - lvl0, 1));
+            k = k + 2;
+        } else {
+            // drop = 0 is always allowed (needed once the cap is reached; skipping only
+            // hurts the skipper).
+            require(drop == 0);
+        }
+
+        // At most one more output, plain change. Stops: extra NFTs minted into change.
+        require(tx.outputs.length <= k + 1);
+        if (tx.outputs.length == k + 1) {
+            require(tx.outputs[k].tokenCategory == 0x);
+        }
+    }
+}

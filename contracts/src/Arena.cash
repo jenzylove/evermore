@@ -1,0 +1,29 @@
+pragma cashscript ^0.14.0;
+
+// =====================================================================================
+// Evermore Arena: holds every ghost (39 B 'G' commitments). A ghost is the copy of a hero
+// that other players challenge; its owner is paid on every challenge without being online.
+//
+// Only path, fight(): a lane of the game category (minting capability) is input 0, and the
+// ghost comes back to this same address at the SAME index, still in the category, still a
+// ghost with the same id ('G' + id preserved), value kept. The lane function at input 0
+// pins the rest of the commitment (defences + 1, beaten + 1, or the level up refresh).
+//
+// Stops:
+// - spending a ghost without the referee: no lane at input 0 -> fails.
+// - burning a ghost by slipping it into a lane path that does not expect it: every lane
+//   path pins every output index, so the output at this ghost's index is not a ghost with
+//   its id -> fails (tested for raise and challenge).
+// - swapping one ghost for another, or moving it off the Arena.
+// No owner path and no burn path: a ghost lives as long as the chain does.
+// =====================================================================================
+contract Arena(bytes32 gameCategory) {
+    function fight() {
+        require(tx.inputs[0].tokenCategory == gameCategory + 0x02);
+        int i = this.activeInputIndex;
+        require(tx.outputs[i].lockingBytecode == tx.inputs[i].lockingBytecode);
+        require(tx.outputs[i].tokenCategory == gameCategory);
+        require(tx.outputs[i].nftCommitment.split(5)[0] == tx.inputs[i].nftCommitment.split(5)[0]);
+        require(tx.outputs[i].value >= tx.inputs[i].value);
+    }
+}

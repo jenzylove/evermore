@@ -1,0 +1,27 @@
+pragma cashscript ^0.14.0;
+
+// =====================================================================================
+// Evermore Sale: one listing (a hero or a gear NFT) per address, no operator, no game logic.
+// The address is derived from (sellerPkh, price); the listing tx also carries an OP_RETURN
+// 'EVR1' sellerPkh price so clients can find it and rebuild this address.
+//
+// buy(): the output at THIS input's index pays the seller at least `price` in plain BCH.
+//   The token goes wherever the buyer puts it, in the same transaction (atomic swap).
+//   Stops: underpaying, paying someone else, paying with the token itself, and settling
+//   two listings with one payment (each listing needs its own output at its own index).
+// cancel(): the seller signs (pubkey must hash to sellerPkh).
+//   Stops: anyone else withdrawing the listing.
+// =====================================================================================
+contract Sale(bytes20 sellerPkh, int price) {
+    function buy() {
+        int i = this.activeInputIndex;
+        require(tx.outputs[i].lockingBytecode == new LockingBytecodeP2PKH(sellerPkh));
+        require(tx.outputs[i].value >= price);
+        require(tx.outputs[i].tokenCategory == 0x);
+    }
+
+    function cancel(pubkey pk, sig s) {
+        require(hash160(pk) == sellerPkh);
+        require(checkSig(s, pk));
+    }
+}

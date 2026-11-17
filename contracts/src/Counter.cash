@@ -1,0 +1,23 @@
+pragma cashscript ^0.14.0;
+
+// =====================================================================================
+// Evermore Counter: holds the single global gear counter NFT 'C' + minted4.
+// Genesis mints exactly one. The Lane's forge path is the only way to mint gear, and it
+// demands this counter with minted < gearCap and writes minted + 1, so total gear supply
+// is exactly gearCap, forever.
+//
+// Only path, tick(): a lane of the game category is input 0, and the counter comes back
+// here at the SAME index, still in the category, still a 'C' commitment, value kept.
+// Stops: spending the counter without the referee, burning it inside a raise or challenge
+// (the pinned output at its index is not a counter), moving it off this address.
+// =====================================================================================
+contract Counter(bytes32 gameCategory) {
+    function tick() {
+        require(tx.inputs[0].tokenCategory == gameCategory + 0x02);
+        int i = this.activeInputIndex;
+        require(tx.outputs[i].lockingBytecode == tx.inputs[i].lockingBytecode);
+        require(tx.outputs[i].tokenCategory == gameCategory);
+        require(tx.outputs[i].nftCommitment.split(1)[0] == 0x43);
+        require(tx.outputs[i].value >= tx.inputs[i].value);
+    }
+}
