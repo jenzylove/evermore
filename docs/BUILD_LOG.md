@@ -19,3 +19,7 @@
 **Genesis** (`contracts/scripts/genesis.mjs`, chipnet only, refuses mainnet)
 - Deployer key generated at `C:\Users\LENOVO\relic-launch\keys\evermore-chipnet-deployer.wif` (outside git). Address **bchtest:qzx2n0hzycuu3mevnlyy0myvrxsr4yj5rsrp65x2mg**.
 - `run --dry` builds and VM verifies prep + genesis (1,738 B, 20 outputs: authhead, 16 lanes, counter, BCMR OP_RETURN, change). Blocked on funding: needs about 25,000 sats from a chipnet faucet, then `node scripts/genesis.mjs run` and `node scripts/smoke.mjs` (raise x2, challenge, forge, all on chipnet with explorer links).
+
+## Nov 17 2026: chipnet genesis and first real duel
+- Genesis (16 lanes, Counter, Arena): https://chipnet.imaginary.cash/tx/3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b
+- Raise x2: 1b506aec..., fc3ad93c...; Challenge: 2660d1e6...; Forge: 3b5ef289... (hero #13 Knight L1 to L2, beat Mage #8, replayed by the Lane covenant)

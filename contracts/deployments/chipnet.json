@@ -1,0 +1,111 @@
+{
+  "network": "chipnet",
+  "category": "39f93c4462d990e5c2cee900c11aba6b7e74439d81301f26515cb2a856766c0c",
+  "treasuryPkh": "8ca9bee22639c8ef2c9fc847ec8c19a03a92541c",
+  "raisePrice": "50000",
+  "challengeFee": "4000",
+  "forgeFee": "2000",
+  "gearCap": "5000",
+  "authbaseTxid": "39f93c4462d990e5c2cee900c11aba6b7e74439d81301f26515cb2a856766c0c",
+  "genesisTxid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+  "authhead": {
+    "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+    "vout": 0
+  },
+  "deployer": "bchtest:qzx2n0hzycuu3mevnlyy0myvrxsr4yj5rsrp65x2mg",
+  "addresses": {
+    "lane": "bchtest:pwxqps92grqdv2570vwk76vr3hmeh64j6yv2es2d3lw8quzjnmwgulf96x57e",
+    "arena": "bchtest:pws5p77kresc9ncfx7fu8d427hjdfgn4n00v74lzj7e8xk4wcvgdjjq8nheq8",
+    "counter": "bchtest:pv2xddqu4l9cr07n2a3gkwsqagduujscjunrh0h0ed9grnl34ndy27twdv9gf",
+    "bazaar": "bchtest:qqwp6qu3xumk9q2nz4kps4racz7utqktnq3e4wc2ep",
+    "treasury": "bchtest:qzx2n0hzycuu3mevnlyy0myvrxsr4yj5rsrp65x2mg"
+  },
+  "lanes": [
+    {
+      "lane": 0,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 1
+    },
+    {
+      "lane": 1,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 2
+    },
+    {
+      "lane": 2,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 3
+    },
+    {
+      "lane": 3,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 4
+    },
+    {
+      "lane": 4,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 5
+    },
+    {
+      "lane": 5,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 6
+    },
+    {
+      "lane": 6,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 7
+    },
+    {
+      "lane": 7,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 8
+    },
+    {
+      "lane": 8,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 9
+    },
+    {
+      "lane": 9,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 10
+    },
+    {
+      "lane": 10,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 11
+    },
+    {
+      "lane": 11,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 12
+    },
+    {
+      "lane": 12,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 13
+    },
+    {
+      "lane": 13,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 14
+    },
+    {
+      "lane": 14,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 15
+    },
+    {
+      "lane": 15,
+      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "vout": 16
+    }
+  ],
+  "counter": {
+    "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+    "vout": 17
+  },
+  "bcmr": null,
+  "createdAt": "2026-11-17T13:10:35.210Z"
+}

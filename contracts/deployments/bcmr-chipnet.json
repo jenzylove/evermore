@@ -1,0 +1,115 @@
+{
+  "$schema": "https://cashtokens.org/bcmr-v2.schema.json",
+  "version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "latestRevision": "2026-11-17T13:10:34.387Z",
+  "registryIdentity": {
+    "name": "Evermore",
+    "description": "Evermore game registry",
+    "uris": {
+      "web": "https://evermore.example"
+    }
+  },
+  "identities": {
+    "39f93c4462d990e5c2cee900c11aba6b7e74439d81301f26515cb2a856766c0c": {
+      "2026-11-17T13:10:34.387Z": {
+        "name": "Evermore",
+        "description": "Heroes that live on Bitcoin Cash. Games die. Heroes do not.",
+        "uris": {
+          "icon": "https://evermore.example/art/icon.png",
+          "web": "https://evermore.example"
+        },
+        "token": {
+          "category": "39f93c4462d990e5c2cee900c11aba6b7e74439d81301f26515cb2a856766c0c",
+          "symbol": "EVER",
+          "nfts": {
+            "description": "Evermore heroes and gear",
+            "fields": {
+              "commitment": {
+                "name": "Save data",
+                "description": "Hero or gear state, written only by the Evermore covenants",
+                "encoding": {
+                  "type": "binary"
+                }
+              }
+            },
+            "parse": {
+              "bytecode": "00cf76517f7578557f77517f757e6b6b",
+              "types": {
+                "4500": {
+                  "name": "Evermore Blade",
+                  "description": "Gear won by beating a ghost 3+ levels above. Capped supply.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore.example/art/gear-0.png",
+                    "image": "https://evermore.example/art/gear-0.png"
+                  }
+                },
+                "4501": {
+                  "name": "Evermore Shield",
+                  "description": "Gear won by beating a ghost 3+ levels above. Capped supply.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore.example/art/gear-1.png",
+                    "image": "https://evermore.example/art/gear-1.png"
+                  }
+                },
+                "4502": {
+                  "name": "Evermore Charm",
+                  "description": "Gear won by beating a ghost 3+ levels above. Capped supply.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore.example/art/gear-2.png",
+                    "image": "https://evermore.example/art/gear-2.png"
+                  }
+                },
+                "4800": {
+                  "name": "Evermore Knight",
+                  "description": "A Knight hero. Every level was earned in a duel the chain replayed.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore.example/art/knight.png",
+                    "image": "https://evermore.example/art/knight.png"
+                  }
+                },
+                "4801": {
+                  "name": "Evermore Rogue",
+                  "description": "A Rogue hero. Every level was earned in a duel the chain replayed.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore.example/art/rogue.png",
+                    "image": "https://evermore.example/art/rogue.png"
+                  }
+                },
+                "4802": {
+                  "name": "Evermore Mage",
+                  "description": "A Mage hero. Every level was earned in a duel the chain replayed.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore.example/art/mage.png",
+                    "image": "https://evermore.example/art/mage.png"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
