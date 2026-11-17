@@ -16,6 +16,7 @@ type Saved = {
   wardens: { id: number; cls: ClassId; level: number; beaten: number; defences: number; name: string; owner: string }[];
   listings: Listing[];
   gearMinted: number;
+  tickets?: string[]; // open challenge tickets; a forge spends one
 };
 
 const WARDENS: [string, ClassId, number, string][] = [
@@ -37,6 +38,8 @@ function fresh(): Saved {
       beaten: rec(name, 4 + level * 2), defences: rec(name + 'd', 20 + level * 9),
     })),
     listings: [
+      { id: 'ph', kind: 'hero', priceSats: cents(150), seller: 'qzy5…8lp', mine: false,
+        hero: { id: 777, cls: 1, level: 4, xp: 12, wins: 9, name: 'Kestrel', ...grown(1, 4), defences: 21, beaten: 3, earnedSats: cents(42), where: 'listed' } },
       { id: 'p1', kind: 'gear', gear: { id: 9001, kind: 0, tier: 1, where: 'listed' }, priceSats: cents(40), seller: 'qq6h…k5c', mine: false },
       { id: 'p2', kind: 'gear', gear: { id: 9002, kind: 2, tier: 2, where: 'listed' }, priceSats: cents(95), seller: 'qra1…f9n', mine: false },
       { id: 'p3', kind: 'gear', gear: { id: 9003, kind: 1, tier: 1, where: 'listed' }, priceSats: cents(35), seller: 'qp3s…w6j', mine: false },
@@ -52,12 +55,6 @@ export class PracticeChain implements GameChain {
     let s: Saved | null = null;
     try { const raw = localStorage.getItem(KEY); if (raw) s = JSON.parse(raw); } catch { /* storage blocked */ }
     this.s = s ?? fresh();
-    // A practice hero listed for sale by the wardens, so the Bazaar has a hero on day one.
-    if (!this.s.listings.some(l => l.kind === 'hero' && !l.mine)) {
-      const g = grown(1, 4);
-      this.s.listings.unshift({ id: 'ph', kind: 'hero', priceSats: cents(150), seller: 'qzy5…8lp', mine: false,
-        hero: { id: 777, cls: 1, level: 4, xp: 12, wins: 9, name: 'Kestrel', ...g, defences: 21, beaten: 3, earnedSats: cents(42), where: 'listed' } });
-    }
   }
 
   private save() { try { localStorage.setItem(KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ } }
@@ -98,6 +95,7 @@ export class PracticeChain implements GameChain {
     const seed = seedOf(styleHash(heroId, g));
     const w = this.s.wardens.find(x => x.id === ghostId);
     if (w) w.defences++;
+    (this.s.tickets ??= []).push(`${heroId}:${ghostId}:${seed}`);
     this.save();
     return { heroId, ghost: g, seed, receipt: NONE };
   }
@@ -105,6 +103,8 @@ export class PracticeChain implements GameChain {
   async forge(t: Ticket, moves: number[]): Promise<ForgeResult> {
     const h = this.s.heroes.find(x => x.id === t.heroId);
     if (!h) throw new Error('Hero not found.');
+    const tk = `${t.heroId}:${t.ghost.id}:${t.seed}`;
+    if (!this.s.tickets?.includes(tk)) throw new Error('That challenge was already forged.');
     const g: Ghost = { ...t.ghost, ownerPkh: new Uint8Array(20) };
     const r = duel(h, g, t.seed, moves);
     // Same check the covenant makes: the duel must be won, ending exactly on the last move.
@@ -115,6 +115,7 @@ export class PracticeChain implements GameChain {
     const { hero, levelled, gain } = forgeHero(h, live, r.hHp, r.rounds);
     Object.assign(h, hero);
     if (w) w.beaten++;
+    this.s.tickets = this.s.tickets!.filter(x => x !== tk);
     let gear: GearView | null = null;
     if (gearDrops(h.level - (levelled ? 1 : 0), t.ghost.level) && this.s.gearMinted < 5000) {
       const kind = gearKindOf(styleHash(t.heroId, { id: t.ghost.id, beaten: t.ghost.beaten + 1, defences: t.ghost.defences })) as 0 | 1 | 2;

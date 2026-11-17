@@ -21,7 +21,7 @@ register('front', root => {
       // a hero now and then swings at the air
       if (Math.random() < dt / 3000) {
         const a = heroes[Math.floor(Math.random() * 3)];
-        stage.tween(380, t => { a.weaponAngle = 0.35 + Math.sin(t * Math.PI) * (a.cls === 2 ? -0.6 : 1.6); });
+        stage.tween(380, t => { a.weaponAngle = Math.sin(t * Math.PI) * (a.cls === 2 ? -0.6 : 1.6); });
       }
     },
     draw(ctx: CanvasRenderingContext2D, W: number, H: number, t: number) {

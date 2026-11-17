@@ -1,7 +1,7 @@
 // Drives the real client in headless Chromium at phone and desktop sizes and saves screenshots.
 // Run: node --experimental-strip-types scripts/shots.ts [baseUrl] [outDir]
 import { chromium, type Page } from 'playwright';
-import { solve, type Hero, type Ghost } from '../src/game/sim.ts';
+import { solve, styleHash, seedOf, type Hero, type Ghost } from '../src/game/sim.ts';
 
 const base = process.argv[2] ?? 'http://localhost:5190';
 const out = process.argv[3] ?? 'C:/Users/LENOVO/relic-launch/shots';
@@ -57,6 +57,39 @@ for (const s of sizes) {
     won = true;
     await wait(700); await shot(p, s.tag, '11-victory');
     await wait(3200); await shot(p, s.tag, '12-forge');
+  }
+  // a harder ghost (level 4 Mage, three above): Special, level up and a gear drop
+  if (s.tag === 'phone') {
+    const pick = await p.evaluate(async () => { const m = (window as any).__ev; return { hero: await m.activeHero(), ghosts: await m.app.chain.listGhosts() }; });
+    const cands = pick.ghosts.filter((g: any) => !g.mine && g.level >= pick.hero.level + 2).sort((a: any, b: any) => b.level - a.level);
+    let target = cands[cands.length - 1];
+    for (const g of cands) { if (solve(pick.hero, { ...g, ownerPkh: new Uint8Array(20) }, seedOf(styleHash(pick.hero.id, g)))) { target = g; break; } }
+    console.log('hard target', target?.name, target?.level);
+    await p.evaluate((id: number) => { const m = (window as any).__ev; m.app.focusGhost = id; m.go('arena'); }, target.id);
+    await wait(1500); await shot(p, s.tag, '16-arena-hard');
+    await p.getByRole('button', { name: /^Challenge/ }).click(); await wait(2000);
+    const mv = await winningMoves(p);
+    console.log('hard line', mv?.join(''));
+    if (mv) {
+      for (let i = 0; i < mv.length; i++) {
+        await p.locator('.moves .btn', { hasText: ['Strike', 'Guard', 'Special'][mv[i]] }).click();
+        if (mv[i] === 2) { await wait(300); await shot(p, s.tag, '17-special-buildup'); await wait(330); await shot(p, s.tag, '18-special-hit'); }
+        await p.waitForSelector('.moves:not(.wait)', { timeout: 9000 }).catch(() => {});
+      }
+      await wait(4200); await shot(p, s.tag, '19-forge-levelup');
+      await wait(1500); await shot(p, s.tag, '20-forge-gear');
+    } else await p.evaluate(() => (window as any).__ev.go('arena'));
+    // one more win to cross the level line
+    for (let k = 0; k < 4; k++) {
+      await p.evaluate((id: number) => { const m = (window as any).__ev; m.app.focusGhost = id; m.go('arena'); }, 100 + 7 * k);
+      await wait(1200);
+      await p.getByRole('button', { name: /^Challenge/ }).click(); await wait(1800);
+      const mv2 = await winningMoves(p);
+      if (!mv2) continue;
+      for (const m2 of mv2) { await p.locator('.moves .btn', { hasText: ['Strike', 'Guard', 'Special'][m2] }).click(); await p.waitForSelector('.moves:not(.wait)', { timeout: 9000 }).catch(() => {}); }
+      await wait(4300); await shot(p, s.tag, '21-forge-levelup');
+      break;
+    }
   }
   await click(p, 'Hero'); await wait(1000); await shot(p, s.tag, '13-hero');
   await click(p, 'Bazaar'); await wait(1000); await shot(p, s.tag, '14-bazaar');

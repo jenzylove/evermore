@@ -8,7 +8,7 @@ export class Actor {
   sq = 0;               // squash (+) / stretch (-)
   face = 1;             // 1 faces right
   anim: 'idle' | 'run' | 'hit' = 'idle';
-  weaponAngle = 0.35;   // radians, resting tilt (blade up and a little forward)
+  weaponAngle = 0;      // radians; rests upright so the blade stays pixel crisp
   weaponReach = 0;
   flash = 0;            // white flash ms left
   ward = 0;             // guard bubble 0..1
@@ -34,14 +34,6 @@ export class Actor {
     ctx.fillRect(Math.round(this.x + this.dx * 0.6 - sw), Math.round(this.y - 1), sw * 2, 2);
     ctx.fillRect(Math.round(this.x + this.dx * 0.6 - sw + 2), Math.round(this.y - 2), sw * 2 - 4, 1);
     ctx.globalAlpha = this.alpha;
-    // charge aura under the body
-    if (this.aura > 0.01) {
-      const pulse = 0.6 + 0.4 * Math.sin(t / 70);
-      ctx.globalAlpha = this.alpha * this.aura * 0.55 * pulse;
-      ctx.fillStyle = this.layer === 'ghost' ? '#8ff6e6' : '#ffd36b';
-      ctx.fillRect(Math.round(x - 9), Math.round(y - 30), 18, 30);
-      ctx.globalAlpha = this.alpha;
-    }
     const frames = R[`${this.body}_${this.anim}`]?.[4] ?? 1;
     const fr = this.anim === 'hit' ? 0 : Math.floor(this.phase / (this.anim === 'run' ? 80 : 140)) % frames;
     const layer: Layer = this.flash > 0 ? 'white' : this.layer;
@@ -56,6 +48,13 @@ export class Actor {
     if (this.sq) {
       const s = 1 + this.sq * 0.12;
       ctx.translate(Math.round(x), Math.round(y)); ctx.scale(1 / s, s); ctx.translate(-Math.round(x), -Math.round(y));
+    }
+    // charged: a one pixel outline that pulses, the sprite's own silhouette
+    if (this.aura > 0.01) {
+      const glow: Layer = this.layer === 'ghost' ? 'spirit' : 'gold';
+      ctx.globalAlpha = this.alpha * this.aura * (0.55 + 0.45 * Math.sin(t / 90));
+      for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) spr(ctx, `${this.body}_${this.anim}`, fr, x + ox, y + oy, flip, glow);
+      ctx.globalAlpha = this.alpha * (this.dead > 0 ? 1 - this.dead * 0.4 : 1);
     }
     spr(ctx, `${this.body}_${this.anim}`, fr, x, y, flip, layer);
     // weapon: pivot near the grip

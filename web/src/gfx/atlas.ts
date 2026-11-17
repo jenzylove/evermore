@@ -28,7 +28,7 @@ export const R: Record<string, Rect> = {
   wizzard_m_idle: [128, 164, 16, 28, 4], wizzard_m_run: [192, 164, 16, 28, 4], wizzard_m_hit: [256, 164, 16, 28, 1],
 };
 
-export type Sheet = { img: HTMLCanvasElement; white: HTMLCanvasElement; ghost: HTMLCanvasElement; dark: HTMLCanvasElement };
+export type Sheet = { img: HTMLCanvasElement; white: HTMLCanvasElement; ghost: HTMLCanvasElement; dark: HTMLCanvasElement; gold: HTMLCanvasElement; spirit: HTMLCanvasElement };
 export let sheet: Sheet;
 
 function recolor(src: HTMLImageElement, f: (r: number, g: number, b: number, a: number) => [number, number, number, number]) {
@@ -60,11 +60,13 @@ export async function loadSheet(): Promise<Sheet> {
     white: recolor(img, (_r, _g, _b, a) => [255, 255, 255, a]),
     ghost: recolor(img, (r, g, b, a) => { const l = (0.3 * r + 0.59 * g + 0.11 * b) / 255; const [R2, G2, B2] = ramp(l * 1.25 + 0.08); return [R2, G2, B2, a]; }),
     dark: recolor(img, (_r, _g, _b, a) => [8, 6, 14, a]),
+    gold: recolor(img, (_r, _g, _b, a) => [255, 211, 107, a]),
+    spirit: recolor(img, (_r, _g, _b, a) => [143, 246, 230, a]),
   };
   return sheet;
 }
 
-export type Layer = 'img' | 'white' | 'ghost' | 'dark';
+export type Layer = 'img' | 'white' | 'ghost' | 'dark' | 'gold' | 'spirit';
 
 /** Draw frame `f` of sprite `name` with its bottom centre at (x, y). */
 export function spr(ctx: CanvasRenderingContext2D, name: string, f: number, x: number, y: number, flip = false, layer: Layer = 'img') {

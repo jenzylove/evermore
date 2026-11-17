@@ -14,7 +14,7 @@ export function drawHall(ctx: CanvasRenderingContext2D, W: number, H: number, t:
   // the wall rises off the top of the screen; upper courses fall into darkness
   const c0p = Math.floor(cam / 16) - 1, c1p = Math.ceil((cam + W) / 16) + 1;
   ctx.fillStyle = '#0d0a15'; ctx.fillRect(0, 0, W, top + 1);
-  for (let y = top - 16; y > -16; y -= 16) for (let c = c0p; c < c1p; c++) {
+  for (let y = top; y > -16; y -= 16) for (let c = c0p; c < c1p; c++) {
     const v = h2(c, Math.round(y / 16) + 900);
     tile(ctx, v < 0.06 ? 'wall_hole_1' : 'wall_mid', 0, c * 16 - cam, y);
   }

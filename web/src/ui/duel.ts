@@ -34,7 +34,7 @@ register('duel', root => {
       const portrait = H > W;
       fy = Math.round(H * (portrait ? 0.4 : 0.42));
       drawHall(ctx, W, H, t, { floorY: fy, camX: 900, focusY: fy + 30, light: 1.1 });
-      const base = fy + 36, gap = Math.min(Math.round(W * 0.24), 44);
+      const base = fy + 36, gap = Math.min(Math.round(W * 0.3), 44);
       if (!busy) { A.place(W / 2 - gap, base); B.place(W / 2 + gap, base); }
       else { A.homeX = W / 2 - gap; B.homeX = W / 2 + gap; A.y = B.y = base; }
       // duel ring
@@ -47,7 +47,7 @@ register('duel', root => {
         const m = gMoves[moves.length];
         const rows = iconRows(MOVE_ICON[m]);
         const pop = intentPop > 0 ? ease.outBack(1 - intentPop / 300) : 1;
-        const ix = Math.round(B.x - 4), iy = Math.round(B.y - 42 + Math.sin(t / 260) * 1.2 - (1 - pop) * 4);
+        const ix = Math.round(B.x - 4), iy = Math.round(B.y - 46 + Math.sin(t / 260) * 1.2 - (1 - pop) * 4);
         ctx.fillStyle = 'rgba(7,6,13,0.75)'; ctx.fillRect(ix - 2, iy - 2, 13, 13);
         rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch === '#') { ctx.fillStyle = MOVE_COLOR[m]; ctx.fillRect(ix + i, iy + j, 1, 1); } }));
       }
@@ -161,7 +161,7 @@ register('duel', root => {
     }
     // anticipation: lean back, weapon up
     sfx.whoosh(special);
-    await stage.tween(special ? 140 : 110, p => { a.dx = -dir * 3 * ease.outCubic(p); a.weaponAngle = 0.35 - 1.9 * ease.outCubic(p); a.sq = 0.35 * p; });
+    await stage.tween(special ? 140 : 110, p => { a.dx = -dir * 3 * ease.outCubic(p); a.weaponAngle = -1.6 * ease.outCubic(p); a.sq = 0.35 * p; });
     const contact = b.x - a.x - dir * 14;
     if (a.cls === 2) {
       // mages throw a bolt from the staff
@@ -194,8 +194,8 @@ register('duel', root => {
     b.anim = 'idle';
     // recover
     const x0 = a.dx;
-    await Promise.all([reel, stage.tween(220, p => { a.dx = x0 * (1 - ease.inOut(p)); a.weaponAngle = 1.85 - 1.5 * ease.inOut(p); a.weaponReach = 3 * (1 - p); a.sq = 0; })]);
-    a.weaponAngle = 0.35; a.dx = 0; b.dx = 0;
+    await Promise.all([reel, stage.tween(220, p => { a.dx = x0 * (1 - ease.inOut(p)); a.weaponAngle = 1.85 * (1 - ease.inOut(p)); a.weaponReach = 3 * (1 - p); a.sq = 0; })]);
+    a.weaponAngle = 0; a.dx = 0; b.dx = 0;
     if (left <= 0) await fall(b, mine);
   }
 
@@ -208,8 +208,8 @@ register('duel', root => {
     const hx = b.x - a.face * 4, hy = b.y - 14;
     if (blocked) { sfx.clang(); stage.burst(hx, hy, 12, ['#ffffff', '#9fd8ff', '#f6c453'], 80, 160, 300); }
     else { sfx.hit(special || kill); stage.burst(hx, hy, special ? 34 : 16, mine ? ['#ff5a3c', '#ffd36b', '#ffffff'] : ['#8ff6e6', '#ffffff', '#3c9fb0'], special ? 110 : 75, 200, 420); }
-    stage.pop(b.x, b.y - 30, String(dmg), blocked ? '#9fd8ff' : special ? '#f6c453' : '#ffffff', special || dmg >= 12);
-    if (blocked) stage.pop(b.x, b.y - 40, 'blocked', '#9fd8ff');
+    stage.pop(b.x, b.y - 18, String(dmg), blocked ? '#9fd8ff' : special ? '#f6c453' : '#ffffff', special || dmg >= 12);
+    if (blocked) stage.pop(b.x, b.y - 8, 'blocked', '#9fd8ff');
     if (special) stage.pop(a.x, a.y - 44, 'Special', mine ? '#f6c453' : '#8ff6e6');
   }
 

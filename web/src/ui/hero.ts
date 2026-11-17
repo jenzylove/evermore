@@ -61,7 +61,7 @@ register('hero', root => {
       ...(['hp', 'atk', 'def', 'spd'] as const).map(k => h('span', {}, `${k.toUpperCase()} `, h('b', {}, String(hero[k])))));
     const earned = h('div', { class: 'earned', style: 'text-align:center' },
       hero.defences ? h('span', {}, `Defended ${hero.defences} times, `, h('b', {}, `+${money(hero.earnedSats, f.usdPerBch)}`)) : h('span', { class: 'dim' }, 'Its ghost stands in the Arena. Every challenge pays you.'),
-      h('div', { class: 'dim', style: 'font-size:15px;margin-top:4px' }, `${hero.wins} wins · ${hero.xp}/${xpNeed(hero.level)} XP`));
+      h('div', { class: 'dim', style: 'font-size:15px;margin-top:4px' }, `${hero.wins} win${hero.wins === 1 ? '' : 's'} · ${hero.xp}/${xpNeed(hero.level)} XP`));
     info.append(pick, xp, stats, earned);
     if (gear.length) info.append(h('div', { class: 'gearline' }, 'Gear', ...gear.slice(0, 6).map(g => { const c = sprite(GEAR_SPRITE(g.kind, g.tier), 0, 2, 'img', [16, 16]); c.title = GEAR_NAMES[g.kind][Math.min(2, g.tier - 1)]; return c; })));
     const home = h('button', { class: 'btn ghost small', onClick: async () => {
