@@ -132,7 +132,7 @@ register('arena', root => {
       return;
     }
     if (hero) {
-      const seed = app.chain.styleSeed?.(hero.id, g) ?? seedOf(styleHash(hero.id, g)); // real chains: the covenant seed
+      const seed = seedOf(styleHash(hero.id, g));
       const mv = ghostMoves(seed);
       const st = h('div', { class: 'style' }, h('span', { class: 'lbl' }, `How it fights ${hero.name}`));
       mv.forEach(m => { const s = h('span', { class: `mv m${m}`, title: MOVE_NAME[m] }, icon(MOVE_ICON[m])); st.append(s); });
