@@ -1,8 +1,11 @@
-// The arena: a round stone pit under one shaft of warm light, ringed by pillars, braziers and old banners, falling away into fog.
-// Every surface is textured in code (stone, mortar, cloth) so nothing reads as a flat toy colour, and one light rig lights it all:
-// a warm key from above, a cool rim from behind, warm fire low on the sides, and a blue hemisphere so shadows go cool, never black.
+// The Hall of Evermore: a round marble hall under moonlight, where heroes that never die are remembered.
+// Pale columns and arches ring a floor written with faint runes; beyond them colossal statues of past champions stand
+// in the blue night. Shafts of moonlight fall through, motes drift in them. Every texture is made in code.
+// The light rig: a cold moon key from above, a pale gold rim from behind, a deep blue hemisphere so nothing goes black.
 import * as THREE from 'three';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { engine } from './engine';
+import { runeDisc, runeMaterial } from './runes';
 
 // ---- small noise kit for canvas textures ----
 const hash = (x: number, y: number, s = 0) => { let h = (x * 374761393 + y * 668265263 + s * 2147483647) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
@@ -26,7 +29,7 @@ function nz(x: number, y: number) {
 }
 function canvas(n: number) { const c = document.createElement('canvas'); c.width = c.height = n; return c; }
 
-/** tiling grain used as bump and roughness on all stone */
+/** tiling grain used as bump and roughness on stone */
 function grainTexture() {
   const n = 256, c = canvas(n), x = c.getContext('2d')!, img = x.createImageData(n, n);
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
@@ -38,87 +41,53 @@ function grainTexture() {
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
 }
 
-/** the pit floor: rings of flagstones round a worn bronze sigil */
+/** marble: cool pale stone with soft veins */
+const marble = (u: number, v: number, s: number) => {
+  const warp = nz(u * 0.7 + s, v * 0.7 + s * 1.3) * 5;
+  const vein = Math.pow(Math.abs(Math.sin((u * 1.4 + v * 0.6) * 3 + warp * 2.2)), 0.18);
+  const fine = Math.pow(Math.abs(Math.sin((u * 0.5 - v * 1.6) * 7 + warp * 3.1)), 0.35);
+  return 0.78 + 0.22 * vein * fine - 0.08 * nz(u * 3 + 2, v * 3 + 5);
+};
+
+/** the hall floor: rings of marble slabs with pale gold seams, round a quiet centre stone */
 function floorTexture() {
   const n = 1024, c = canvas(n), x = c.getContext('2d')!;
   const img = x.createImageData(n, n);
-  const rings = [0, 0.09, 0.2, 0.33, 0.47, 0.62, 0.78, 0.95, 1.2];
+  const rings = [0, 0.16, 0.3, 0.46, 0.62, 0.8, 0.96, 1.3];
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
     const u = i / n * 2 - 1, v = j / n * 2 - 1, r = Math.hypot(u, v), a = Math.atan2(v, u);
     let ri = 0; while (ri < rings.length - 2 && r > rings[ri + 1]) ri++;
     const r0 = rings[ri], r1 = rings[ri + 1];
-    const segs = Math.max(1, Math.round((ri + 1) * 7));
+    const segs = ri === 0 ? 1 : Math.round(ri * 9);
     const sa = (a / (Math.PI * 2) + 0.5) * segs + (ri % 2) * 0.5, si = Math.floor(sa), sf = sa - si;
-    const edgeR = Math.min(r - r0, r1 - r) * n / 2, edgeA = Math.min(sf, 1 - sf) * (r * Math.PI * 2 / segs) * n / 2;
-    const mortar = ri === 0 ? Math.max(0, 1 - (r1 - r) * n / 2 / 3) : Math.max(0, 1 - Math.min(edgeR, edgeA) / 3);
-    const tone = 0.55 + 0.45 * hash(si, ri, 11);
-    const grime = nz(u * 3 + 1.3, v * 3 + 2.1);
-    const wear = nz(u * 11 + 5.7, v * 11 + 3.3);
-    let L = (0.16 + 0.1 * tone) * (0.65 + 0.7 * grime) * (0.85 + 0.3 * wear);
-    L *= 1 - mortar * 0.75;
-    // a darker stain ring where fighters stand
-    L *= 1 - 0.18 * Math.exp(-(((r - 0.28) / 0.1) ** 2));
+    const edgeR = Math.min(r - r0, r1 - r) * n / 2, edgeA = ri === 0 ? 99 : Math.min(sf, 1 - sf) * (r * Math.PI * 2 / segs) * n / 2;
+    const seam = Math.max(0, 1 - Math.min(ri === 0 ? (r1 - r) * n / 2 : edgeR, edgeA) / 1.6);
+    const tone = 0.9 + 0.1 * hash(si, ri, 11);
+    const m = marble(u * 4 + si * 0.37, v * 4 + ri * 1.7, si + ri * 7);
+    let L = 0.2 * tone * m;
+    L *= 0.92 + 0.08 * nz(u * 9 + 5.7, v * 9 + 3.3);
     const k = (j * n + i) * 4;
-    img.data[k] = Math.min(255, L * 255 * 1.06); img.data[k + 1] = Math.min(255, L * 255 * 0.98); img.data[k + 2] = Math.min(255, L * 255 * 0.94); img.data[k + 3] = 255;
+    // seams are a thread of pale gold inlay with a dark hairline either side
+    const R = L * 0.96 * (1 - seam * 0.4) + seam * 0.5 * (seam > 0.6 ? 1 : 0), G = L * 0.99 * (1 - seam * 0.4) + seam * 0.4 * (seam > 0.6 ? 1 : 0), B = L * 1.05 * (1 - seam * 0.4) + seam * 0.22 * (seam > 0.6 ? 1 : 0);
+    img.data[k] = Math.min(255, R * 255); img.data[k + 1] = Math.min(255, G * 255); img.data[k + 2] = Math.min(255, B * 255); img.data[k + 3] = 255;
   }
   x.putImageData(img, 0, 0);
-  // the sigil: worn bronze inlay, broken where the stone is chipped
-  x.save(); x.translate(n / 2, n / 2);
-  x.strokeStyle = 'rgba(176,128,70,0.55)'; x.lineCap = 'round';
-  const ring = (r: number, w: number) => { x.lineWidth = w; x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.stroke(); };
-  ring(n * 0.185, 5); ring(n * 0.165, 2); ring(n * 0.06, 3);
-  for (let i = 0; i < 24; i++) {
-    const a = i / 24 * Math.PI * 2; x.lineWidth = i % 3 ? 2 : 4;
-    x.beginPath(); x.moveTo(Math.cos(a) * n * 0.165, Math.sin(a) * n * 0.165); x.lineTo(Math.cos(a) * n * (i % 3 ? 0.15 : 0.13), Math.sin(a) * n * (i % 3 ? 0.15 : 0.13)); x.stroke();
-  }
-  for (let k = 0; k < 3; k++) { // a triangle of three, one per class
-    x.lineWidth = 3; x.beginPath();
-    for (let i = 0; i <= 3; i++) { const a = (i / 3 + k / 9) * Math.PI * 2 - Math.PI / 2; const p = [Math.cos(a) * n * 0.15, Math.sin(a) * n * 0.15]; if (i) x.lineTo(p[0], p[1]); else x.moveTo(p[0], p[1]); }
-    x.stroke();
-  }
-  x.restore();
-  // chips and scuffs across the inlay
-  x.globalCompositeOperation = 'multiply';
-  for (let i = 0; i < 900; i++) { const a = Math.random() * Math.PI * 2, r = Math.random() * n * 0.5; x.fillStyle = `rgba(20,16,14,${0.2 + Math.random() * 0.5})`; x.beginPath(); x.arc(n / 2 + Math.cos(a) * r, n / 2 + Math.sin(a) * r, 1 + Math.random() * 4, 0, 7); x.fill(); }
-  x.globalCompositeOperation = 'source-over';
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
 
-/** stone blocks for pillars and walls (tiles in both directions) */
-function blockTexture() {
+/** fluted column marble (tiles round and up) */
+function columnTexture() {
   const n = 512, c = canvas(n), x = c.getContext('2d')!, img = x.createImageData(n, n);
-  const rows = 8;
+  const flutes = 16;
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-    const row = Math.floor(j / (n / rows)), off = row % 2 ? 0.5 : 0, bx = i / (n / 3) + off, col = Math.floor(bx);
-    const ey = Math.min(j % (n / rows), n / rows - (j % (n / rows))), ex = Math.min(bx - col, col + 1 - bx) * (n / 3);
-    const mortar = Math.max(0, 1 - Math.min(ey, ex) / 3);
-    const tone = 0.6 + 0.4 * hash(((col % 3) + 3) % 3, row, 4);
-    let L = (0.2 + 0.1 * tone) * (0.6 + 0.8 * nz(i / 64 + 2.5, j / 64 + 4.5)) * (1 - mortar * 0.7);
-    // grime runs down from the joints
-    L *= 1 - 0.25 * nz(i / 16 + 6.1, j / 128 + 1.7);
-    const k = (j * n + i) * 4; img.data[k] = L * 255 * 1.04; img.data[k + 1] = L * 255; img.data[k + 2] = L * 255 * 0.95; img.data[k + 3] = 255;
+    const f = (i / n) * flutes, ff = f - Math.floor(f);
+    const groove = 0.72 + 0.28 * Math.sin(ff * Math.PI);
+    const m = marble(i / 64, j / 128, 3);
+    const L = 0.42 * m * groove;
+    const k = (j * n + i) * 4; img.data[k] = L * 255 * 0.97; img.data[k + 1] = L * 255; img.data[k + 2] = L * 255 * 1.06; img.data[k + 3] = 255;
   }
   x.putImageData(img, 0, 0);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
-}
-
-/** a banner: deep oxblood cloth, a gold sigil, frayed hem */
-function bannerTexture() {
-  const w = 256, hh = 768, c = document.createElement('canvas'); c.width = w; c.height = hh; const x = c.getContext('2d')!;
-  const g = x.createLinearGradient(0, 0, 0, hh); g.addColorStop(0, '#3a0f12'); g.addColorStop(1, '#1e0709');
-  x.fillStyle = g; x.fillRect(0, 0, w, hh);
-  for (let i = 0; i < 4000; i++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; x.fillRect(Math.random() * w, Math.random() * hh, 1, 3 + Math.random() * 8); }
-  x.strokeStyle = '#a77a3e'; x.lineWidth = 4; x.strokeRect(14, 14, w - 28, hh - 120);
-  x.save(); x.translate(w / 2, 300); x.strokeStyle = '#c49a52'; x.lineWidth = 6;
-  x.beginPath(); x.arc(0, 0, 70, 0, Math.PI * 2); x.stroke();
-  x.beginPath(); for (let i = 0; i <= 3; i++) { const a = i / 3 * Math.PI * 2 - Math.PI / 2; if (i) x.lineTo(Math.cos(a) * 70, Math.sin(a) * 70); else x.moveTo(Math.cos(a) * 70, Math.sin(a) * 70); } x.stroke();
-  x.beginPath(); x.moveTo(0, -110); x.lineTo(0, 110); x.stroke();
-  x.restore();
-  // ragged hem
-  x.globalCompositeOperation = 'destination-out';
-  for (let i = 0; i < w; i += 6) { const d = 30 + Math.random() * 70; x.fillRect(i, hh - d, 6, d); }
-  x.globalCompositeOperation = 'source-over';
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
 function softDot() {
@@ -128,165 +97,177 @@ function softDot() {
 }
 export const DOT = softDot();
 
-// ---- fire: a camera facing card with a noise flame ----
-const fireMat = () => new THREE.ShaderMaterial({
-  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-  uniforms: { uT: { value: 0 }, uSeed: { value: Math.random() * 10 } },
-  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-  fragmentShader: `varying vec2 vUv; uniform float uT; uniform float uSeed;
-    float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
-    float n(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }
-    float fb(vec2 p){ float s=0., a=.5; for(int i=0;i<4;i++){ s+=a*n(p); p*=2.03; a*=.5; } return s; }
-    void main(){
-      vec2 uv = vUv; float t = uT*1.6 + uSeed;
-      float q = fb(vec2(uv.x*3., uv.y*2.2 - t*1.7));
-      float shape = 1. - smoothstep(0., .5 + .25*(1.-uv.y), abs(uv.x-.5)*2.2 + uv.y*0.9 - q*0.55);
-      shape *= smoothstep(0., .12, uv.y) * (1. - smoothstep(.55, 1., uv.y + q*.25));
-      vec3 c = mix(vec3(1.,.28,.05), vec3(1.,.78,.35), pow(shape, 1.6));
-      c = mix(c, vec3(1.,.95,.8), pow(shape, 5.));
-      gl_FragColor = vec4(c * shape * 1.8, shape);
-    }`,
+/** a shaft of light: a soft open cone, bright at its core, fading top and bottom */
+export const shaftMaterial = (color: string, a: number) => new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+  uniforms: { uA: { value: a }, uC: { value: new THREE.Color(color) }, uT: { value: 0 } },
+  vertexShader: 'varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ vUv=uv; vec4 mv = modelViewMatrix*vec4(position,1.); vV = -mv.xyz; vN = normalMatrix*normal; gl_Position = projectionMatrix*mv; }',
+  fragmentShader: `varying vec2 vUv; varying vec3 vN; varying vec3 vV; uniform float uA, uT; uniform vec3 uC;
+    void main(){ float f = abs(dot(normalize(vN), normalize(vV)));
+      float streak = 0.75 + 0.25 * sin(vUv.x * 60.0 + sin(vUv.x * 23.0) * 3.0 + uT * 0.3);
+      float a = uA * pow(f, 2.4) * streak * smoothstep(0.0, 0.35, vUv.y) * (1.0 - smoothstep(0.75, 1.0, vUv.y));
+      gl_FragColor = vec4(uC * a, a); }`,
 });
 
 export type Arena = {
-  key: THREE.SpotLight; rim: THREE.DirectionalLight; hemi: THREE.HemisphereLight; fires: THREE.PointLight[];
-  /** 0 = normal, 1 = the world drops away for a special */
+  key: THREE.SpotLight; rim: THREE.DirectionalLight; hemi: THREE.HemisphereLight;
+  /** 0 = normal, 1 = the hall drops away for a special */
   dim(v: number): void;
-  /** where the light shaft points (follows the action a little) */
+  /** where the moon's key light points (follows the action a little) */
   focus(x: number, z: number): void;
+  /** raise the colossal statues of past champions (needs the fighter kits) */
+  statues(kits: { scene: THREE.Object3D; clips: Map<string, THREE.AnimationClip> }[]): void;
 };
+
+const MOON = '#cfdcff', GOLD = '#f2d49a';
 
 export function buildArena(): Arena {
   const S = engine.scene;
   const grain = grainTexture();
-  const stoneTex = blockTexture();
-  const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture(), roughnessMap: grain, bumpMap: grain, bumpScale: 1.6, roughness: 0.82, metalness: 0.0 });
+
+  // ---- floor: a wide marble hall, polished enough to catch the moon ----
+  const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture(), roughnessMap: grain, bumpMap: grain, bumpScale: 0.35, roughness: 0.3, metalness: 0.0, envMap: engine.env, envMapIntensity: 0.3 });
   floorMat.roughnessMap!.repeat.set(10, 10); floorMat.bumpMap!.repeat.set(10, 10);
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(13, 96), floorMat);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(13, 128), floorMat);
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; S.add(floor);
+  // the outer court, where the statues stand: darker, plainer stone
+  const court = new THREE.Mesh(new THREE.RingGeometry(12.98, 70, 96, 1), new THREE.MeshStandardMaterial({ color: '#2a2f3a', roughness: 0.9, bumpMap: grain, bumpScale: 0.8 }));
+  court.rotation.x = -Math.PI / 2; court.position.y = -0.005; court.receiveShadow = true; S.add(court);
 
-  // a low step ring around the pit
-  const stepMat = new THREE.MeshStandardMaterial({ map: stoneTex, roughness: 0.9, bumpMap: grain, bumpScale: 1.2 });
-  stepMat.map = stoneTex.clone(); stepMat.map.repeat.set(24, 1); stepMat.map.needsUpdate = true;
-  const step = new THREE.Mesh(new THREE.CylinderGeometry(9.4, 9.4, 0.36, 96, 1, true), stepMat);
-  step.position.y = 0.18; step.receiveShadow = true; S.add(step);
-  const stepTop = new THREE.Mesh(new THREE.RingGeometry(9.4, 13, 96, 1), new THREE.MeshStandardMaterial({ color: '#2a2622', roughness: 0.95, bumpMap: grain, bumpScale: 1.5 }));
-  stepTop.rotation.x = -Math.PI / 2; stepTop.position.y = 0.36; stepTop.receiveShadow = true; S.add(stepTop);
+  // ---- runes written in the floor: a wide outer band and the duel circle ----
+  const ringTex = runeDisc({ count: 48, seed: 3, r0: 0.86, r1: 0.94, lines: [0.84, 0.96, 0.985, 0.42, 0.44] });
+  const ringMat = runeMaterial(ringTex, GOLD, 48); ringMat.uniforms.uK.value = 0.32;
+  const ring = new THREE.Mesh(new THREE.PlaneGeometry(19, 19), ringMat);
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.006; S.add(ring);
+  const innerTex = runeDisc({ count: 24, seed: 11, r0: 0.78, r1: 0.92, lines: [0.76, 0.94] });
+  const innerMat = runeMaterial(innerTex, MOON, 24); innerMat.uniforms.uK.value = 0.4;
+  const inner = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 7.4), innerMat);
+  inner.rotation.x = -Math.PI / 2; inner.position.y = 0.008; S.add(inner);
 
-  // pillars
-  const pillarMat = new THREE.MeshStandardMaterial({ map: stoneTex, roughness: 0.88, bumpMap: grain, bumpScale: 1.4 });
-  pillarMat.map = stoneTex.clone(); pillarMat.map.repeat.set(2, 3); pillarMat.map.needsUpdate = true;
-  const shaft = new THREE.CylinderGeometry(0.5, 0.58, 10, 20, 1);
-  const cap = new THREE.BoxGeometry(1.5, 0.45, 1.5);
-  const N = 12;
+  // ---- the colonnade: twelve fluted columns joined by arches ----
+  const colTex = columnTexture();
+  const colMat = new THREE.MeshStandardMaterial({ map: colTex, roughness: 0.55, bumpMap: grain, bumpScale: 0.4 });
+  colMat.map!.repeat.set(1, 3);
+  const stoneMat = new THREE.MeshStandardMaterial({ color: '#8d93a0', roughness: 0.7, bumpMap: grain, bumpScale: 0.6 });
+  const N = 12, CR = 11.2, CH = 8.6;
+  const shaft = new THREE.CylinderGeometry(0.42, 0.48, CH, 32, 1);
+  const base = new THREE.CylinderGeometry(0.66, 0.72, 0.36, 32);
+  const capital = new THREE.CylinderGeometry(0.7, 0.46, 0.5, 32);
+  const abacus = new THREE.BoxGeometry(1.5, 0.22, 1.5);
+  const chord = 2 * CR * Math.sin(Math.PI / N);
+  const archGeo = new THREE.TorusGeometry(chord / 2, 0.22, 10, 40, Math.PI);
   for (let i = 0; i < N; i++) {
-    const a = i / N * Math.PI * 2 + Math.PI / N, r = 11;
-    const g = new THREE.Group(); g.position.set(Math.cos(a) * r, 0.36, Math.sin(a) * r); g.rotation.y = -a;
-    const s = new THREE.Mesh(shaft, pillarMat); s.position.y = 5; s.castShadow = true; s.receiveShadow = true;
-    const b = new THREE.Mesh(cap, pillarMat); b.position.y = 0.22; b.receiveShadow = true;
-    const t = new THREE.Mesh(cap, pillarMat); t.position.y = 7.4; t.scale.set(0.9, 1, 0.9);
-    g.add(s, b, t); S.add(g);
+    const a = i / N * Math.PI * 2 + Math.PI / N;
+    const g = new THREE.Group(); g.position.set(Math.cos(a) * CR, 0, Math.sin(a) * CR);
+    const s = new THREE.Mesh(shaft, colMat); s.position.y = 0.36 + CH / 2; s.castShadow = true; s.receiveShadow = true;
+    const b = new THREE.Mesh(base, stoneMat); b.position.y = 0.18; b.receiveShadow = true;
+    const c = new THREE.Mesh(capital, stoneMat); c.position.y = 0.36 + CH + 0.25;
+    const ab = new THREE.Mesh(abacus, stoneMat); ab.position.y = 0.36 + CH + 0.6; ab.rotation.y = -a;
+    g.add(s, b, c, ab); S.add(g);
+    // the arch to the next column
+    const a2 = a + Math.PI / N;
+    const arch = new THREE.Mesh(archGeo, stoneMat);
+    arch.position.set(Math.cos(a2) * CR * Math.cos(Math.PI / N), 0.36 + CH + 0.7, Math.sin(a2) * CR * Math.cos(Math.PI / N));
+    arch.rotation.y = -a2 + Math.PI / 2; S.add(arch);
   }
-  // the outer wall, almost lost in the dark
-  const wallMat = new THREE.MeshStandardMaterial({ map: stoneTex.clone(), roughness: 0.95, side: THREE.BackSide, color: '#8a8580' });
-  wallMat.map!.repeat.set(16, 3); wallMat.map!.needsUpdate = true;
-  const wall = new THREE.Mesh(new THREE.CylinderGeometry(15, 15, 16, 64, 1, true), wallMat); wall.position.y = 8; S.add(wall);
+  // a ring beam above the arches
+  const beam = new THREE.Mesh(new THREE.TorusGeometry(CR, 0.35, 10, 96), stoneMat);
+  beam.rotation.x = Math.PI / 2; beam.position.y = 0.36 + CH + 0.7 + chord / 2 + 0.2; S.add(beam);
 
-  // banners between some pillars, behind the fight
-  const bTex = bannerTexture();
-  const banners: { m: THREE.Mesh; base: Float32Array; ph: number }[] = [];
-  for (const a of [-2.05, -1.57, -1.09, -0.6, -2.55]) {
-    const geo = new THREE.PlaneGeometry(1.5, 4.6, 4, 14);
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: bTex, roughness: 0.95, side: THREE.DoubleSide, transparent: true, alphaTest: 0.4 }));
-    m.position.set(Math.cos(a) * 10.4, 6.2, Math.sin(a) * 10.4); m.lookAt(0, 6.2, 0); m.castShadow = false;
-    S.add(m); banners.push({ m, base: Float32Array.from(geo.attributes.position.array as Float32Array), ph: a * 3 });
-  }
-
-  // braziers: iron bowls on stands with live fire, embers and a flickering light
-  const iron = new THREE.MeshStandardMaterial({ color: '#2b2622', roughness: 0.55, metalness: 0.85, bumpMap: grain, bumpScale: 2, envMap: engine.env, envMapIntensity: 0.5 });
-  const bowlPts = [new THREE.Vector2(0.05, 0), new THREE.Vector2(0.45, 0.05), new THREE.Vector2(0.62, 0.32), new THREE.Vector2(0.58, 0.36), new THREE.Vector2(0.42, 0.12), new THREE.Vector2(0.05, 0.1)];
-  const bowlGeo = new THREE.LatheGeometry(bowlPts, 20);
-  const fires: THREE.PointLight[] = [];
-  const flames: { mesh: THREE.Mesh; mat: THREE.ShaderMaterial }[] = [];
-  const ember = new THREE.BufferGeometry(); const EN = 160;
-  const ePos = new Float32Array(EN * 3), eVel = new Float32Array(EN * 3), eLife = new Float32Array(EN);
-  ember.setAttribute('position', new THREE.BufferAttribute(ePos, 3));
-  const brazierAt = [new THREE.Vector3(-4.6, 0, -3.6), new THREE.Vector3(4.6, 0, -3.6), new THREE.Vector3(-6.4, 0, 2.6), new THREE.Vector3(6.4, 0, 2.6)];
-  brazierAt.forEach((p, i) => {
-    const g = new THREE.Group(); g.position.copy(p);
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, 1.25, 8), iron); leg.position.y = 0.62; leg.castShadow = true;
-    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.1, 12), iron); foot.position.y = 0.05;
-    const bowl = new THREE.Mesh(bowlGeo, iron); bowl.position.y = 1.2; bowl.castShadow = true;
-    const coals = new THREE.Mesh(new THREE.CircleGeometry(0.5, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 0.7, 0.18) }));
-    coals.rotation.x = -Math.PI / 2; coals.position.y = 1.5;
-    const mat = fireMat(); const fl = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 2.0), mat); fl.position.y = 2.35;
-    g.add(leg, foot, bowl, coals, fl); S.add(g);
-    flames.push({ mesh: fl, mat });
-    const L = new THREE.PointLight('#ff8a3a', 16, 11, 1.7); L.position.set(p.x, 2.3, p.z);
-    if (i < 2) { S.add(L); fires.push(L); } // two lights; the front fires glow but do not light
-  });
-  const embers = new THREE.Points(ember, new THREE.PointsMaterial({ map: DOT, color: new THREE.Color(3, 1.2, 0.4), size: 0.06, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-  S.add(embers);
-  const respawn = (k: number) => {
-    const b = brazierAt[k % 4]; ePos[k * 3] = b.x + (Math.random() - 0.5) * 0.6; ePos[k * 3 + 1] = 1.7; ePos[k * 3 + 2] = b.z + (Math.random() - 0.5) * 0.6;
-    eVel[k * 3] = (Math.random() - 0.5) * 0.3; eVel[k * 3 + 1] = 0.6 + Math.random() * 1.2; eVel[k * 3 + 2] = (Math.random() - 0.5) * 0.3; eLife[k] = 1 + Math.random() * 2.5;
+  // ---- moonlight: one wide shaft over the centre and slanting shafts between the columns ----
+  const shafts: THREE.ShaderMaterial[] = [];
+  const addShaft = (x: number, z: number, r0: number, r1: number, len: number, tiltX: number, tiltZ: number, a: number, col = MOON) => {
+    const m = shaftMaterial(col, a); shafts.push(m);
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, len, 40, 1, true), m);
+    mesh.position.set(x, len / 2 - 0.2, z); mesh.rotation.set(tiltX, 0, tiltZ); S.add(mesh);
+    return mesh;
   };
-  for (let k = 0; k < EN; k++) { respawn(k); eLife[k] *= Math.random(); }
+  addShaft(0.6, -0.4, 1.8, 3.4, 16, 0.05, -0.12, 0.085);
+  [[-6.5, -6.2, 0.18], [6.8, -5.6, -0.2], [-8.4, 2.6, 0.24], [8.2, 3.4, -0.22]].forEach(([x, z, t], i) => addShaft(x, z, 0.6, 1.3, 15, 0.12 * (i % 2 ? 1 : -1), t, 0.06));
+  // pools of moonlight on the floor where the shafts land
+  const pool = (x: number, z: number, s: number, a: number) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: DOT, color: new THREE.Color(MOON).multiplyScalar(a), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    m.rotation.x = -Math.PI / 2; m.position.set(x, 0.01, z); S.add(m);
+  };
+  pool(0, 0, 9, 0.1);
 
-  // the shaft of light from above, and dust turning in it
-  const shaftMat = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-    uniforms: { uA: { value: 0.12 }, uC: { value: new THREE.Color('#ffcf94') } },
-    vertexShader: 'varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ vUv=uv; vec4 mv = modelViewMatrix*vec4(position,1.); vV = -mv.xyz; vN = normalMatrix*normal; gl_Position = projectionMatrix*mv; }',
-    fragmentShader: 'varying vec2 vUv; varying vec3 vN; varying vec3 vV; uniform float uA; uniform vec3 uC; void main(){ float f = abs(dot(normalize(vN), normalize(vV))); float a = uA * pow(f, 2.2) * smoothstep(0.0, 0.5, vUv.y) * (1.0 - smoothstep(0.8, 1.0, vUv.y)); gl_FragColor = vec4(uC * a, a); }',
-  });
-  const shaftMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 3.6, 13, 32, 1, true), shaftMat);
-  shaftMesh.position.set(0.6, 6.5, 0.4); shaftMesh.rotation.z = -0.08; S.add(shaftMesh);
-  const DN = 260, dGeo = new THREE.BufferGeometry(), dPos = new Float32Array(DN * 3), dSeed = new Float32Array(DN);
-  for (let i = 0; i < DN; i++) { const a = Math.random() * 7, r = Math.sqrt(Math.random()) * 3.2; dPos[i * 3] = Math.cos(a) * r; dPos[i * 3 + 1] = Math.random() * 6; dPos[i * 3 + 2] = Math.sin(a) * r; dSeed[i] = Math.random() * 100; }
+  // ---- motes drifting through the hall: pale gold and moon blue, twinkling ----
+  const DN = 520, dGeo = new THREE.BufferGeometry(), dPos = new Float32Array(DN * 3), dCol = new Float32Array(DN * 3), dSeed = new Float32Array(DN), dBase = new Float32Array(DN * 3);
+  const gold = new THREE.Color(GOLD), moon = new THREE.Color(MOON);
+  for (let i = 0; i < DN; i++) {
+    const a = Math.random() * 7, r = Math.sqrt(Math.random()) * 10.5;
+    dPos[i * 3] = Math.cos(a) * r; dPos[i * 3 + 1] = Math.random() * 8; dPos[i * 3 + 2] = Math.sin(a) * r; dSeed[i] = Math.random() * 100;
+    const c = Math.random() < 0.45 ? gold : moon; const k = 0.6 + Math.random() * 1.2;
+    dBase.set([c.r * k, c.g * k, c.b * k], i * 3);
+  }
   dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
-  const dust = new THREE.Points(dGeo, new THREE.PointsMaterial({ map: DOT, color: '#d9b98a', size: 0.035, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
-  S.add(dust);
+  dGeo.setAttribute('color', new THREE.BufferAttribute(dCol, 3));
+  const dust = new THREE.Points(dGeo, new THREE.PointsMaterial({ map: DOT, vertexColors: true, size: 0.06, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  dust.frustumCulled = false; S.add(dust);
+
+  // ---- a moon, low behind the hall, with a halo ----
+  const moonDisc = new THREE.Sprite(new THREE.SpriteMaterial({ map: DOT, color: new THREE.Color('#dfe8ff').multiplyScalar(1.6), fog: false, depthWrite: false, transparent: true }));
+  moonDisc.scale.setScalar(9); moonDisc.position.set(-14, 24, -46); S.add(moonDisc);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: DOT, color: new THREE.Color('#5d78b8').multiplyScalar(0.5), fog: false, depthWrite: false, transparent: true, blending: THREE.AdditiveBlending }));
+  halo.scale.setScalar(40); halo.position.copy(moonDisc.position).add(new THREE.Vector3(0, 0, -1)); S.add(halo);
 
   // ---- lights ----
-  const key = new THREE.SpotLight('#ffc994', 520, 34, 0.46, 0.7, 1.4);
-  key.position.set(2.4, 11, 5.5); key.target.position.set(0, 0.8, 0);
+  const key = new THREE.SpotLight(MOON, 560, 36, 0.5, 0.75, 1.4);
+  key.position.set(-2.6, 12, 5.2); key.target.position.set(0, 0.8, 0);
   key.castShadow = true; key.shadow.mapSize.setScalar(engine.tier >= 2 ? 2048 : engine.tier === 1 ? 1024 : 512);
-  key.shadow.bias = -0.0002; key.shadow.normalBias = 0.03; key.shadow.camera.near = 4; key.shadow.camera.far = 24; key.shadow.radius = 4;
+  key.shadow.bias = -0.0002; key.shadow.normalBias = 0.03; key.shadow.camera.near = 4; key.shadow.camera.far = 26; key.shadow.radius = 4;
   S.add(key, key.target);
-  const rim = new THREE.DirectionalLight('#86a2ff', 2.2); rim.position.set(-4, 5, -8); S.add(rim);
-  const rim2 = new THREE.DirectionalLight('#ffb070', 0.5); rim2.position.set(6, 3, -6); S.add(rim2);
-  const hemi = new THREE.HemisphereLight('#56648f', '#24180e', 0.9); S.add(hemi);
+  const rim = new THREE.DirectionalLight(GOLD, 2.0); rim.position.set(4, 5, -8); S.add(rim);
+  const rim2 = new THREE.DirectionalLight('#7f9cff', 0.9); rim2.position.set(-6, 3, -6); S.add(rim2);
+  const hemi = new THREE.HemisphereLight('#5d72a8', '#161a24', 1.0); S.add(hemi);
+  // the statues catch a cold wash so they read in the fog
+  const wash = new THREE.DirectionalLight('#b4c6ee', 2.4); wash.position.set(0, 10, 12); wash.target.position.set(0, 4, -24); S.add(wash, wash.target);
 
   let dimV = 0, dimTarget = 0;
-  const base = { key: key.intensity, rim: rim.intensity, hemi: hemi.intensity, fire: 16, shaft: 0.12 };
+  const base0 = { key: key.intensity, rim: rim.intensity, hemi: hemi.intensity, shaft: shafts.map(m => m.uniforms.uA.value as number) };
   engine.onTick((dt, t) => {
-    // fire flicker, two incommensurate sines and a little noise
-    fires.forEach((L, i) => { L.intensity = base.fire * (1 - dimV * 0.8) * (0.82 + 0.12 * Math.sin(t * 11 + i * 2) + 0.08 * Math.sin(t * 23.7 + i) + 0.05 * Math.random()); });
-    flames.forEach(f => { f.mat.uniforms.uT.value = t; f.mesh.quaternion.copy(engine.camera.quaternion); });
-    for (let k = 0; k < EN; k++) {
-      eLife[k] -= dt; if (eLife[k] <= 0) { respawn(k); continue; }
-      ePos[k * 3] += (eVel[k * 3] + Math.sin(t * 2 + k) * 0.2) * dt; ePos[k * 3 + 1] += eVel[k * 3 + 1] * dt; ePos[k * 3 + 2] += eVel[k * 3 + 2] * dt;
-    }
-    ember.attributes.position.needsUpdate = true;
     for (let i = 0; i < DN; i++) {
-      dPos[i * 3 + 1] += Math.sin(t * 0.3 + dSeed[i]) * 0.0015 + 0.0006; if (dPos[i * 3 + 1] > 6) dPos[i * 3 + 1] = 0;
-      dPos[i * 3] += Math.cos(t * 0.2 + dSeed[i]) * 0.001;
+      const s = dSeed[i];
+      dPos[i * 3 + 1] += (0.05 + (s % 1) * 0.08) * dt; if (dPos[i * 3 + 1] > 8) dPos[i * 3 + 1] = 0;
+      dPos[i * 3] += Math.cos(t * 0.21 + s) * 0.06 * dt; dPos[i * 3 + 2] += Math.sin(t * 0.17 + s * 1.3) * 0.06 * dt;
+      const tw = 0.35 + 0.65 * Math.max(0, Math.sin(t * (0.6 + (s % 0.7)) + s)) ** 3;
+      const fade = Math.min(1, dPos[i * 3 + 1] * 1.5) * Math.min(1, (8 - dPos[i * 3 + 1]) * 0.5);
+      const k = tw * fade * (1 - dimV * 0.5);
+      dCol[i * 3] = dBase[i * 3] * k; dCol[i * 3 + 1] = dBase[i * 3 + 1] * k; dCol[i * 3 + 2] = dBase[i * 3 + 2] * k;
     }
-    dGeo.attributes.position.needsUpdate = true;
-    for (const b of banners) {
-      const p = b.m.geometry.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < p.count; i++) { const y = b.base[i * 3 + 1], hang = (2.3 - y) / 4.6; p.setZ(i, Math.sin(t * 1.1 + b.ph + y * 0.9) * 0.12 * hang * hang); }
-      p.needsUpdate = true; b.m.geometry.computeVertexNormals();
-    }
+    dGeo.attributes.position.needsUpdate = true; dGeo.attributes.color.needsUpdate = true;
+    ringMat.uniforms.uT.value = t; innerMat.uniforms.uT.value = t;
+    inner.rotation.z = t * 0.02; ring.rotation.z = -t * 0.006;
     dimV += (dimTarget - dimV) * (1 - Math.exp(-dt * 9));
-    key.intensity = base.key * (1 - dimV * 0.55); rim.intensity = base.rim * (1 + dimV * 0.4); hemi.intensity = base.hemi * (1 - dimV * 0.7);
-    shaftMat.uniforms.uA.value = base.shaft * (1 - dimV * 0.6);
+    key.intensity = base0.key * (1 - dimV * 0.55); rim.intensity = base0.rim * (1 + dimV * 0.4); hemi.intensity = base0.hemi * (1 - dimV * 0.6);
+    shafts.forEach((m, i) => { m.uniforms.uA.value = base0.shaft[i] * (1 - dimV * 0.6); m.uniforms.uT.value = t; });
+    innerMat.uniforms.uK.value = 0.4 + dimV * 0.5;
   });
 
+  let raised = false;
   return {
-    key, rim, hemi, fires,
+    key, rim, hemi,
     dim(v) { dimTarget = v; },
     focus(x, z) { key.target.position.set(x, 0.8, z); },
+    statues(kits) {
+      if (raised) return; raised = true;
+      // past champions, carved twelve times life size, each frozen in its moment
+      const stone = new THREE.MeshStandardMaterial({ color: '#c3cad8', emissive: '#1c2740', roughness: 0.75, metalness: 0, bumpMap: grain, bumpScale: 1.2 });
+      const plinthMat = new THREE.MeshStandardMaterial({ color: '#6a7182', roughness: 0.85, bumpMap: grain, bumpScale: 1 });
+      const spots: [number, number, string, number][] = [[-Math.PI / 2 - 0.62, 1, 'taunt', 0.5], [-Math.PI / 2 + 0.62, 2, 'victory', 1.4],
+        [-Math.PI / 2 + 1.5, 0, 'taunt', 1.0], [-Math.PI / 2 - 1.5, 1, 'victory', 1.1], [Math.PI / 2 - 0.5, 2, 'taunt', 0.8], [Math.PI / 2 + 0.5, 0, 'victory', 1.6]];
+      for (const [a, cls, clipName, at] of spots) {
+        const kit = kits[cls]; if (!kit) continue;
+        const m = SkeletonUtils.clone(kit.scene);
+        m.traverse(o => { const mm = o as THREE.Mesh; if (mm.isMesh) { mm.material = stone; mm.castShadow = false; mm.receiveShadow = false; mm.frustumCulled = false; } });
+        const clip = kit.clips.get(clipName);
+        if (clip) { const mx = new THREE.AnimationMixer(m); mx.clipAction(clip).play(); mx.update(at); }
+        const r = 25, g = new THREE.Group();
+        g.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); g.rotation.y = Math.atan2(-g.position.x, -g.position.z);
+        const pl = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3, 2.2, 32), plinthMat); pl.position.y = 1.1;
+        m.scale.setScalar(cls === 2 ? 5.6 : 6.6); m.position.y = 2.2;
+        g.add(pl, m); S.add(g);
+      }
+    },
   };
 }

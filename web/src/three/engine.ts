@@ -52,8 +52,8 @@ class Engine {
     const pm = new THREE.PMREMGenerator(r);
     // reflections only on metal (set per material), so the many plain materials stay cheap to compile
     this.env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
-    this.scene.background = new THREE.Color('#0d0a12');
-    this.scene.fog = new THREE.Fog('#120d16', 10, 34);
+    this.scene.background = new THREE.Color('#070b16');
+    this.scene.fog = new THREE.Fog('#0d1526', 14, 46);
     this.buildComposer();
     this.fit();
     addEventListener('resize', () => this.fit());

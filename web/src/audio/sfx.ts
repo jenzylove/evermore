@@ -62,10 +62,29 @@ export const sfx = {
   bolt() { tone('square', 1200, 300, 0.22, 0.12); noise(0.2, 0.2, 'bandpass', 3000, 800, 0, 3); },
   coin() { tone('square', 988, 988, 0.07, 0.1); tone('square', 1319, 1319, 0.2, 0.1, 0.07); },
   step() { noise(0.04, 0.12, 'lowpass', 900, 300); },
-  ko() { tone('sawtooth', 300, 40, 0.9, 0.3); noise(0.9, 0.3, 'lowpass', 2000, 80); },
-  win() { [523, 659, 784, 1047].forEach((f, i) => tone('square', f, f, 0.16, 0.12, i * 0.1)); tone('triangle', 1047, 1047, 0.7, 0.14, 0.4); },
+  ko() { tone('sine', 220, 70, 0.5, 0.35); noise(0.35, 0.22, 'lowpass', 1800, 120); },
+  /** a bell: three inharmonic partials with a long tail; i walks up a pentatonic scale */
+  chime(i = 0) {
+    const scale = [659.3, 784, 880, 1046.5, 1174.7, 1318.5, 1568, 1760, 2093];
+    const f = scale[Math.min(scale.length - 1, i)];
+    tone('sine', f, f, 1.6, 0.16); tone('sine', f * 2.76, f * 2.76, 0.7, 0.05, 0.004); tone('sine', f * 5.4, f * 5.4, 0.35, 0.025, 0.006);
+    tone('triangle', f / 2, f / 2, 1.2, 0.05, 0.01);
+  },
+  /** the column of light comes down: a swell and a soft high shimmer */
+  seal() {
+    tone('sine', 110, 220, 1.4, 0.18); tone('sine', 165, 330, 1.4, 0.1, 0.05);
+    noise(1.4, 0.08, 'bandpass', 1800, 7000, 0, 4);
+    [1318.5, 1760, 2349].forEach((f, i) => tone('sine', f, f, 1.2, 0.035, 0.5 + i * 0.12));
+  },
+  /** a ghost breaks: glassy ringing fragments falling upward */
+  shatter() {
+    noise(0.25, 0.4, 'highpass', 5000, 2500);
+    for (let i = 0; i < 14; i++) { const f = 1800 + Math.random() * 3600; tone('sine', f, f * 1.02, 0.4 + Math.random() * 0.8, 0.045, i * 0.035 + Math.random() * 0.03); }
+    tone('sine', 880, 1760, 1.2, 0.07, 0.1);
+  },
+  win() { [523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, f, 0.5, 0.12, i * 0.09)); tone('sine', 1047, 1047, 1.2, 0.12, 0.36); },
   lose() { [392, 349, 311, 262].forEach((f, i) => tone('triangle', f, f * 0.97, 0.3, 0.16, i * 0.18)); },
-  levelUp() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => { tone('square', f, f, 0.12, 0.1, i * 0.07); tone('triangle', f * 2, f * 2, 0.1, 0.04, i * 0.07 + 0.02); }); },
+  levelUp() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => { tone('sine', f, f, 0.9, 0.1, i * 0.07); tone('sine', f * 2.76, f * 2.76, 0.3, 0.025, i * 0.07 + 0.01); }); },
   xtick() { tone('square', vary(1500, 0.05), 1500, 0.03, 0.04); },
   reveal() { noise(0.6, 0.2, 'bandpass', 200, 6000, 0, 2); [784, 988, 1175, 1568].forEach((f, i) => tone('triangle', f, f, 0.5, 0.08, 0.3 + i * 0.06)); },
 };
@@ -77,7 +96,7 @@ const music = {
     if (!ac) return;
     const drone = (f: number, v: number) => {
       const o = ac!.createOscillator(), g = ac!.createGain(), lp = ac!.createBiquadFilter();
-      o.type = 'sawtooth'; o.frequency.value = f; lp.type = 'lowpass'; lp.frequency.value = 260; g.gain.value = v;
+      o.type = 'triangle'; o.frequency.value = f; lp.type = 'lowpass'; lp.frequency.value = 420; g.gain.value = v;
       o.connect(lp).connect(g).connect(musicBus); o.start();
     };
     drone(55, 0.05); drone(55.4, 0.05); drone(82.4, 0.025);

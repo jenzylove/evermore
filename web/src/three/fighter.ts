@@ -135,13 +135,17 @@ function crown(color: string) {
 }
 
 // ---- the one shader patch every fighter wears: veins, hit flash, spectral rim ----
-type U = { uT: { value: number }; uVein: { value: number }; uVeinC: { value: THREE.Color }; uFlash: { value: number }; uGhost: { value: number }; uRim: { value: THREE.Color }; uRimK: { value: number } };
+type U = { uT: { value: number }; uVein: { value: number }; uVeinC: { value: THREE.Color }; uFlash: { value: number }; uGhost: { value: number }; uRim: { value: THREE.Color }; uRimK: { value: number }; uDis: { value: number }; uDisC: { value: THREE.Color } };
 function patch(mat: THREE.MeshStandardMaterial, u: U) {
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vObj;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvObj = position;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      varying vec3 vObj; uniform float uT, uVein, uFlash, uGhost, uRimK; uniform vec3 uVeinC, uRim;`)
+      varying vec3 vObj; uniform float uT, uVein, uFlash, uGhost, uRimK, uDis; uniform vec3 uVeinC, uRim, uDisC;
+      float gh3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+      float gn3(vec3 p){ vec3 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
+        return mix(mix(mix(gh3(i), gh3(i+vec3(1,0,0)), f.x), mix(gh3(i+vec3(0,1,0)), gh3(i+vec3(1,1,0)), f.x), f.y),
+                   mix(mix(gh3(i+vec3(0,0,1)), gh3(i+vec3(1,0,1)), f.x), mix(gh3(i+vec3(0,1,1)), gh3(i+vec3(1,1,1)), f.x), f.y), f.z); }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       {
         float fr = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 2.5);
@@ -153,8 +157,20 @@ function patch(mat: THREE.MeshStandardMaterial, u: U) {
         totalEmissiveRadiance += uVeinC * vein * pulse * uVein;
         totalEmissiveRadiance += uRim * fr * uRimK;
         totalEmissiveRadiance += vec3(1.0, 0.95, 0.9) * uFlash;
-        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.25, 0.42, 0.5), uGhost);
-        diffuseColor.a *= mix(1.0, 0.16 + fr * 0.9, uGhost);
+        // a ghost is a body of light: thin where it faces you, bright at its edges, with light flowing up through it
+        float flow = pow(0.5 + 0.5 * sin(vObj.y * 26.0 - uT * 2.4 + sin(vObj.x * 8.0 + vObj.z * 6.0 + uT * 0.7) * 1.6), 8.0);
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.22, 0.3, 0.42), uGhost);
+        totalEmissiveRadiance += uRim * (0.1 + flow * 0.5) * uGhost;
+        diffuseColor.a *= mix(1.0, 0.1 + fr * 0.8 + flow * 0.14, uGhost);
+        // shattering: the body breaks along a noise field, each crack edged in white gold light
+        if (uDis > 0.0) {
+          float n = gn3(vObj * 16.0) * 0.7 + gn3(vObj * 47.0) * 0.3;
+          float d = n - uDis * 1.12 + 0.06;
+          if (d < 0.0) discard;
+          float e = 1.0 - smoothstep(0.0, 0.07, d);
+          totalEmissiveRadiance += uDisC * e * 7.0;
+          diffuseColor.a = max(diffuseColor.a, e * 0.9);
+        }
       }`);
   };
   mat.customProgramCacheKey = () => 'evermore-fighter';
@@ -168,7 +184,7 @@ export class Fighter {
   mixer: THREE.AnimationMixer;
   private actions = new Map<Clip, THREE.AnimationAction>();
   private cur: THREE.AnimationAction | null = null;
-  private u: U = { uT: { value: 0 }, uVein: { value: 0 }, uVeinC: { value: new THREE.Color() }, uFlash: { value: 0 }, uGhost: { value: 0 }, uRim: { value: new THREE.Color('#7fe9ff') }, uRimK: { value: 0 } };
+  private u: U = { uT: { value: 0 }, uVein: { value: 0 }, uVeinC: { value: new THREE.Color() }, uFlash: { value: 0 }, uGhost: { value: 0 }, uRim: { value: new THREE.Color('#9fd6ff') }, uRimK: { value: 0 }, uDis: { value: 0 }, uDisC: { value: new THREE.Color('#fff1cf') } };
   private anchors: Record<string, THREE.Object3D> = {};
   private lookGroup: THREE.Object3D[] = [];
   private aura: { pts: THREE.Points; seed: Float32Array; ring: THREE.Mesh; halo?: THREE.Object3D; hand?: THREE.Sprite } | null = null;
@@ -316,11 +332,15 @@ export class Fighter {
     for (const o of this.lookGroup) o.traverse(c => {
       const mm = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
       if (!mm || !(c as THREE.Mesh).isMesh) return;
-      if (ghost && mm.isMeshStandardMaterial) { mm.transparent = true; mm.opacity = 0.35; mm.emissive = new THREE.Color('#3fb6c9'); mm.emissiveIntensity = 0.5; }
+      if (ghost && mm.isMeshStandardMaterial) { mm.transparent = true; mm.opacity = 0.3; mm.emissive = new THREE.Color('#8fc8ff'); mm.emissiveIntensity = 0.55; }
     });
   }
 
   rimColor(c: string) { this.u.uRim.value.set(c); }
+  /** 0 = whole, 1 = gone: the body breaks into light (ghosts on defeat) */
+  dissolve(k: number) { this.u.uDis.value = k; for (const m of this.mats) if (!m.transparent && k > 0) { m.transparent = true; m.needsUpdate = true; } }
+  /** the worn pieces of level and gear (shoulders, halo, crown, aura, carried gear), for the forge to bring in one by one */
+  get pieces(): readonly THREE.Object3D[] { return this.lookGroup; }
   /** spectral opacity / glow for a ghost that is (1) or is not (0) the one in focus */
   ghostGlow(k: number) { this.u.uRimK.value = 1.6 + k * 2.4; }
 

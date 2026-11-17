@@ -1,10 +1,12 @@
-// Arena: the ghosts of other players' heroes stand round the ring, cold and translucent. Yours waits in the foreground.
+// Arena: the echoes of other players' heroes stand on plinths round the hall, bodies of light with their names written
+// above them and round their feet. Yours waits in the foreground.
 // Turn to a ghost and it turns to face you; its fighting style against your hero is shown before you pay.
 import * as THREE from 'three';
 import { ease } from '../three/engine';
 import { director, fitDistance, portrait, shot } from '../three/fx';
 import { world } from '../three/world';
 import type { Fighter } from '../three/fighter';
+import { haunt, type GhostFx } from '../three/ghost';
 import { CLASS_NAMES, ghostMoves, seedOf, styleHash } from '../game/sim';
 import { activeHero, app, go, isPractice, register } from '../app';
 import { sfx } from '../audio/sfx';
@@ -14,7 +16,7 @@ import { tabs } from './tabs';
 
 export const MOVE_ICON = ['strike', 'guard', 'special'] as const;
 export const MOVE_NAME = ['Strike', 'Guard', 'Special'] as const;
-const R = 5.4, STEP = 0.46;
+const R = 5.4, STEP = 0.46, LIFT = 0.2;
 const angle = (i: number) => -Math.PI / 2 + i * STEP;
 const at = (i: number) => new THREE.Vector3(Math.cos(angle(i)) * R, 0, Math.sin(angle(i)) * R);
 
@@ -23,6 +25,8 @@ register('arena', root => {
   let hero: HeroView | null = null;
   let me: Fighter | null = null;
   const figs = new Map<number, Fighter>();
+  const fxs = new Map<number, GhostFx>();
+  const plinths = new Map<number, THREE.Object3D>();
   let focus = 0, ready = false;
 
   // the camera stands behind your hero, looking out across the ring at the ghost in focus
@@ -58,6 +62,7 @@ register('arena', root => {
     figs.forEach((fg, id) => {
       const i = ghosts.findIndex(g => g.id === id);
       fg.root.visible = Math.abs(i - n) <= 2;
+      const pl = plinths.get(id); if (pl) pl.visible = fg.root.visible;
     });
     const fg = figs.get(ghosts[n]?.id);
     if (fg && !cut && fg.clipName === 'idle') fg.once('taunt', { fade: 0.25 });
@@ -83,10 +88,14 @@ register('arena', root => {
       ...ghosts.map(g => world.fighter(g.cls, { level: g.level }, 1)),
       hero ? world.fighter(hero.cls, { level: hero.level, gear: gear.filter(x => x.where === 'satchel') }) : Promise.resolve(null),
     ]);
+    const plinthGeo = new THREE.CylinderGeometry(0.62, 0.7, LIFT, 40);
+    const plinthMat = new THREE.MeshStandardMaterial({ color: '#5d6577', roughness: 0.35, metalness: 0 });
     ghosts.forEach((g, i) => {
       const f = made[i]!;
-      f.root.position.copy(at(i)); f.face(0, 0);
-      if (g.mine) f.rimColor('#ffc875');
+      f.root.position.copy(at(i)).setY(LIFT); f.face(0, 0);
+      const pl = world.extra(new THREE.Mesh(plinthGeo, plinthMat)); pl.position.copy(at(i)).setY(LIFT / 2); pl.receiveShadow = true; pl.castShadow = true;
+      plinths.set(g.id, pl);
+      fxs.set(g.id, haunt(f, { name: g.name, owner: g.mine ? 'you' : g.owner, label: true, lift: LIFT, color: g.mine ? '#ffd9a0' : undefined }));
       figs.set(g.id, f);
     });
     me = made[ghosts.length] ?? null;
@@ -100,6 +109,7 @@ register('arena', root => {
         let d = target - f.root.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
         f.root.rotation.y += d * (1 - Math.exp(-dt * 5));
         f.ghostGlow(on ? 1 : 0);
+        fxs.get(g.id)?.setFocus(on ? 1 : 0);
       });
     });
     setFocus(focus, true);
@@ -122,7 +132,7 @@ register('arena', root => {
       return;
     }
     if (hero) {
-      const seed = seedOf(styleHash(hero.id, g));
+      const seed = app.chain.styleSeed?.(hero.id, g) ?? seedOf(styleHash(hero.id, g)); // real chains: the covenant seed
       const mv = ghostMoves(seed);
       const st = h('div', { class: 'style' }, h('span', { class: 'lbl' }, `How it fights ${hero.name}`));
       mv.forEach(m => { const s = h('span', { class: `mv m${m}`, title: MOVE_NAME[m] }, icon(MOVE_ICON[m])); st.append(s); });

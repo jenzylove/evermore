@@ -1,9 +1,11 @@
-// The one 3D world every screen shares. A screen borrows fighters and cameras; leaving the screen gives them back.
+// The one 3D world every screen shares (the Hall of Evermore). A screen borrows fighters and cameras; leaving the screen gives them back.
 import * as THREE from 'three';
 import { engine } from './engine';
 import { buildArena, type Arena } from './arena';
 import { director, flash, initFx, shock, ward as wardMesh } from './fx';
 import { loadKit, makeFighter, type Fighter, type Look } from './fighter';
+import { ghostWarmup } from './ghost';
+import { forgeWarmup } from './forge';
 
 let arena: Arena;
 let owned: Fighter[] = [];
@@ -19,7 +21,7 @@ export const world = {
     performance.mark('b'); arena = buildArena(); performance.measure('arena', 'b');
     initFx();
     performance.mark('c');
-    await kits; performance.measure('kits', 'c');
+    arena.statues(await kits); performance.measure('kits', 'c');
     // Compile every shader the game will use behind the loading veil (fighters in every look, ghosts, wards,
     // flashes, rings), so no fight ever stalls on a compile. D3D compiles are slow; this pays them once.
     performance.mark('d');
@@ -29,6 +31,7 @@ export const world = {
     fs.forEach((f, i) => { f.root.position.set(i - 2.5, 0, 0); warm.push(f.root); });
     const w = wardMesh('#ffffff'); warm.push(w.mesh);
     flash(new THREE.Vector3(0, 1, 0), '#ffffff', 1, 0.01); shock(new THREE.Vector3(0, 1, 0), '#ffffff', 1, 0.01);
+    warm.push(...ghostWarmup(), ...forgeWarmup());
     warm.forEach(o => engine.scene.add(o));
     engine.camera.position.set(0, 1.5, 7); engine.camera.lookAt(0, 1, 0);
     // compile for the composer's linear target, the one every frame really renders into

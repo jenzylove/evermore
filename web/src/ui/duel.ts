@@ -1,11 +1,15 @@
-// Duel: two fighters face off in the pit. Each round you pick Strike, Guard or Special; the round then plays out
-// as the sim decides, with the class animations, cuts, hit stop, shake, sparks and numbers.
+// Duel: your hero meets the echo of another player's hero in the hall. Each round you pick Strike, Guard or Special;
+// the round then plays out as the sim decides, with the class animations, cuts, hit stop, sparks and numbers.
+// A win ends with the ghost shattering into light and the Forge, where what was earned comes into being on the hero.
 // Every number shown comes from sim.trace(), the same arithmetic the covenant replays. The camera only dresses it.
 import * as THREE from 'three';
 import { engine, ease } from '../three/engine';
 import { bolt, director, fitDistance, flash, pin, pop, portrait, screenFlash, shock, shot, sparks, ward } from '../three/fx';
 import { world } from '../three/world';
-import { CONTACT, TIER_COLOR, tierOf, type Fighter } from '../three/fighter';
+import { CONTACT, TIER_NAME, tierOf, type Fighter } from '../three/fighter';
+import { GHOST_LIGHT, haunt, type GhostFx } from '../three/ghost';
+import { beginRite } from '../three/forge';
+import { glyphSvg } from '../three/runes';
 import { GUARD, SPECIAL, STRIKE, ghostMoves, trace, xpNeed, type Ghost, type Hero, type Move, type RoundTrace } from '../game/sim';
 import { activeHero, app, go, isPractice, register, renderChrome } from '../app';
 import { setIntensity, sfx } from '../audio/sfx';
@@ -15,7 +19,7 @@ import { MOVE_ICON } from './arena';
 
 const CLS = ['knight', 'rogue', 'mage'];
 const HERO_FX = ['#ffd27a', '#ff7a3c', '#ffffff'];
-const GHOST_FX = ['#9ff4ff', '#3fb6c9', '#ffffff'];
+const GHOST_FX = ['#cfeaff', '#8fc8ff', '#ffffff'];
 
 register('duel', root => {
   const t0 = app.ticket;
@@ -27,7 +31,7 @@ register('duel', root => {
   const gMoves = ghostMoves(ticket.seed);
   const moves: Move[] = [];
   let hHp = 0, gHp = G.hp, hCh = 0, gCh = 0, busy = true, over = false;
-  let A: Fighter | null = null, B: Fighter | null = null;
+  let A: Fighter | null = null, B: Fighter | null = null, ghost: GhostFx | null = null;
   const X = () => (portrait() ? 0.85 : 1.3);
 
   // ---- camera language ----
@@ -46,20 +50,23 @@ register('duel', root => {
   };
 
   // ---- HUD ----
-  const plate = (side: 'l' | 'r') => {
-    const nm = h('div', { class: 'nm' }), hp = h('div', { class: 'hp' }, h('i', {}), h('b', {})), n = h('span', {});
-    const pips = h('span', { class: 'pips' }, h('i', {}), h('i', {}));
-    return { el: h('div', { class: `plate ${side}` }, nm, hp, h('div', { class: 'hpn' }, n, pips)), nm, hp, n, pips };
+  const plate = (side: 'l' | 'r', sub: string) => {
+    const nm = h('div', { class: 'nm' }), hp = h('div', { class: 'hp' }, h('i', {}), h('b', {})), n = h('span', { class: 'n' });
+    const pips = h('span', { class: 'pips', title: 'Charge' }, h('i', {}), h('i', {}));
+    return { el: h('div', { class: `plate ${side}` }, h('div', { class: 'sub' }, sub), nm, hp, h('div', { class: 'hpn' }, n, pips)), nm, hp, n, pips };
   };
-  const L = plate('l'), Rr = plate('r');
-  const round = h('div', { class: 'round' });
+  const L = plate('l', 'Hero'), Rr = plate('r', 'Echo');
+  // the round counter is a line of twelve runes; the current one burns, the spent ones stay faintly lit
+  const runes = [...Array(12)].map(() => h('span', { class: 'rp' }));
+  runes.forEach((x, i) => x.append(glyphSvg(200 + i)));
+  const round = h('div', { class: 'round' }, h('div', { class: 'rl' }), h('div', { class: 'rr' }, ...runes));
   const btns = h('div', { class: 'moves wait' });
   const mk = (m: Move, label: string, sub: string, cls: string) => {
     const b = h('button', { class: `btn ${cls}`, onClick: () => play(m) }, icon(MOVE_ICON[m]), label, h('small', {}, sub));
     b.addEventListener('pointerdown', () => sfx.tap());
     return b;
   };
-  const bS = mk(STRIKE, 'Strike', 'full hit', 'strike'), bG = mk(GUARD, 'Guard', 'half, +1 charge', 'guard'), bX = mk(SPECIAL, 'Special', '2 charges', '');
+  const bS = mk(STRIKE, 'Strike', 'full hit', 'strike'), bG = mk(GUARD, 'Guard', 'half, +1 charge', 'guard'), bX = mk(SPECIAL, 'Special', '2 charges', 'special');
   btns.append(bS, bG, bX);
   const center = h('div', { class: 'pass', style: 'position:absolute;inset:0' });
   const hint = h('div', { class: 'duel-hint' });
@@ -85,14 +92,16 @@ register('duel', root => {
       const w = `${Math.max(0, cur) / max * 100}%`;
       (p.hp.children[1] as HTMLElement).style.width = w; (p.hp.children[0] as HTMLElement).style.width = w;
       p.hp.classList.toggle('low', cur / max < 0.3);
-      p.n.textContent = `${Math.max(0, cur)} / ${max}`;
+      p.n.textContent = `${Math.max(0, cur)}`;
       [...p.pips.children].forEach((x, i) => x.classList.toggle('on', ch > i));
     };
     set(L, hHp, hero.hp, hCh, hero.name);
     set(Rr, gHp, G.hp, gCh, G.name);
-    round.innerHTML = over ? '' : `Round<b>${moves.length + 1}</b>`;
+    const r = moves.length;
+    (round.firstChild as HTMLElement).textContent = over ? '' : `Round ${r + 1}`;
+    runes.forEach((x, i) => { x.className = `rp${i < r ? ' past' : ''}${i === r && !over ? ' now' : ''}`; });
     hint.textContent = !over && moves.length === 0 ? 'Its next move shows above its head' : '';
-    bX.disabled = hCh < 2;
+    bX.disabled = hCh < 2; bX.classList.toggle('ready', hCh >= 2);
     (bX.querySelector('small') as HTMLElement).textContent = hCh >= 2 ? 'double hit' : `${hCh} of 2 charges`;
   };
 
@@ -100,9 +109,10 @@ register('duel', root => {
     hero = await activeHero();
     if (!hero || hero.id !== ticket.heroId) { toast('That hero is not in your satchel.', true); go('arena'); return; }
     const gear = (await app.chain.myGear()).filter(x => x.where === 'satchel');
-    [A, B] = await Promise.all([world.fighter(hero.cls, { level: hero.level, gear }), world.fighter(G.cls, { level: G.level }, 0.6)]);
+    [A, B] = await Promise.all([world.fighter(hero.cls, { level: hero.level, gear }), world.fighter(G.cls, { level: G.level }, 1)]);
     A.root.position.set(-X(), 0, 0); B.root.position.set(X(), 0, 0);
     A.face(1, 0); B.face(-1, 0);
+    ghost = haunt(B, { name: G.name, owner: G.owner });
     hHp = hero.hp;
     hud(); setIntensity(1);
     unpin = pin(intent, () => B!.point('head', new THREE.Vector3()).add(new THREE.Vector3(0, 0.32, 0)));
@@ -114,15 +124,20 @@ register('duel', root => {
     await engine.wait(900);
     A.once('taunt', { fade: 0.2 });
     director.move(two(), 1100, ease.inOut);
-    await banner(`${hero.name}`, `${G.name}`, isPractice() ? 'Practice duel' : 'The chain will check every move', 1500);
+    await meet(hero.name, G.name, G.owner, isPractice() ? 'Practice duel' : 'The chain checks every move', 1700);
     director.drift = 0.6;
     busy = false; btns.classList.remove('wait'); showIntent();
   })();
 
-  async function banner(a: string, b: string, small: string, ms: number) {
-    const el = h('div', { class: 'titlecard' }, h('h2', { class: 'vs' }, a), h('p', { style: 'margin:6px 0;font-size:13px' }, 'versus'), h('h2', { class: 'vs', style: 'color:var(--spirit)' }, b), h('p', {}, small));
+  // the meeting: a quiet line of words, not a splash. Your hero, the echo it meets, and who keeps that echo.
+  async function meet(a: string, b: string, owner: string, small: string, ms: number) {
+    const el = h('div', { class: 'meet' },
+      h('div', { class: 'a' }, a),
+      h('div', { class: 'mid' }, h('i', {}), 'meets the echo of', h('i', {})),
+      h('div', { class: 'b' }, b),
+      h('div', { class: 'k' }, `kept by ${owner}`, h('span', {}, ' · ', small)));
     center.append(el); sfx.reveal();
-    await engine.wait(ms); el.style.transition = 'opacity 260ms'; el.style.opacity = '0'; await engine.wait(260); el.remove();
+    await engine.wait(ms); el.classList.add('out'); await engine.wait(420); el.remove();
   }
 
   async function play(m: Move) {
@@ -146,10 +161,10 @@ register('duel', root => {
   const wards: { mesh: THREE.Mesh; mat: THREE.ShaderMaterial; f: Fighter }[] = [];
   async function raiseWard(f: Fighter, mine: boolean) {
     f.once('guard', { fade: 0.1, speed: 1.6, hold: true });
-    const w = ward(mine ? '#9fc4ff' : '#7fe9ff');
+    const w = ward(mine ? '#ffe2a6' : '#a9d8ff');
     w.mesh.position.set(0, 1.0, 0.45); f.root.add(w.mesh);
     wards.push({ ...w, f });
-    sparks(f.point('chest').add(new THREE.Vector3(Math.sign(-f.root.position.x) * 0.5, 0, 0)), 14, mine ? ['#cfe0ff', '#ffffff'] : ['#bff9ff', '#7fe9ff'], 2.2, 0, 0.5);
+    sparks(f.point('chest').add(new THREE.Vector3(Math.sign(-f.root.position.x) * 0.5, 0, 0)), 14, mine ? ['#ffe9bf', '#ffffff'] : ['#d8efff', '#a9d8ff'], 2.2, 0, 0.5);
     await engine.tween(220, p => { w.mat.uniforms.uA.value = ease.outBack(p); w.mat.uniforms.uT.value = engine.t; });
   }
   async function dropWards() {
@@ -178,7 +193,7 @@ register('duel', root => {
     await dropWards();
     if (r.hHp > 0 && r.gHp > 0) director.move(two(), 520);
     // a full charge shows on the body
-    [a, b].forEach((f, i) => { const ch = i ? r.gCharge : r.hCharge; if (ch >= 2) { f.flash(0.5); sparks(f.point('hand'), 12, i ? ['#7fe9ff'] : ['#ffd27a'], 1.2, -1, 0.8); } });
+    [a, b].forEach((f, i) => { const ch = i ? r.gCharge : r.hCharge; if (ch >= 2) { f.flash(0.5); sparks(f.point('hand'), 12, i ? [GHOST_LIGHT] : ['#ffd27a'], 1.2, -1, 0.8); } });
   }
 
   async function strike(a: Fighter, b: Fighter, special: boolean, dmg: number, blocked: boolean, left: number, mine: boolean) {
@@ -233,8 +248,8 @@ register('duel', root => {
   function impact(a: Fighter, b: Fighter, special: boolean, dmg: number, blocked: boolean, kill: boolean, mine: boolean) {
     const fxc = mine ? HERO_FX : GHOST_FX;
     const at = b.point('chest').add(new THREE.Vector3(Math.sign(a.root.position.x - b.root.position.x) * 0.25, 0, 0.1));
-    engine.hitstop(kill ? 240 : special ? 170 : blocked ? 55 : 95);
-    director.shake(kill ? 0.95 : special ? 0.8 : blocked ? 0.22 : 0.45);
+    engine.hitstop(kill ? 200 : special ? 160 : blocked ? 55 : 90);
+    director.shake(kill ? 0.6 : special ? 0.6 : blocked ? 0.2 : 0.38);
     const away = new THREE.Vector3(Math.sign(b.root.position.x - a.root.position.x), 0.3, 0);
     if (blocked) {
       sfx.clang();
@@ -245,38 +260,38 @@ register('duel', root => {
       pop(b.point('head').add(new THREE.Vector3(0, -0.15, 0)), 'Blocked', 'word');
     } else {
       sfx.hit(special || kill);
-      sparks(at, special ? 70 : 34, [...fxc, '#ff4a2a'], special ? 7 : 5, 8, 0.6, away);
+      sparks(at, special ? 70 : 34, fxc, special ? 7 : 5, 8, 0.6, away);
       flash(at, fxc[0], special ? 2.4 : 1.4, special ? 0.3 : 0.2);
       shock(at, fxc[0], special ? 1.8 : 0.9, 0.3);
       b.flash(1);
       pop(b.point('head').add(new THREE.Vector3(0, 0.2, 0)), String(dmg), special || dmg >= 12 ? 'big' : mine ? 'dmg' : 'spirit');
     }
-    if (special || kill) screenFlash(special ? '#fff3d6' : '#ffffff', special ? 0.55 : 0.4);
+    if (special || kill) screenFlash(special ? '#fff3d6' : '#eef5ff', special ? 0.5 : 0.45);
   }
 
+  // the final blow lands crisp and short. A ghost does not fall: it shatters into light. A hero falls once, cleanly.
   async function ko(b: Fighter, a: Fighter, mine: boolean) {
-    sfx.ko();
-    engine.slow = 0.28;
-    world.arena.dim(0.6);
-    const p = b.root.position.clone();
     director.drift = 0;
-    director.orbit = t => { const k = t * 0.5; return shot(p.x + Math.sin(k) * 2.6, 0.9, Math.cos(k) * 2.6 + 0.4, p.x, 0.75, 0, portrait() ? 46 : 34); };
-    b.once('ko', { fade: 0.08, hold: true });
-    sparks(b.point('chest'), 60, mine ? ['#7fe9ff', '#ffffff'] : ['#ff5a3c', '#ffd36b'], 3, -0.5, 2.2);
-    await engine.wait(700);
-    engine.slow = 0.6;
-    await engine.wait(900);
-    engine.slow = 1; world.arena.dim(0);
+    const p = b.root.position.clone();
     if (mine) {
-      // a beaten ghost comes apart into light
-      const body = b.point('chest');
-      for (let i = 0; i < 4; i++) sparks(body.clone().add(new THREE.Vector3(0, -0.4 + i * 0.2, 0)), 30, ['#7fe9ff', '#ffffff', '#3fb6c9'], 1.2, -1.4, 2.4);
-      b.setSpectral(1);
-      await engine.tween(900, k => { b.ghostGlow(1 - k); b.root.position.y = -k * 0.15; b.root.scale.setScalar(1 - k * 0.04); b.mats.forEach(m => { m.opacity = 1 - k; }); });
-      b.root.visible = false;
+      sfx.shatter();
+      // hold on the ghost from low and close while it breaks
+      director.move(shot(p.x + Math.sign(p.x) * 0.7, 1.0, portrait() ? 4.4 : 3.6, p.x - Math.sign(p.x) * 0.3, 1.3, 0, portrait() ? 46 : 34), 500, ease.outCubic);
+      b.once('hit', { fade: 0.05, speed: 0.7, hold: true });
+      await (ghost ? ghost.shatter() : Promise.resolve());
+      await engine.wait(250);
+    } else {
+      sfx.ko();
+      engine.slow = 0.55; world.arena.dim(0.4);
+      director.move(shot(p.x + Math.sign(-p.x || 1) * 1.4, 0.8, portrait() ? 3.4 : 2.8, p.x, 0.7, 0, portrait() ? 46 : 34), 700, ease.outCubic);
+      b.once('ko', { fade: 0.08, hold: true });
+      sparks(b.point('chest'), 30, ['#ffe9bf', '#ffffff'], 2, -0.5, 1.4);
+      await engine.wait(600);
+      engine.slow = 1; world.arena.dim(0);
+      await engine.wait(500);
     }
-    director.orbit = null; director.drift = 0.6;
-    a.root.position.x = a.root.position.x; // winner keeps their ground
+    director.drift = 0.6;
+    void a;
   }
 
   async function finish(won: boolean, outOfRounds = false) {
@@ -287,8 +302,8 @@ register('duel', root => {
       sfx.lose();
       if (outOfRounds) { B!.once('taunt', { fade: 0.2 }); director.move(close(B!), 900); }
       else { B!.once('victory', { fade: 0.25, hold: true }); director.move(close(B!, true), 1400); }
-      center.append(h('div', { class: 'titlecard' }, h('h2', { class: 'red' }, 'Fallen'),
-        h('p', {}, outOfRounds ? `${G.name} held out for 12 rounds` : `${G.name} holds the pit`)));
+      center.append(h('div', { class: 'titlecard' }, h('h2', { class: 'fallen' }, 'Fallen'),
+        h('p', {}, outOfRounds ? `${G.name} held out for 12 rounds` : `${G.name} holds the hall`)));
       const panel = h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' },
         h('p', { class: 'dim', style: 'margin:0 0 4px' }, isPractice() ? 'Practice. Nothing was lost.' : `Your ${money(f.challengeSats, f.usdPerBch)} went to its owner. Your hero keeps everything else.`),
         h('p', { class: 'dim', style: 'margin:0' }, 'Its moves are shown before each round. Guard on its Strikes, Special when it Guards.'),
@@ -302,33 +317,37 @@ register('duel', root => {
     const a = A!;
     a.face(0, 4);
     a.once('victory', { fade: 0.25, hold: true });
-    director.move(portrait() ? shot(a.root.position.x + 0.2, 0.55, 3.6, a.root.position.x, 1.15, 0, 44) : shot(a.root.position.x + 1.1, 0.6, 3.4, a.root.position.x + 0.9, 1.05, 0, 32), 1600, ease.outCubic);
-    sparks(a.root.position.clone().setY(0.2), 60, ['#ffd27a', '#fff1c1', '#ff9d3c'], 4, 2, 1.4);
-    const card = h('div', { class: 'titlecard', style: 'top:18%' }, h('h2', { class: 'gold' }, 'Victory'), h('p', {}, `in ${moves.length} round${moves.length > 1 ? 's' : ''}, ${hHp} HP left`));
+    const card = h('div', { class: 'titlecard won', style: 'top:12%' }, h('h2', { class: 'gold' }, 'Victory'), h('p', {}, `in ${moves.length} round${moves.length > 1 ? 's' : ''}, ${hHp} HP left`));
     center.append(card);
-    await engine.wait(1300);
+    await engine.wait(700);
     await forge(card);
   }
 
+  // The Forge. The hero is sealed in a column of light while the chain replays the duel; the XP lights the ring rune by
+  // rune; a new level's pieces and any new gear come into being on the body one at a time. Then the camera settles.
   async function forge(card: HTMLElement) {
     const hero0 = hero!;
+    const a = A!;
+    const rite = beginRite(a);
     const seal = h('div', { class: 'seal' }, h('span', { class: 'dot' }), isPractice() ? 'Practice · forging in your browser' : 'Forging on Bitcoin Cash');
     const xpI = h('i', {}), xpBar = h('div', { class: 'xpbar' }, xpI);
     const xpL = h('span', {}), xpR = h('span', {});
     const extra = h('div', {});
     const actions = h('div', { class: 'row' });
-    const panel = h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' }, h('div', { class: 'eyebrow' }, 'Forge'), seal, xpBar, h('div', { class: 'xprow' }, xpL, xpR), extra, actions));
+    const panel = h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' }, h('div', { class: 'eyebrow' }, 'The Forge'), seal, xpBar, h('div', { class: 'xprow' }, xpL, xpR), extra, actions));
     root.querySelector('.screen')!.append(panel);
     xpI.style.width = `${hero0.xp / xpNeed(hero0.level) * 100}%`;
     xpL.textContent = `Level ${hero0.level}`; xpR.textContent = `${hero0.xp} / ${xpNeed(hero0.level)} XP`;
     let res;
+    const minimum = engine.wait(1100); // let the column come all the way down before anything is written
     try { res = await app.chain.forge(ticket, moves); }
-    catch (e) { seal.textContent = (e as Error).message; actions.append(h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Arena')); return; }
+    catch (e) { seal.textContent = (e as Error).message; rite.settle(endShot()); actions.append(h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Arena')); return; }
+    await minimum;
     seal.innerHTML = '';
     if (res.receipt.explorer) {
       seal.replaceWith(h('a', { class: 'seal', href: res.receipt.explorer, target: '_blank', rel: 'noopener' }, h('span', { class: 'dot' }), 'Sealed on Bitcoin Cash', icon('link')));
     } else seal.append(h('span', { class: 'dot' }), 'Practice · not sealed on chain');
-    card.style.transition = 'transform 400ms, opacity 400ms'; card.style.transform = 'translateY(-30px) scale(0.8)'; card.style.opacity = '0';
+    card.style.transition = 'transform 600ms, opacity 600ms'; card.style.transform = 'translateY(-16px)'; card.style.opacity = '0';
     const need0 = xpNeed(hero0.level);
     const total = hero0.xp + res.xpGain;
     const steps = Math.min(30, res.xpGain);
@@ -336,38 +355,42 @@ register('duel', root => {
       const x = Math.round(hero0.xp + (res.xpGain * i) / steps);
       xpI.style.width = `${Math.min(1, x / need0) * 100}%`;
       xpR.textContent = `${Math.min(x, need0)} / ${need0} XP  +${Math.round(res.xpGain * i / steps)}`;
-      sfx.xtick(); await engine.wait(28);
+      sfx.xtick(); if (i % 3 === 0) rite.glyph();
+      await engine.wait(34);
     }
-    const a = A!;
     const gearNow = (await app.chain.myGear()).filter(x => x.where === 'satchel');
-    if (res.levelled) {
-      xpI.classList.add('flash'); await engine.wait(80); xpI.classList.remove('flash');
-      // the new level is worn on the body, right now
-      sfx.levelUp(); screenFlash('#ffd58a', 0.6); director.shake(0.45);
-      const t = tierOf(res.hero.level), col = TIER_COLOR[Math.max(1, t)];
-      shock(a.root.position.clone().setY(0.05), col, 3.4, 0.6); flash(a.point('chest'), col, 2.6, 0.4);
-      sparks(a.root.position.clone().setY(0.3), 90, [col, '#fff1c1', '#ffffff'], 5, 2, 1.5);
-      a.setLook({ level: res.hero.level, gear: gearNow }); a.flash(1.2);
-      xpI.style.width = '0%'; await engine.wait(60);
-      xpI.style.width = `${res.hero.xp / xpNeed(res.hero.level) * 100}%`;
-      xpL.textContent = `Level ${res.hero.level}`; xpR.textContent = `${res.hero.xp} / ${xpNeed(res.hero.level)} XP`;
-      const d = (k: 'hp' | 'atk' | 'def' | 'spd', n: string) => res.hero[k] > hero0[k] ? h('span', {}, `${n} +${res.hero[k] - hero0[k]}`) : null;
+    if (res.levelled || res.gear) {
       const newTier = tierOf(res.hero.level) > tierOf(hero0.level);
-      extra.append(h('div', { class: 'lvup' }, `Level ${res.hero.level}`, newTier ? h('small', {}, ['', 'Shoulders plated', 'Veins of fire, a burning hand', 'A halo, and an aura', 'Crowned'][tierOf(res.hero.level)]) : null),
-        h('div', { class: 'gain' }, d('hp', 'HP'), d('atk', 'ATK'), d('def', 'DEF'), d('spd', 'SPD')));
-    } else xpR.textContent = `${total} / ${need0} XP  +${res.xpGain}`;
+      // the hero takes its new form: everything it wears comes in one piece at a time, each with a chime
+      a.setLook({ level: res.hero.level, gear: gearNow });
+      if (res.levelled) {
+        xpI.classList.add('flash'); await engine.wait(80); xpI.classList.remove('flash');
+        sfx.levelUp(); rite.crest(); a.flash(1.1);
+        xpI.style.width = '0%'; await engine.wait(60);
+        xpI.style.width = `${res.hero.xp / xpNeed(res.hero.level) * 100}%`;
+        xpL.textContent = `Level ${res.hero.level}`; xpR.textContent = `${res.hero.xp} / ${xpNeed(res.hero.level)} XP`;
+        const d = (k: 'hp' | 'atk' | 'def' | 'spd', n: string) => res.hero[k] > hero0[k] ? h('span', {}, `${n} +${res.hero[k] - hero0[k]}`) : null;
+        extra.append(h('div', { class: 'lvup' }, `Level ${res.hero.level}`, newTier ? h('small', {}, ['', 'Shoulders plated', 'Veins of light, a burning hand', 'A halo, and an aura', 'Crowned'][tierOf(res.hero.level)], ` · ${TIER_NAME[tierOf(res.hero.level)]}`) : null),
+          h('div', { class: 'gain' }, d('hp', 'HP'), d('atk', 'ATK'), d('def', 'DEF'), d('spd', 'SPD')));
+      }
+      await rite.materialise(a);
+    } else { xpR.textContent = `${total} / ${need0} XP  +${res.xpGain}`; await engine.wait(900); }
     if (res.gear) {
-      await engine.wait(500); sfx.reveal();
+      sfx.reveal();
       const g = res.gear;
-      a.setLook({ level: res.hero.level, gear: gearNow }); a.flash(0.8);
-      sparks(a.point('chest'), 40, ['#ffd27a', '#ffffff'], 3, 2, 1);
       extra.append(h('div', { class: 'drop-reveal' }, gearIcon(g.kind, g.tier),
         h('div', {}, h('div', { class: 'gold', style: 'font:700 20px var(--display)' }, gearName(g.kind, g.tier)),
           h('div', { class: 'dim', style: 'font-size:14px' }, `Gear #${g.id} of a capped 5,000. Worn now; yours to keep or sell.`))));
     }
+    await engine.wait(600);
+    rite.settle(endShot());
     hero = res.hero; renderChrome();
     actions.append(h('button', { class: 'btn ghost', onClick: () => go('hero') }, 'Hero'), h('button', { class: 'btn spirit', onClick: () => go('arena') }, 'Next fight'));
   }
+  const endShot = () => {
+    const x = A!.root.position.x;
+    return portrait() ? shot(x + 0.3, 1.5, 5.0, x, 0.2, 0, 46) : shot(x + 1.2, 1.0, 4.2, x + 0.9, 1.0, 0, 32);
+  };
 
   async function rematch() {
     try { app.ticket = await app.chain.challenge(ticket.heroId, G.id); go('duel'); }
