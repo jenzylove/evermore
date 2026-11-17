@@ -6,7 +6,7 @@
   "description": "Evermore CashScript covenants, VM tests and deploy scripts",
   "scripts": {
     "compile": "node scripts/compile.mjs",
-    "test": "node scripts/compile.mjs --check && node --test test/",
+    "test": "node scripts/compile.mjs --check && node --test \"test/**/*.test.mjs\"",
     "genesis": "node scripts/genesis.mjs"
   },
   "dependencies": {
