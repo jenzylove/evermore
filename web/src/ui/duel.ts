@@ -365,7 +365,7 @@ register('duel', root => {
       a.setLook({ level: res.hero.level, gear: gearNow });
       if (res.levelled) {
         xpI.classList.add('flash'); await engine.wait(80); xpI.classList.remove('flash');
-        sfx.levelUp(); rite.crest(); a.flash(1.1);
+        sfx.levelUp(); rite.crest(); a.flash(0.5);
         xpI.style.width = '0%'; await engine.wait(60);
         xpI.style.width = `${res.hero.xp / xpNeed(res.hero.level) * 100}%`;
         xpL.textContent = `Level ${res.hero.level}`; xpR.textContent = `${res.hero.xp} / ${xpNeed(res.hero.level)} XP`;

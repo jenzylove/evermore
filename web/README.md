@@ -9,16 +9,20 @@ npm test           # duel sim: trace() agrees with duel() on 3000 random duels
 npm run build      # static site in dist/
 node --experimental-strip-types scripts/loop-test.ts   # practice loop end to end (dev server running)
 node --experimental-strip-types scripts/shots.ts       # phone + desktop screenshots (real GPU)
+node --experimental-strip-types scripts/identity-shots.ts  # the look: hall, ghosts, shatter, Forge, hero card
 ```
 
 ## How it looks
 
 - `src/three/engine.ts`: renderer, post chain (bloom, ACES, grade, vignette, SMAA), quality tiers and game time (hit stop, slow motion, tweens).
   Quality starts at tier 2 on desktop and 1 on phones and steps down by itself if the frame rate cannot hold; `?q=0|1|2` pins it.
-- `src/three/arena.ts`: the stone pit, pillars, braziers with live fire, banners, the light shaft and the light rig. Every texture is made in code.
+- `src/three/arena.ts`: the Hall of Evermore. A moonlit marble hall with faint runes in the floor, a colonnade of arches, shafts of moonlight, drifting motes and colossal statues of past champions in the night beyond. Every texture is made in code.
+- `src/three/runes.ts`: the hall's own script (generated glyphs), used for the floor rings, the ghosts' name rings, the Forge and the duel's round pips.
+- `src/three/ghost.ts`: the ghosts. A body of light with soft trails, its name and its keeper's written in light, and on defeat a shatter into fragments that drift up.
+- `src/three/forge.ts`: the Forge rite after a win. A column of light, a ring of runes lighting glyph by glyph, worn pieces arriving one at a time with a chime, a slow camera orbit.
 - `src/three/fighter.ts`: Mixamo fighters, class clips and the progression look. Level and gear are worn on the body:
   shoulder plates from level 3, burning veins and a lit weapon hand from 5, an aura and a halo from 7, a crown at 10;
-  the best blade, heavy weapon and flask the player owns hang at the hip and on the back. Ghosts are the same fighters, translucent with a cold rim.
+  the best blade, heavy weapon and flask the player owns hang at the hip and on the back. Ghosts are the same fighters as bodies of light (see `ghost.ts`).
 - `src/three/fx.ts`: sparks, impact flashes, shock rings, guard wards, bolts, damage numbers and the camera director (shots, cuts, trauma shake).
 - Every shader is compiled behind the loading veil, so a fight never stalls on a compile.
 
