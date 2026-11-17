@@ -42,6 +42,7 @@ export function go(r: Route, push = true) {
   cleanup?.(); cleanup = undefined;
   world.reset();
   app.route = r;
+  document.body.dataset.route = r;
   const root = ui(); root.innerHTML = '';
   if (push) history.pushState({ r }, '', r === 'front' ? location.pathname : `#${r}`);
   cleanup = screens[r](root);

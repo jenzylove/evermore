@@ -23,7 +23,8 @@ register('raise', root => {
   const figs: (Fighter | null)[] = [null, null, null];
   let spin = 0.5, drag = 0, dragging = false, lastX = 0;
 
-  const frame = () => portrait() ? shot(0, 1.25, 4.9, 0, 0.62, 0, 38) : shot(0, 1.15, 5.2, 0, 0.55, 0, 30);
+  // phone: the fighter stands in the top half, clear of the panel; desktop: left of the panel
+  const frame = () => portrait() ? shot(0, 1.55, 7.6, 0, 0.1, 0, 38) : shot(1.5, 1.2, 5.6, 1.5, 0.95, 0, 30);
   director.cut(shot(0, 2.4, 7.5, 0, 1, 0, 30));
   director.move(frame(), 1400, ease.outCubic);
   (async () => {

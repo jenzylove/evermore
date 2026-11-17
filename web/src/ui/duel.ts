@@ -28,11 +28,11 @@ register('duel', root => {
   const moves: Move[] = [];
   let hHp = 0, gHp = G.hp, hCh = 0, gCh = 0, busy = true, over = false;
   let A: Fighter | null = null, B: Fighter | null = null;
-  const X = () => (portrait() ? 0.95 : 1.3);
+  const X = () => (portrait() ? 0.85 : 1.3);
 
   // ---- camera language ----
   const fovW = () => (portrait() ? 40 : 30);
-  const two = () => { const fov = fovW(), d = Math.max(4.4, fitDistance(X() * 2 + (portrait() ? 1.5 : 2.6), fov)); return shot(0, 1.25, d, 0, portrait() ? 0.95 : 1.05, 0, fov); };
+  const two = () => { const fov = fovW(), d = Math.max(4.4, fitDistance(X() * 2 + (portrait() ? 1.1 : 2.6), fov)); return shot(0, 1.2, d, 0, portrait() ? 1.25 : 1.05, 0, fov); };
   const ots = (a: Fighter, b: Fighter) => {
     const pa = a.root.position, pb = b.root.position, dir = pb.clone().sub(pa).setY(0).normalize();
     const back = portrait() ? 2.6 : 2.0, side = portrait() ? 1.0 : 1.35;
@@ -147,7 +147,7 @@ register('duel', root => {
   async function raiseWard(f: Fighter, mine: boolean) {
     f.once('guard', { fade: 0.1, speed: 1.6, hold: true });
     const w = ward(mine ? '#9fc4ff' : '#7fe9ff');
-    w.mesh.position.set(0, 1.0, 0.5); f.root.add(w.mesh);
+    w.mesh.position.set(0, 1.0, 0.45); f.root.add(w.mesh);
     wards.push({ ...w, f });
     sparks(f.point('chest').add(new THREE.Vector3(Math.sign(-f.root.position.x) * 0.5, 0, 0)), 14, mine ? ['#cfe0ff', '#ffffff'] : ['#bff9ff', '#7fe9ff'], 2.2, 0, 0.5);
     await engine.tween(220, p => { w.mat.uniforms.uA.value = ease.outBack(p); w.mat.uniforms.uT.value = engine.t; });
@@ -247,7 +247,7 @@ register('duel', root => {
       sfx.hit(special || kill);
       sparks(at, special ? 70 : 34, [...fxc, '#ff4a2a'], special ? 7 : 5, 8, 0.6, away);
       flash(at, fxc[0], special ? 2.4 : 1.4, special ? 0.3 : 0.2);
-      shock(at, fxc[0], special ? 3 : 1.6, 0.35);
+      shock(at, fxc[0], special ? 1.8 : 0.9, 0.3);
       b.flash(1);
       pop(b.point('head').add(new THREE.Vector3(0, 0.2, 0)), String(dmg), special || dmg >= 12 ? 'big' : mine ? 'dmg' : 'spirit');
     }

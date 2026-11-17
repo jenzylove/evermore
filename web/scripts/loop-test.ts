@@ -3,7 +3,7 @@
 import { chromium } from 'playwright';
 import { solve, styleHash, seedOf } from '../src/game/sim.ts';
 const base = process.argv[2] ?? 'http://localhost:5190';
-const b = await chromium.launch(); const p = await b.newPage();
+const b = await chromium.launch({ args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] }); const p = await b.newPage();
 await p.goto(base); await p.waitForFunction(() => (window as any).__ev);
 const ev = (f: string, arg?: unknown) => p.evaluate(([f, arg]) => new Function('m', 'arg', `return (async () => { ${f} })()`)((window as any).__ev, arg), [f, arg] as const);
 const fails: string[] = []; const ok = (c: boolean, m: string) => { if (!c) fails.push(m); console.log((c ? 'ok   ' : 'FAIL ') + m); };
@@ -40,6 +40,6 @@ if (found) {
   const home: any = await ev(`await m.app.chain.sendHome(arg); return (await m.app.chain.getHero(arg)).where;`, found.hero.id);
   ok(home === 'home', 'send home moves the hero');
 }
-await b.close();
 console.log(fails.length ? `${fails.length} failed` : 'all passed');
-if (fails.length) process.exit(1);
+// exit without b.close(): with the GPU on, Chromium can hang on close in headless runs
+process.exit(fails.length ? 1 : 0);

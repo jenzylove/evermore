@@ -40,7 +40,7 @@ export function initFx() {
     for (const r of [...rings]) {
       r.age += dt; const p = r.age / r.life;
       if (p >= 1) { r.m.removeFromParent(); rings.splice(rings.indexOf(r), 1); continue; }
-      r.m.scale.setScalar(0.1 + ease.outCubic(p) * r.size); (r.m.material as THREE.MeshBasicMaterial).opacity = (1 - p) * 0.9;
+      r.m.scale.setScalar(0.1 + ease.outCubic(p) * r.size); (r.m.material as THREE.MeshBasicMaterial).opacity = (1 - p) ** 2 * 0.7;
       r.m.quaternion.copy(engine.camera.quaternion);
     }
   });
@@ -63,7 +63,7 @@ export function flash(at: THREE.Vector3, color: string, size = 1.2, life = 0.22)
   s.position.copy(at); engine.scene.add(s); flashes.push({ s, age: 0, life, size });
 }
 export function shock(at: THREE.Vector3, color: string, size = 2.2, life = 0.4) {
-  const m = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(3), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.47, 0.5, 64), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(2), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
   m.position.copy(at); engine.scene.add(m); rings.push({ m, age: 0, life, size });
 }
 
@@ -75,10 +75,10 @@ export function ward(color: string) {
     vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vP = position; vec4 mv = modelViewMatrix*vec4(position,1.); vV=-mv.xyz; vN=normalMatrix*normal; gl_Position=projectionMatrix*mv; }',
     fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; uniform vec3 uC; uniform float uA; uniform float uT;
       void main(){ float f = 1.0 - abs(dot(normalize(vN), normalize(vV))); float hex = 0.5 + 0.5*sin(vP.y*40.0 + uT*6.0) * sin(vP.x*40.0);
-        float a = uA * (pow(f, 2.0) * 1.4 + 0.08 + 0.1*hex*f); gl_FragColor = vec4(uC * a * 2.0, a); }`,
+        float a = uA * (pow(f, 3.0) * 0.8 + 0.03 + 0.08*hex*f); gl_FragColor = vec4(uC * a * 2.0, a); }`,
   });
   const m = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 16, -Math.PI / 2.4, Math.PI / 1.2, 0.15, Math.PI * 0.75), mat);
-  m.scale.set(1, 1.25, 0.75);
+  m.scale.set(0.7, 0.95, 0.5);
   return { mesh: m, mat };
 }
 
