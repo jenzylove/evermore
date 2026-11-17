@@ -101,8 +101,10 @@ export function beginRite(f: Fighter): Rite {
   const t0 = engine.t;
   director.drift = 0;
   director.orbit = t => {
-    const a = a0 + (t - t0) * 0.22, d = P ? 4.8 : 3.9, y = P ? 1.5 : 1.15;
-    return shot(at.x + Math.sin(a) * d, y + Math.sin((t - t0) * 0.5) * 0.06, at.z + Math.cos(a) * d, at.x, P ? 0.2 : 0.98, at.z, P ? 46 : 34);
+    // on a wide screen the hero stands right of centre, clear of the Forge panel on the left
+    const a = a0 + (t - t0) * 0.22, d = P ? 4.8 : 5.2, y = P ? 1.5 : 1.3, off = P ? 0 : 1.1;
+    return shot(at.x + Math.sin(a) * d, y + Math.sin((t - t0) * 0.5) * 0.06, at.z + Math.cos(a) * d,
+      at.x - Math.cos(a) * off, P ? 0.2 : 0.95, at.z + Math.sin(a) * off, P ? 46 : 34);
   };
 
   return {

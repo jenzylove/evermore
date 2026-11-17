@@ -389,7 +389,7 @@ register('duel', root => {
   }
   const endShot = () => {
     const x = A!.root.position.x;
-    return portrait() ? shot(x + 0.3, 1.5, 5.0, x, 0.2, 0, 46) : shot(x + 1.2, 1.0, 4.2, x + 0.9, 1.0, 0, 32);
+    return portrait() ? shot(x + 0.3, 1.5, 5.0, x, 0.2, 0, 46) : shot(x - 1.0, 1.25, 5.2, x - 1.1, 0.95, 0, 34);
   };
 
   async function rematch() {

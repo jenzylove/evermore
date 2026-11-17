@@ -102,7 +102,7 @@ export function haunt(f: Fighter, o: { name: string; owner?: string; ring?: bool
     }
     if (label) {
       label.visible = vis;
-      const head = f.root.position.clone().setY(f.root.position.y + 2.35 + Math.sin(t * 1.3) * 0.03);
+      const head = f.root.position.clone().setY(f.root.position.y + 2.12 + Math.sin(t * 1.3) * 0.03);
       label.position.copy(head); label.quaternion.copy(engine.camera.quaternion);
       (label.material as THREE.MeshBasicMaterial).opacity = 0.25 + focus * 0.55;
     }
