@@ -78,7 +78,7 @@ function bladeMesh(tier: number) {
 }
 function heavyMesh(tier: number) {
   const g = new THREE.Group();
-  const len = tier >= 3 ? 1.15 : 0.8;
+  const len = tier >= 3 ? 0.95 : 0.75;
   const haft = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.024, len, 8), metal.leather()); g.add(haft);
   if (tier <= 1) { // old mace: a studded iron head
     const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.075, 0), metal.dark()); head.position.y = len / 2 + 0.04; g.add(head);
@@ -295,7 +295,7 @@ export class Fighter {
     const best = new Map<number, number>();
     for (const g of look.gear ?? []) best.set(g.kind, Math.max(best.get(g.kind) ?? 0, g.tier));
     if (best.has(0)) { const b = bladeMesh(best.get(0)!); b.position.set(0.17 * size, -0.04, 0.02); b.rotation.set(0.35, 0, Math.PI - 0.25); add('hips', b); }
-    if (best.has(1)) { const w = heavyMesh(best.get(1)!); w.position.set(0, 0.0, -0.16 * size); w.rotation.set(0, 0, 0.42); add('spine', w); }
+    if (best.has(1)) { const w = heavyMesh(best.get(1)!); w.position.set(0, -0.05, -0.16 * size); w.rotation.set(0, 0, 0.3); add('spine', w); }
     if (best.has(2)) { const f = flaskMesh(best.get(2)!); f.position.set(-0.16 * size, -0.06, 0.07); add('hips', f); }
     this.setSpectral(this.spectral);
   }

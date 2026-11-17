@@ -25,9 +25,8 @@ for (const cls of [0, 1, 2]) for (const [level, gear] of [[1, 0], [3, 0], [5, 1]
     localStorage.setItem('evermore.practice.v1', JSON.stringify(s));
     localStorage.setItem('evermore.hero', '4242');
   }, { cls, level, gear, stats: grown(cls, level) });
-  await p.goto(url, { timeout: 90000 }); await p.waitForFunction(() => !document.getElementById('veil'), null, { timeout: 120000 });
+  await p.reload({ timeout: 90000 }); await p.waitForFunction(() => !document.getElementById('veil'), null, { timeout: 120000 });
   await p.waitForTimeout(3200);
-  // hold the turntable at a three quarter view for a fair comparison
   await p.screenshot({ path: `${out}/${tag}-look-${['knight', 'rogue', 'mage'][cls]}-L${String(level).padStart(2, '0')}.png`, timeout: 60000 });
   console.log(cls, level);
 }

@@ -15,7 +15,7 @@ register('hero', root => {
   let i = 0;
   let fig: Fighter | null = null;
   let spin = 0.4, dragging = false, lastX = 0, vel = 0;
-  const frame = () => portrait() ? shot(0, 1.2, 4.6, 0, 0.55, 0, 40) : shot(-1.3, 1.1, 5.0, -1.3, 0.85, 0, 30);
+  const frame = () => portrait() ? shot(0, 1.2, 4.6, 0, 0.55, 0, 40) : shot(-1.0, 1.15, 6.0, -1.0, 0.95, 0, 30);
   director.cut(shot(0, 2.6, 7, 0, 1, 0, 30));
   director.move(frame(), 1200, ease.outCubic);
   world.tick(dt => {
