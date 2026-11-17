@@ -16,20 +16,20 @@ register('bazaar', root => {
   stage.scene = {
     update(dt) { keeper.update(dt); },
     draw(ctx, W, H, t) {
-      const fy = Math.round(H * (H > W ? 0.16 : 0.26));
+      const fy = Math.round(H * (H > W ? 0.2 : 0.26));
       drawHall(ctx, W, H, t, { floorY: fy, camX: 2100, focusY: fy + 20 });
-      // stalls: chests and crates with wares on top
-      const base = fy + 30;
-      for (let k = 0; k < 4; k++) {
-        const x = W / 2 - 42 + k * 28;
-        spr(ctx, 'crate', 0, x, base + 4);
-        spr(ctx, k % 2 ? 'chest_full_open' : 'chest_empty_open', Math.floor(t / 600 + k) % 3 === 0 ? 2 : 0, x, base - 18);
+      // one crate per listing, the ware standing on top of it
+      const base = fy + 34, n = Math.max(3, Math.min(5, items.length)), step = Math.min(26, (W - 30) / n);
+      const x0 = W / 2 - (step * (n - 1)) / 2;
+      for (let k = 0; k < n; k++) {
+        const x = x0 + k * step, l = items[k];
+        spr(ctx, 'crate', 0, x, base);
+        const top = base - 18, bob = Math.round(Math.sin(t / 400 + k) * 1);
+        if (!l) continue;
+        if (l.hero) spr(ctx, `${CLASS_SPRITE(l.hero.cls, l.hero.id % 2 === 1)}_idle`, t / 140, x, top, false, 'img');
+        else spr(ctx, GEAR_SPRITE(l.gear!.kind, l.gear!.tier), 0, x, top - 2 + bob, false, 'img');
       }
-      items.slice(0, 3).forEach((l, k) => {
-        const x = W / 2 - 42 + k * 28;
-        if (l.hero) spr(ctx, `${CLASS_SPRITE(l.hero.cls, l.hero.id % 2 === 1)}_idle`, t / 140, x, base + 26, false, 'img');
-      });
-      keeper.place(W / 2 + 64, base + 20); keeper.draw(ctx, t);
+      keeper.place(Math.min(W - 10, W / 2 + 70), fy + 22); keeper.face = -1; keeper.draw(ctx, t);
     },
   };
   const list = h('div', { class: 'wrap' });
@@ -45,7 +45,7 @@ register('bazaar', root => {
     for (const l of items) {
       const pic = l.hero ? sprite(`${CLASS_SPRITE(l.hero.cls, l.hero.id % 2 === 1)}_idle`, 0, 2, 'img', [20, 28]) : sprite(GEAR_SPRITE(l.gear!.kind, l.gear!.tier), 0, 2, 'img', [20, 28]);
       const title = l.hero ? `${l.hero.name}, level ${l.hero.level} ${CLASS_NAMES[l.hero.cls]}` : GEAR_NAMES[l.gear!.kind][Math.min(2, l.gear!.tier - 1)];
-      const sub = l.hero ? `${l.hero.wins} wins · defended ${l.hero.defences} · from ${l.seller}` : `Gear #${l.gear!.id} · from ${l.seller}`;
+      const sub = l.hero ? `${l.hero.wins} wins · from ${l.seller}` : `#${l.gear!.id} · from ${l.seller}`;
       const b = h('button', { class: l.mine ? 'btn ghost' : 'btn', onClick: async () => {
         b.setAttribute('disabled', '');
         try {

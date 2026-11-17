@@ -80,15 +80,15 @@ for (const s of sizes) {
       await wait(1500); await shot(p, s.tag, '20-forge-gear');
     } else await p.evaluate(() => (window as any).__ev.go('arena'));
     // one more win to cross the level line
-    for (let k = 0; k < 4; k++) {
-      await p.evaluate((id: number) => { const m = (window as any).__ev; m.app.focusGhost = id; m.go('arena'); }, 100 + 7 * k);
+    for (let k = 0; k < 8; k++) {
+      await p.evaluate((id: number) => { const m = (window as any).__ev; m.app.focusGhost = id; m.go('arena'); }, 100 + 7 * (k % 4));
       await wait(1200);
       await p.getByRole('button', { name: /^Challenge/ }).click(); await wait(1800);
       const mv2 = await winningMoves(p);
       if (!mv2) continue;
       for (const m2 of mv2) { await p.locator('.moves .btn', { hasText: ['Strike', 'Guard', 'Special'][m2] }).click(); await p.waitForSelector('.moves:not(.wait)', { timeout: 9000 }).catch(() => {}); }
-      await wait(4300); await shot(p, s.tag, '21-forge-levelup');
-      break;
+      await wait(4300);
+      if (await p.locator('.lvup').count()) { await shot(p, s.tag, '21-forge-levelup'); break; }
     }
   }
   await click(p, 'Hero'); await wait(1000); await shot(p, s.tag, '13-hero');

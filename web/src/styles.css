@@ -83,7 +83,7 @@ canvas.px { image-rendering: pixelated; display: block; }
 /* chrome */
 .tag { position: absolute; top: 12px; left: 12px; font-size: 14px; color: var(--spirit); padding: 4px 8px; background: rgba(7,6,13,0.6); letter-spacing: 1px; }
 .tag b { color: var(--bone); font-weight: 600; }
-.pouch { position: absolute; top: 6px; right: 56px; display: flex; align-items: center; gap: 6px; padding: 8px 10px; font-size: 16px; }
+.pouch { position: absolute; top: 8px; right: 56px; display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 16px; background: rgba(7,6,13,0.6); }
 .mute { position: absolute; top: 6px; right: 8px; width: 44px; height: 44px; display: grid; place-items: center; }
 
 /* tabs: plain words at the bottom of hub screens */
@@ -196,7 +196,7 @@ canvas.px { image-rendering: pixelated; display: block; }
 .item canvas { width: 40px; height: 56px; flex: none; }
 .item .t { flex: 1; min-width: 0; }
 .item .t b { display: block; font-size: 19px; font-weight: 600; }
-.item .t span { font-size: 14px; color: var(--dust); }
+.item .t span { font-size: 14px; color: var(--dust); white-space: nowrap; }
 .item .btn { min-height: 44px; font-size: 17px; padding: 0 14px; }
 
 /* satchel sheet */
