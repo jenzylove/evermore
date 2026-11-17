@@ -1,4 +1,4 @@
-# Relic: build plan
+# Evermore: build plan
 
 Today Nov 17 11:40 UTC. Due Nov 22 14:00 UTC.
 
