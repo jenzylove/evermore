@@ -1,15 +1,22 @@
 # Credits
 
-## Art
-- **16x16 DungeonTileset II** by 0x72, CC0 (public domain). https://0x72.itch.io/dungeontileset-ii
-  Used for every hero, weapon, wall, floor, fountain, banner, chest and gear sprite (`public/art/dungeon.png`, v1.3 sheet).
-  Ghosts are the same sprites recoloured in code onto a spectral ramp; hit flashes and silhouettes are also made in code.
+## Characters and animation
+- **Mixamo** (Adobe), used under the Mixamo license, which allows use in games, personal or commercial.
+  Characters: Paladin J Nordstrom (Knight), Kachujin G Rosales (Rogue), Mremireh O Desbiens (Mage).
+  Animations: fighting idles, strikes, guards, specials, hit reaction, knockout, victory and taunt.
+  The raw FBX files are not in this repository; they were converted to compressed GLB (`public/models/`,
+  meshopt geometry, 1024 px WebP textures) with `scripts/build-models.mjs` (FBX2glTF + glTF Transform).
+- Armour plates, crowns, halos, weapons, flasks, auras and the arena itself are built in code (`src/three/`).
 
 ## Type
-- **Pixelify Sans** by Stefie Justprince, SIL Open Font License 1.1. Self hosted from `public/fonts/` (via @fontsource/pixelify-sans).
+- **Cinzel** by Natanael Gama, SIL Open Font License 1.1. Self hosted from `public/fonts/` (via @fontsource/cinzel).
+- **Barlow Condensed** by Jeremy Tribby, SIL Open Font License 1.1. Self hosted from `public/fonts/` (via @fontsource/barlow-condensed).
+
+## Code
+- three.js (MIT) and postprocessing by pmndrs (Zlib).
 
 ## Sound
 - Every sound effect and the music loop are synthesised at runtime with the Web Audio API (`src/audio/sfx.ts`). No samples.
 
 ## Icons
-- The move, sound, pouch, dice and arrow icons are 9x9 bitmaps drawn in `src/ui/kit.ts`.
+- Line icons drawn in `src/ui/kit.ts`.

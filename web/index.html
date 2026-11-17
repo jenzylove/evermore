@@ -3,15 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#07060d" />
+  <meta name="theme-color" content="#07060a" />
   <title>Evermore</title>
-  <meta name="description" content="A pixel hero duel game. Games die. Heroes don't." />
-  <link rel="preload" href="/fonts/pixelify-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="description" content="A hero duel game on Bitcoin Cash. Games die. Heroes don't." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2307060a'/%3E%3Cpath d='M6 11l5 5 5-9 5 9 5-5-2 13H8z' fill='none' stroke='%23d9ab5b' stroke-width='2'/%3E%3C/svg%3E" />
+  <link rel="preload" href="/fonts/cinzel-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
 </head>
 <body>
   <canvas id="world"></canvas>
+  <div id="fx"></div>
+  <div id="flash"></div>
   <main id="ui"></main>
   <div id="chrome"></div>
+  <div id="veil"><h1>Evermore</h1><p>Lighting the arena</p><i></i></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

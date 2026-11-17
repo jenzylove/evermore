@@ -1,61 +1,59 @@
-// Bazaar: heroes and gear for sale. Buying swaps the token and the money in one transaction.
-import { Actor } from '../gfx/actor';
-import { drawHall } from '../gfx/hall';
-import { stage } from '../gfx/stage';
+// Bazaar: heroes and gear for sale. Tap a hero to see it stand in the light. Buying swaps the token and the money in one transaction.
+import { ease } from '../three/engine';
+import { director, portrait, shot, sparks } from '../three/fx';
+import { world } from '../three/world';
+import type { Fighter } from '../three/fighter';
 import { CLASS_NAMES } from '../game/sim';
-import { app, go, register, renderChrome } from '../app';
-import { h, money, sprite, toast } from './kit';
-import { CLASS_SPRITE, GEAR_NAMES, GEAR_SPRITE, spr } from '../gfx/atlas';
+import { app, register, renderChrome } from '../app';
+import { gearIcon, gearName, h, icon, money, toast } from './kit';
 import type { Listing } from '../chain/types';
 import { tabs } from './tabs';
 import { sfx } from '../audio/sfx';
+import * as THREE from 'three';
 
 register('bazaar', root => {
   let items: Listing[] = [];
-  const keeper = new Actor(1, true); keeper.face = 1;
-  stage.scene = {
-    update(dt) { keeper.update(dt); },
-    draw(ctx, W, H, t) {
-      const fy = Math.round(H * (H > W ? 0.2 : 0.26));
-      drawHall(ctx, W, H, t, { floorY: fy, camX: 2100, focusY: fy + 20 });
-      // one crate per listing, the ware standing on top of it
-      const base = fy + 34, n = Math.max(3, Math.min(5, items.length)), step = Math.min(26, (W - 30) / n);
-      const x0 = W / 2 - (step * (n - 1)) / 2;
-      for (let k = 0; k < n; k++) {
-        const x = x0 + k * step, l = items[k];
-        spr(ctx, 'crate', 0, x, base);
-        const top = base - 18, bob = Math.round(Math.sin(t / 400 + k) * 1);
-        if (!l) continue;
-        if (l.hero) spr(ctx, `${CLASS_SPRITE(l.hero.cls, l.hero.id % 2 === 1)}_idle`, t / 140, x, top, false, 'img');
-        else spr(ctx, GEAR_SPRITE(l.gear!.kind, l.gear!.tier), 0, x, top - 2 + bob, false, 'img');
-      }
-      keeper.place(Math.min(W - 10, W / 2 + 70), fy + 22); keeper.face = -1; keeper.draw(ctx, t);
-    },
-  };
-  const list = h('div', { class: 'wrap' });
-  root.append(h('section', { class: 'screen bazaar' }, h('div', { class: 'list scrim-b' }, h('div', { class: 'wrap' }, h('div', { class: 'h2 drop', style: 'margin-bottom:6px' }, 'Bazaar')), list), h('div', { style: 'background:rgba(7,6,13,0.97)' }, tabs('bazaar'))));
+  let shown: Fighter | null = null, shownId = '';
+  director.cut(portrait() ? shot(0, 1.3, 4.8, 0, 1.45, 0, 40) : shot(1.2, 1.2, 5, 1.2, 0.95, 0, 30));
+  director.move(portrait() ? shot(0, 1.3, 4.6, 0, 1.5, 0, 40) : shot(1.4, 1.15, 4.8, 1.4, 0.95, 0, 30), 1200, ease.outCubic);
+  world.tick(dt => { if (shown) shown.root.rotation.y += dt * 0.3; });
 
-  const load = async () => { items = await app.chain.listings(); paint(); };
+  const list = h('div', { class: 'wrap' });
+  root.append(h('section', { class: 'screen bazaar' }, h('div', { class: 'list scrim-b' }, h('div', { class: 'wrap' }, h('div', { class: 'eyebrow', style: 'margin-bottom:8px' }, 'Bazaar')), list), h('div', { style: 'background:rgba(7,6,10,0.94)' }, tabs('bazaar'))));
+
+  const load = async () => { items = await app.chain.listings(); paint(); const first = items.find(l => l.hero); if (first && !shown) preview(first); };
   load();
+
+  async function preview(l: Listing) {
+    if (!l.hero || shownId === l.id) return;
+    shownId = l.id; paint();
+    const f = await world.fighter(l.hero.cls, { level: l.hero.level });
+    if (shown) world.drop(shown);
+    shown = f; f.root.position.set(0, 0, 0); f.root.rotation.y = 0.5; f.flash(0.5);
+  }
 
   function paint() {
     const f = app.chain.fees();
     list.innerHTML = '';
     if (!items.length) list.append(h('p', { class: 'dim' }, 'Nothing for sale right now.'));
     for (const l of items) {
-      const pic = l.hero ? sprite(`${CLASS_SPRITE(l.hero.cls, l.hero.id % 2 === 1)}_idle`, 0, 2, 'img', [20, 28]) : sprite(GEAR_SPRITE(l.gear!.kind, l.gear!.tier), 0, 2, 'img', [20, 28]);
-      const title = l.hero ? `${l.hero.name}, level ${l.hero.level} ${CLASS_NAMES[l.hero.cls]}` : GEAR_NAMES[l.gear!.kind][Math.min(2, l.gear!.tier - 1)];
+      const pic = l.hero ? icon('crown') : gearIcon(l.gear!.kind, l.gear!.tier);
+      const title = l.hero ? `${l.hero.name}, level ${l.hero.level} ${CLASS_NAMES[l.hero.cls]}` : gearName(l.gear!.kind, l.gear!.tier);
       const sub = l.hero ? `${l.hero.wins} wins · from ${l.seller}` : `#${l.gear!.id} · from ${l.seller}`;
-      const b = h('button', { class: l.mine ? 'btn ghost' : 'btn', onClick: async () => {
+      const b = h('button', { class: l.mine ? 'btn ghost' : 'btn', onClick: async (e: Event) => {
+        e.stopPropagation();
         b.setAttribute('disabled', '');
         try {
           if (l.mine) { await app.chain.cancel(l.id); toast('Listing cancelled.'); }
-          else { await app.chain.buy(l.id); sfx.coin(); stage.burst(stage.W / 2, stage.H * 0.25, 30, ['#f6c453', '#ffffff'], 80, 100, 800); toast(l.hero ? `${l.hero.name} is yours.` : 'Gear is yours.'); }
+          else {
+            await app.chain.buy(l.id); sfx.coin();
+            if (shown && shownId === l.id) { shown.once('victory', { fade: 0.2 }); sparks(shown.point('chest', new THREE.Vector3()), 50, ['#ffd27a', '#ffffff'], 3, 2, 1); }
+            toast(l.hero ? `${l.hero.name} is yours.` : 'Gear is yours.');
+          }
           await load(); renderChrome();
-        } catch (e) { toast((e as Error).message, true); b.removeAttribute('disabled'); }
+        } catch (err) { toast((err as Error).message, true); b.removeAttribute('disabled'); }
       } }, l.mine ? 'Cancel' : money(l.priceSats, f.usdPerBch));
-      list.append(h('div', { class: 'item' }, pic, h('div', { class: 't' }, h('b', {}, title), h('span', {}, sub)), b));
+      list.append(h('div', { class: `item${shownId === l.id ? ' on' : ''}`, onClick: () => preview(l) }, pic, h('div', { class: 't' }, h('b', {}, title), h('span', {}, sub)), b));
     }
-    void go;
   }
 });

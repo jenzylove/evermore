@@ -1,7 +1,7 @@
 // App state, routing and the little bit of chrome that sits over the game.
 import type { GameChain, HeroView, Ticket } from './chain/types';
 import { PracticeChain } from './chain/practice';
-import { stage } from './gfx/stage';
+import { world } from './three/world';
 import { h, icon, shortCents } from './ui/kit';
 import { isMuted, setMuted, sfx, unlock } from './audio/sfx';
 
@@ -40,7 +40,7 @@ export function register(r: Route, s: Screen) { screens[r] = s; }
 let cleanup: (() => void) | void;
 export function go(r: Route, push = true) {
   cleanup?.(); cleanup = undefined;
-  stage.clearFx();
+  world.reset();
   app.route = r;
   const root = ui(); root.innerHTML = '';
   if (push) history.pushState({ r }, '', r === 'front' ? location.pathname : `#${r}`);
@@ -58,12 +58,12 @@ export async function renderChrome() {
   const s = app.route !== 'front' && app.route !== 'duel' ? await app.chain.satchel() : null;
   if (gen !== chromeGen) return; // a newer render won
   const c = document.getElementById('chrome')!; c.innerHTML = '';
-  const mute = h('button', { class: 'mute', 'aria-label': 'Sound', onClick: () => { unlock(); setMuted(!isMuted()); renderChrome(); } }, icon(isMuted() ? 'muted' : 'sound', '#a99cb8'));
-  if (app.route !== 'duel' && isPractice()) c.append(h('div', { class: 'tag' }, h('b', {}, 'Practice'), ' · nothing on chain'));
+  const mute = h('button', { class: 'mute', 'aria-label': 'Sound', onClick: () => { unlock(); setMuted(!isMuted()); renderChrome(); } }, icon(isMuted() ? 'muted' : 'sound'));
+  if (app.route !== 'duel' && isPractice()) c.append(h('div', { class: 'tag' }, h('b', {}, 'Practice'), h('span', {}, 'nothing on chain')));
   if (s) {
     const f = app.chain.fees();
     c.append(h('button', { class: 'pouch dim', 'aria-label': 'Satchel', onClick: () => import('./ui/satchel').then(m => m.openSatchel()) },
-      icon('pouch', '#a99cb8', '#3b2d52', 2), shortCents(s.sats, f.usdPerBch)));
+      icon('pouch'), shortCents(s.sats, f.usdPerBch)));
   }
   c.append(mute);
 }
