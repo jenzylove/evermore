@@ -99,4 +99,9 @@ export interface GameChain {
   fund(sats: number): Promise<Receipt>;
   /** play key WIF for export; null in practice */
   exportKey(): Promise<string | null>;
+  /**
+   * The ghost's move seed for this hero, exactly as the covenant derives it (real chains only;
+   * practice uses the sim's own styleHash). Lets the Arena preview the real style before paying.
+   */
+  styleSeed?(heroId: number, ghost: { id: number; beaten: number; defences: number }): number;
 }

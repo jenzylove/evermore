@@ -18,6 +18,8 @@ export const app = {
   route: 'front' as Route,
 };
 export function useRealChain(c: GameChain) { realChain = c; app.chain = c; }
+/** Back to the in-browser practice game (the real chain stays loaded for a quick switch back). */
+export function usePractice() { app.chain = practice; }
 export const hasRealChain = () => realChain !== null;
 export const isPractice = () => app.chain.mode === 'practice';
 
@@ -60,7 +62,11 @@ export async function renderChrome() {
   if (gen !== chromeGen) return; // a newer render won
   const c = document.getElementById('chrome')!; c.innerHTML = '';
   const mute = h('button', { class: 'mute', 'aria-label': 'Sound', onClick: () => { unlock(); setMuted(!isMuted()); renderChrome(); } }, icon(isMuted() ? 'muted' : 'sound'));
-  if (app.route !== 'duel' && isPractice()) c.append(h('div', { class: 'tag' }, h('b', {}, 'Practice'), h('span', {}, 'nothing on chain')));
+  // the mode tag opens "Play for real" (wallet, Satchel, switch); real play names its network
+  const openConnect = () => import('./ui/connect').then(m => m.openConnect());
+  if (app.route !== 'duel') c.append(h('div', { class: 'tag', role: 'button', tabindex: '0', style: 'cursor:pointer', 'data-mode': app.chain.mode, onClick: openConnect },
+    ...(isPractice() ? [h('b', {}, 'Practice'), h('span', {}, 'nothing on chain · play for real')]
+      : [h('b', {}, app.chain.mode === 'chipnet' ? 'Chipnet' : 'Mainnet'), h('span', {}, app.chain.mode === 'chipnet' ? 'test coins' : 'real BCH')])));
   if (s) {
     const f = app.chain.fees();
     c.append(h('button', { class: 'pouch dim', 'aria-label': 'Satchel', onClick: () => import('./ui/satchel').then(m => m.openSatchel()) },

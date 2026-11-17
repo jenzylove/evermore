@@ -10,16 +10,21 @@
     "shots": "node scripts/shots.mjs"
   },
   "devDependencies": {
+    "@types/qrcode": "^1.5.6",
     "@types/three": "^0.170.0",
     "playwright": "^1.56.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.7"
   },
   "dependencies": {
+    "@bitauth/libauth": "3.1.0-next.8",
     "@fontsource/barlow-condensed": "^5.2.5",
     "@fontsource/cinzel": "^5.2.5",
     "@noble/hashes": "^1.8.0",
+    "@wizardconnect/core": "0.2.10",
+    "@wizardconnect/dapp": "0.2.7",
     "postprocessing": "^6.39.5",
+    "qrcode": "1.5.4",
     "three": "^0.170.0"
   }
 }

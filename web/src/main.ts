@@ -12,6 +12,8 @@ async function boot() {
   const fonts = Promise.all(['900 40px Cinzel', '700 40px Cinzel', '600 20px Barlow Condensed', '700 20px Barlow Condensed', '500 20px Barlow Condensed'].map(f => document.fonts.load(f)));
   await Promise.all([world.boot(document.getElementById('world') as HTMLCanvasElement), fonts]);
   armAudio();
+  // come back in real mode if the player left in it (the wallet + sdk bundle loads only then)
+  if ((() => { try { return localStorage.getItem('evermore.mode') === 'real'; } catch { return false; } })()) await import('./ui/connect').then(m => m.restoreMode());
   const r0 = (location.hash.slice(1) || 'front') as Route;
   go(['raise', 'arena', 'hero', 'bazaar'].includes(r0) ? r0 : 'front', false);
   const veil = document.getElementById('veil');
