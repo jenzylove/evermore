@@ -16,7 +16,9 @@ export const CONTACT: Record<string, { strike: number; special: number; speed: n
   rogue: { strike: 0.38, special: 0.42, speed: 1.4, sspeed: 1.3 },
   mage: { strike: 0.42, special: 0.5, speed: 1.3, sspeed: 1.25 },
 };
-const ANIM_HIP_Y = 0.956; // the clips were baked on the knight's skeleton
+const ANIM_HIP_Y = 0.956; // the clips are packed in the knight's hip space (see scripts/build-models.mjs)
+/** the Vampire mage stands about 2.2 m; bring every class to roughly one height */
+const BASE_SCALE = [1, 1, 0.84];
 
 type Kit = { scene: THREE.Object3D; clips: Map<Clip, THREE.AnimationClip>; hipY: number };
 const kits = new Map<number, Promise<Kit>>();
@@ -189,7 +191,9 @@ export class Fighter {
       if (!m.isMesh) return;
       m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false;
       const mat = (m.material as THREE.MeshStandardMaterial).clone();
-      mat.roughness = cls === 0 ? 0.55 : 0.72; mat.metalness = cls === 0 ? 0.35 : 0.05; if (cls === 0) { mat.envMap = engine.env; mat.envMapIntensity = 0.5; }
+      mat.roughness = cls === 0 ? 0.55 : 0.72; mat.metalness = cls === 0 ? 0.35 : 0.05;
+      if (mat.emissiveMap) { mat.emissive.set('#ffffff'); mat.emissiveIntensity = 0.5; } // the vampire's eyes and sigils
+      if (cls === 0) { mat.envMap = engine.env; mat.envMapIntensity = 0.5; }
       patch(mat, this.u); m.material = mat; this.mats.push(mat);
     });
     // anchors: empties that sit on the bones but keep the model's own axes, so attachments are placed in plain body space
@@ -261,9 +265,9 @@ export class Fighter {
     this.lookGroup = []; this.aura = null;
     const t = tierOf(look.level), col = TIER_COLOR[t];
     const add = (anchor: string, o: THREE.Object3D) => { o.traverse(c => { if ((c as THREE.Mesh).isMesh) c.castShadow = true; }); this.anchors[anchor]?.add(o); this.lookGroup.push(o); };
-    const size = [1, 0.85, 0.82][this.cls];
+    const size = [1, 0.85, 0.95][this.cls];
     // bigger with every level, a little, up to level 10
-    this.model.scale.setScalar(1 + Math.min(10, look.level - 1) * 0.008);
+    this.model.scale.setScalar(BASE_SCALE[this.cls] * (1 + Math.min(10, look.level - 1) * 0.008));
     if (t >= 1) {
       const l = pauldron(t, 1, size), r = pauldron(t, -1, size);
       l.position.set(0.03, 0.07, -0.01); r.position.set(-0.03, 0.07, -0.01);

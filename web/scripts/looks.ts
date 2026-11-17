@@ -12,7 +12,8 @@ const b = await chromium.launch({ args: ['--use-angle=d3d11', '--enable-gpu', '-
 const p = await b.newPage(phone ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true } : { viewport: { width: 1440, height: 900 } });
 const url = `${base}/?q=${phone ? 1 : 2}#hero`;
 await p.goto(url, { timeout: 90000 }); await p.waitForFunction(() => !document.getElementById('veil'), null, { timeout: 120000 });
-for (const cls of [0, 1, 2]) for (const [level, gear] of [[1, 0], [3, 0], [5, 1], [7, 2], [10, 3]] as const) {
+const classes = process.argv[5] ? process.argv[5].split(',').map(Number) : [0, 1, 2];
+for (const cls of classes) for (const [level, gear] of [[1, 0], [3, 0], [5, 1], [7, 2], [10, 3]] as const) {
   await p.evaluate(({ cls, level, gear, stats }) => {
     const m = (window as any).__ev;
     m.practice.reset();

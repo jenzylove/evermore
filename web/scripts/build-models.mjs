@@ -13,8 +13,10 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
 const out = process.argv[2] ?? 'out';
 fs.mkdirSync(out, { recursive: true });
 
-for (const n of ['knight', 'rogue', 'mage']) {
-  const d = await io.read(`raw/${n}.glb`);
+// class -> source character (the mage is Vampire A Lusth)
+const CHAR = { knight: 'knight', rogue: 'rogue', mage: 'mage-vampire' };
+for (const [n, src] of Object.entries(CHAR)) {
+  const d = await io.read(`raw/${src}.glb`);
   d.getRoot().listAnimations().forEach(a => a.dispose());
   await d.transform(
     prune(), dedup(), weld(),
@@ -27,8 +29,10 @@ for (const n of ['knight', 'rogue', 'mage']) {
 const CLIPS = {
   knight: { idle: 'idle-knight', strike: 'strike-knight', guard: 'guard-knight', special: 'special-knight' },
   rogue: { idle: 'idle-rogue', strike: 'strike-rogue', guard: 'guard', special: 'special-rogue' },
-  mage: { idle: 'idle-rogue', strike: 'strike-mage', guard: 'guard', special: 'special-mage' },
+  mage: { idle: 'idle-mage', strike: 'strike-mage', guard: 'guard', special: 'special-mage' },
 };
+// hip height of the skeleton each clip was baked on, when it was not the knight's
+const HIP_SRC = { 'idle-mage': 1.2175 };
 const COMMON = { hit: 'hit', ko: 'ko', victory: 'victory', taunt: 'taunt' };
 for (const [cls, map] of Object.entries(CLIPS)) {
   const all = { ...map, ...COMMON };
@@ -36,6 +40,10 @@ for (const [cls, map] of Object.entries(CLIPS)) {
   for (const [clip, file] of Object.entries(all)) {
     const d = await io.read(`raw/${file}.glb`);
     d.getRoot().listAnimations().forEach(a => a.setName(clip));
+    // every clip is packed in the knight's hip space (0.956 m), which the client rescales per character
+    const k = (HIP_SRC[file] ?? 0.956) === 0.956 ? 1 : 0.956 / HIP_SRC[file];
+    if (k !== 1) for (const a of d.getRoot().listAnimations()) for (const c of a.listChannels())
+      if (c.getTargetPath() === 'translation' && c.getTargetNode()?.getName() === 'mixamorig:Hips') { const o = c.getSampler().getOutput(); o.setArray(o.getArray().map(v => v * k)); }
     if (!doc) doc = d; else mergeDocuments(doc, d);
   }
   { // every clip onto the first skeleton (by bone name); only the hips keep translation, nobody keeps scale
