@@ -1,4 +1,4 @@
-# Undying: product requirements
+# Relic: product requirements
 
 BCH BLAZE 2026, Mainnet track. Deadline Sun Nov 22 2026 14:00 UTC (15:00 Lagos). Judging Nov 23 to 27.
 
