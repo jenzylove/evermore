@@ -51,3 +51,49 @@
 - forge (5 rounds, +17 XP) https://chipnet.imaginary.cash/tx/c2936ecb1a23dad97edbad6fdf2f83b48f13692a269677dc45aac779d7936063
 
 Not yet on chain: a gear drop (needs a ghost 3+ levels above the hero; the Arena tops out at L2). Not yet with a phone: WizardConnect funding and bring back from Selene / Cashonize (the code path is the one the test wallet ran).
+
+## Nov 19 2026: fees follow the owner, ticket reclaim, mainnet ready scripts, wardens, BCMR
+
+**Contracts** (re-genesis needed, done on chipnet)
+- Lane `sync()`: in lane, hero (P2PKH, its holder signs), the hero's own ghost; out lane, the same hero to a P2PKH, the ghost with owner = that pkh (stats and counters kept), change. Hero spent to itself = "this ghost pays me now"; hero to another P2PKH = Send home and sync in one tx. Lane redeem script 2,339 ops; sync uses well under 20% of its op budget.
+- Ticket reclaim needs no covenant: a ticket is a plain NFT in its holder's P2PKH, so spending it with no output for it burns it and returns its 1,000 sats.
+- Tests: 104 node:test cases green (20 new: sync valid, Send home as sync, old owner cannot sign, fee follows after sync, 11 sync rejections each failing on a covenant input, sdk guards; reclaim standalone, reclaim inside a challenge, someone else cannot burn, sweep with tickets). Parity 100/100 unchanged. sdk 15/15.
+
+**SDK / client**
+- `syncDraft`, `ghostPays`, `reclaimDraft`, `isTicket`; `satchelWithdraw(..., burnTickets)`; `buildRegistry` (symbol EVR, keeps the other network's identity), `BCMR_URL`, `paytacaReindexUrl`.
+- RealChain: every challenge burns the Satchel's older tickets in the same tx (one duel at a time, so they are lost or abandoned); Empty to wallet sweeps coins and tickets; `reclaimTickets()`; buy and bring back are followed by a Satchel signed sync (no wallet popup); Send home is a sync to the wallet in one tx. Warden names come from `deployments/wardens-<net>.json` labels.
+
+**Scripts** (`--net chipnet|mainnet`, `--dry` = in memory chain, every tx VM verified, nothing broadcast; mainnet broadcasts only with `--broadcast-mainnet`)
+- Fees (both nets, BCH about $210): raise 119,000 (~$0.25), challenge 9,500 (~2 cents, ghost owner), forge 4,800 (~1 cent), gear cap 5,000.
+- Mainnet rehearsal (deployer bitcoincash:qpse3d5cgrdrezvm3s5cnprlapw2skc9egkcjpw3ye, unfunded, nothing broadcast): `genesis.mjs run --dry --net mainnet` VM ok (prep 185 B, genesis 1,761 B, 20 outputs); `smoke.mjs --net mainnet --dry` raise, raise, challenge, forge (L1 to L2), challenge, reclaim, sync all VM ok; `wardens.mjs --net mainnet --dry` full ladder in 226 txs, 812,068 sats (about $1.71, tx fees and dust; raise/challenge/forge fees return to the treasury).
+
+**Chipnet re-genesis**
+- prep (authbase, category 7efdf7b0...) https://chipnet.imaginary.cash/tx/7efdf7b03d20338e9331a76314eb87edf8e2ed022bed899a072dabf9eb0269b6
+- genesis (16 lanes, Counter, BCMR OP_RETURN to https://evermore-alpha-nine.vercel.app/bcmr/evermore.json, sha256 ed097768...) https://chipnet.imaginary.cash/tx/fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3
+
+**Chipnet smoke** (`node scripts/smoke.mjs`)
+- raise Knight #8 https://chipnet.imaginary.cash/tx/bb841387826badcac072ffc798c7c50e900227ea533f3c25192b7334818e5b59
+- raise Mage #5 https://chipnet.imaginary.cash/tx/f05a90c1cd08658fbead2af7d8c16daf0c9f8f01c8fcc77e92e2c26372e30923
+- challenge https://chipnet.imaginary.cash/tx/131ca4ec963c8e18ff8ae5113678dea224deb95679d1a8a4e3425df8cc55bda0
+- forge #8 L1 to L2 https://chipnet.imaginary.cash/tx/ce2895fdf8c431e644f16db3addc37de316b7baff4676ca4ecdbd14aa7884a4b
+- challenge (walked away) https://chipnet.imaginary.cash/tx/a54f7950c45702b6f111e884521b833e14e6585895502ba6ad8948cc078ff3c5
+- reclaim (ticket burned, sats back, no lane) https://chipnet.imaginary.cash/tx/4e819a7d41f0d50c6c93655503471af1f4307eb7165bfc436301f3cf7921ee0d
+- sync: Mage #5 moved to another key, its ghost now pays that key https://chipnet.imaginary.cash/tx/07566f90b9ed2d1dc355db278cb9991e5c96c99d465bb3bf8172f7992c4d9545
+
+**Real page in Playwright** (`node web/scripts/real-page.ts`, a dev flagged build served statically, since the wardens run rewrites a JSON Vite watches)
+- raise #24 Rogue "Pagewalker" https://chipnet.imaginary.cash/tx/b83c00f4185b16ffee6dfc963e2d49ba7b927bad4d4256c62cc246687c6e0894
+- challenge https://chipnet.imaginary.cash/tx/a8e03d9fc1b11c294fed78ca971f5c6ee440d09c0fa00659af2d96ba00b49ccd, forge https://chipnet.imaginary.cash/tx/20181361aff7ad3509436d5ae79183fdbc25e5c88c9d96f1c553ffe2adc1044a
+- again (`EVERMORE_REUSE_HERO=1`): challenge https://chipnet.imaginary.cash/tx/16d25d71dec10fac8c809db5f9b2b600eeadf158781a041e17ed7e43c4e2c4c4, forge (level up to L2) https://chipnet.imaginary.cash/tx/360ab8beb88751256689bd838b3f26674b61beb9a4f9ca5dbdfa36af407486f0
+- again: challenge https://chipnet.imaginary.cash/tx/f9f8b99885ecdaedbbb398f7c1c938ffd5ffaf5a036d7307d18b5e11e2b583b7, forge https://chipnet.imaginary.cash/tx/c282365212da4457e81d1b975fe3b4fdfa7875c62bb51156f28aafbb4fa70846 (L2, 3 wins)
+- Script fixes: the forge seal is now `.sealed a`; the post forge read and the connect sheet check wait for Fulcrum / render instead of reading once.
+
+**BCMR**: `web/public/bcmr/evermore.json` (Evermore, EVR, types 4800..4802 Knight/Rogue/Mage with portraits rendered from the game, 4500..4502 Blade/Shield/Charm, icon) and `web/public/bcmr/art/*.png`. Byte exact: `-text` in .gitattributes.
+
+**Mainnet day, in order**
+1. Fund bitcoincash:qpse3d5cgrdrezvm3s5cnprlapw2skc9egkcjpw3ye with about 0.0055 BCH (about $1.15): genesis about 25,000 sats, smoke about 140,000 in flight (raise fees return to the treasury), wardens about 812,000 sats in tx fees and dust (they cycle the same coins, so at least 150,000 must sit there at the start and the run spends about 812,000 in total; fund 1,000,000 to be safe).
+2. `node scripts/genesis.mjs run --dry --net mainnet`, then `node scripts/genesis.mjs run --net mainnet --broadcast-mainnet`. That writes `contracts/deployments/mainnet.json` and rewrites `web/public/bcmr/evermore.json` with both identities.
+3. Commit, deploy the site, and check that https://evermore-alpha-nine.vercel.app/bcmr/evermore.json hashes to the sha256 in mainnet.json (`curl -s URL | sha256sum`).
+4. `node scripts/genesis.mjs bcmr --net chipnet`, so chipnet's authchain commits the new file hash.
+5. Reindex: `curl https://bcmr.paytaca.com/api/bcmr/<mainnet category>/reindex/` (and `https://bcmr-chipnet.paytaca.com/api/bcmr/7efdf7b03d20338e9331a76314eb87edf8e2ed022bed899a072dabf9eb0269b6/reindex/`). Check with `/api/tokens/<category>/`.
+6. `node scripts/smoke.mjs --net mainnet --broadcast-mainnet`, then `node scripts/wardens.mjs --net mainnet --broadcast-mainnet`. Commit `deployments/wardens-mainnet.json` so the client shows the names.
+7. Ship the client with `VITE_EVERMORE_NET=mainnet` (or `?net=mainnet`) once mainnet.json is committed.

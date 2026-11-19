@@ -1,0 +1,1281 @@
+{
+  "network": "chipnet",
+  "category": "7efdf7b03d20338e9331a76314eb87edf8e2ed022bed899a072dabf9eb0269b6",
+  "wardens": [
+    {
+      "id": 3,
+      "name": "Warden Aldric",
+      "cls": 0,
+      "target": 8,
+      "level": 8
+    },
+    {
+      "id": 14,
+      "name": "Warden Brenna",
+      "cls": 1,
+      "target": 7,
+      "level": 7
+    },
+    {
+      "id": 7,
+      "name": "Warden Corvin",
+      "cls": 2,
+      "target": 6,
+      "level": 6
+    },
+    {
+      "id": 2,
+      "name": "Warden Dagny",
+      "cls": 0,
+      "target": 5,
+      "level": 5
+    },
+    {
+      "id": 15,
+      "name": "Warden Edric",
+      "cls": 1,
+      "target": 4,
+      "level": 4
+    },
+    {
+      "id": 6,
+      "name": "Warden Fenna",
+      "cls": 2,
+      "target": 4,
+      "level": 4
+    },
+    {
+      "id": 31,
+      "name": "Warden Garrick",
+      "cls": 0,
+      "target": 3,
+      "level": 3
+    },
+    {
+      "id": 12,
+      "name": "Warden Hester",
+      "cls": 1,
+      "target": 3,
+      "level": 3
+    },
+    {
+      "id": 4,
+      "name": "Warden Isolde",
+      "cls": 2,
+      "target": 2,
+      "level": 2
+    },
+    {
+      "id": 30,
+      "name": "Warden Joren",
+      "cls": 0,
+      "target": 2,
+      "level": 2
+    },
+    {
+      "id": 23,
+      "name": "Warden Kestra",
+      "cls": 1,
+      "target": 1,
+      "level": 1
+    },
+    {
+      "id": 18,
+      "name": "Warden Lucan",
+      "cls": 2,
+      "target": 1,
+      "level": 1
+    }
+  ],
+  "labels": {
+    "2": "Warden Dagny",
+    "3": "Warden Aldric",
+    "4": "Warden Isolde",
+    "6": "Warden Fenna",
+    "7": "Warden Corvin",
+    "12": "Warden Hester",
+    "14": "Warden Brenna",
+    "15": "Warden Edric",
+    "18": "Warden Lucan",
+    "23": "Warden Kestra",
+    "30": "Warden Joren",
+    "31": "Warden Garrick"
+  },
+  "txs": [
+    {
+      "kind": "raise",
+      "txid": "2ad3e4291b01cdf4f1bcf126cd00168c3f1e8ca2106d580ee3fabfcfbbac1da0",
+      "note": "#3 Aldric"
+    },
+    {
+      "kind": "raise",
+      "txid": "49f5c11e9fd808362da4de0a0c40b6fd344b4b79cf8662c89e77a4a297a2b987",
+      "note": "#14 Brenna"
+    },
+    {
+      "kind": "raise",
+      "txid": "9bb58baf3828099758f6b3fc8f4cd7a7f001118c83f5f775ae22646582858dce",
+      "note": "#7 Corvin"
+    },
+    {
+      "kind": "raise",
+      "txid": "05233ecb6094ee01beb6a7fd359c64b7f2229a946b5e635600d4c2848261cc3c",
+      "note": "#2 Dagny"
+    },
+    {
+      "kind": "raise",
+      "txid": "275db5357ff78458188c3abe02754bab8d2aa7eaded5bbee13258550ed0f22d3",
+      "note": "#15 Edric"
+    },
+    {
+      "kind": "raise",
+      "txid": "7f7ec4df8639deda2bb331e41bbd5b4b529f408f46c6a2ce094521f56d0af89d",
+      "note": "#6 Fenna"
+    },
+    {
+      "kind": "raise",
+      "txid": "092c406f1a68457bc897133671223007d310921bc799c6a07838fd63123c0a20",
+      "note": "#31 Garrick"
+    },
+    {
+      "kind": "raise",
+      "txid": "c686901ff7135ee8ed7a2ddb404e32aee38510954802cda7897d0ded5b86f64b",
+      "note": "#12 Hester"
+    },
+    {
+      "kind": "raise",
+      "txid": "52e02f5e64c89d12fe80c5808f42ccd2fb3e0374eb446714fd87a2a5bbe41ba9",
+      "note": "#4 Isolde"
+    },
+    {
+      "kind": "raise",
+      "txid": "ae11c0d2dcb19ba497f0b62612e4411cf0ec22e4d1944412b5cfea54aa494556",
+      "note": "#30 Joren"
+    },
+    {
+      "kind": "raise",
+      "txid": "37ac4603d9f87312d6e648eb971402dc6c52560ceecc9c6e703ede61a055513c",
+      "note": "#23 Kestra"
+    },
+    {
+      "kind": "raise",
+      "txid": "6ff4673651713c0c2873f16e0463d33394f26c027930da481a68f9372230fe2c",
+      "note": "#18 Lucan"
+    },
+    {
+      "kind": "challenge",
+      "txid": "d4c6a71fc52a7ca4cdf393efb0cf6d46df73733b9aa4480f3e79b229f2683409",
+      "note": "#3 vs #23"
+    },
+    {
+      "kind": "forge",
+      "txid": "e5648f0094b7cdeaf09569a8f8166a489e83e4381ffc41eed326850a252858c2",
+      "note": "#3 L2 xp 3"
+    },
+    {
+      "kind": "challenge",
+      "txid": "ef83a2863cc8c8d3ecd5d21fe5b4a62b743c905c186a907f6bc7c67fd0be44ea",
+      "note": "#3 vs #14"
+    },
+    {
+      "kind": "challenge",
+      "txid": "b5a0b9a18fbd23565d0ed8f4bd422bb6882023fcb6fe85cb6e4dc521d4bb5edb",
+      "note": "#3 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "74e73fb1b182cfe609a3f5c0eb3e843b05154df08177ba7e692589a6670b1c1c",
+      "note": "#3 L2 xp 29"
+    },
+    {
+      "kind": "challenge",
+      "txid": "5524d5a40a087b51e5371d95d9d212f297524743cb948eb0475181b7d7ef3a86",
+      "note": "#14 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "33243b8956d32bac437edede44eb7395c81ec08a2345633d353b85a1469274fd",
+      "note": "#14 L2 xp 5"
+    },
+    {
+      "kind": "challenge",
+      "txid": "9480c4d0869c214198f9a377ef633c598b3feb9207c14f4fe1e0d15ed293ba94",
+      "note": "#3 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "763fc1fd9cddef6d470212b1e1a74f01b98babd15da5508f96707fe76cb114bc",
+      "note": "#3 L3 xp 18"
+    },
+    {
+      "kind": "challenge",
+      "txid": "16975b6f7c47061189202e0c837c8bacf095a83eee6882a04d7f00984c852ea6",
+      "note": "#7 vs #4"
+    },
+    {
+      "kind": "forge",
+      "txid": "e622f7b23bd79ff880cd32601d186955b38c7b666c3332ce563841e34f0a73df",
+      "note": "#7 L2 xp 9"
+    },
+    {
+      "kind": "challenge",
+      "txid": "1131946a9652defc1c8c44105d6b4d192c06f2c7de483ffcd90571723bd2fba7",
+      "note": "#14 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "bb1137e2bc7e59f8a614ad227c332560c094354a4599ff7d8f8d76076e7e778a",
+      "note": "#14 L2 xp 36"
+    },
+    {
+      "kind": "challenge",
+      "txid": "0a24615c424ddd783c4a2de83e1f83381f8823e62a2e20a29252bb0dd7afbfb4",
+      "note": "#14 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "fd841d6eb69b91c6f263bf5a93c414f1cd2da5f1cc8017a33a7471a80a833f3b",
+      "note": "#14 L3 xp 23"
+    },
+    {
+      "kind": "challenge",
+      "txid": "8dc75f7caf5f012e9259d4f78550d380d03f2a404b83777c3f950c71378bc0af",
+      "note": "#3 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "0f0d1953200d40a6cde5dd961877b9c59aa75da4a08f69d90b341d737e2251c3",
+      "note": "#3 L3 xp 45"
+    },
+    {
+      "kind": "challenge",
+      "txid": "aab68fe5a9c4181159d4532e396e84b9d02cd2281467ccb783d80c71ab38b2c1",
+      "note": "#3 vs #18"
+    },
+    {
+      "kind": "forge",
+      "txid": "5121786068a3272a619246bb8820df1d9f13ac56a7ca6eaa48c8396d3e299527",
+      "note": "#3 L4 xp 11"
+    },
+    {
+      "kind": "challenge",
+      "txid": "9453c7a700df4617d6129be42b7ed1b4f1ca08d03abcaa2e7412409447c7374f",
+      "note": "#7 vs #30"
+    },
+    {
+      "kind": "forge",
+      "txid": "747f0a232f8152f37d1d10f980a6bcda13f170229d2a7c4782c4895d47008b2f",
+      "note": "#7 L2 xp 37"
+    },
+    {
+      "kind": "challenge",
+      "txid": "7fc68a37c2c97115a9de12ff600a75d1ee1d9c63bb8bd36c56595154d5a10a61",
+      "note": "#14 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "e5ec5f448fbe581015d3be3428331365a971c22e20a5938010893ab3e276a1f8",
+      "note": "#14 L3 xp 51"
+    },
+    {
+      "kind": "challenge",
+      "txid": "a18157e2917807bbd2c559685effb0efa48af6e7bc47dcc004a4f8ad534d52c2",
+      "note": "#3 vs #31"
+    },
+    {
+      "kind": "forge",
+      "txid": "742f4e01eebb6338a7f715761595c09562b0c26d4393c60398e0b7b5fe970997",
+      "note": "#3 L4 xp 38"
+    },
+    {
+      "kind": "challenge",
+      "txid": "bdf9357dd1b3cd7006bdc1f051489fee012cde21ea225ccb58ec65ef14608477",
+      "note": "#7 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "dbad023a161e96a5d00c3b45916063ff1e6560220337ab306a44aab7b6a4badf",
+      "note": "#7 L3 xp 24"
+    },
+    {
+      "kind": "challenge",
+      "txid": "793dc6b87f56be40ff7448921c0f71b154fa519e84f4a9c33e7d4917cd11ca7d",
+      "note": "#14 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "7d0bbec01504bf6a1dfe4135d7b4e72a3c6a9ab8514668bb39e474629082295b",
+      "note": "#14 L4 xp 19"
+    },
+    {
+      "kind": "challenge",
+      "txid": "cbe5a0c39562d0265ddacf897000d63fc8c650fe1ce70cc9ff10de0531d0d468",
+      "note": "#3 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "0e4e61342ae09780754af41ca5988808ea98d09e8e6988f18b4fa62e3043a844",
+      "note": "#3 L4 xp 62"
+    },
+    {
+      "kind": "challenge",
+      "txid": "eac5ef2280efc097b685d4ea461f96adaf975e628bf2f36652fc9097d7011119",
+      "note": "#3 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "e39b3edb102269129b8050748fceb6adb6248b4298898346507ecd96a900aef9",
+      "note": "#3 L5 xp 5"
+    },
+    {
+      "kind": "challenge",
+      "txid": "fa8decbf0baaf73b79dd3e97498db7dcd78e487ac54eb36a00059a7960972a37",
+      "note": "#7 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "3412eac07833a50a138d355556cf11b405876b83c1bf92227928b29d16bf1c90",
+      "note": "#7 L3 xp 51"
+    },
+    {
+      "kind": "challenge",
+      "txid": "c51cefa6fadcb08d4cf93e9435c9eb96e0dde3b5d665952be14cf7b9eaff2320",
+      "note": "#3 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "6837de52856311c2f88e21cc5073c4ecd2437772643c95f00d678e9a59ca9d8b",
+      "note": "#3 L5 xp 29"
+    },
+    {
+      "kind": "challenge",
+      "txid": "ad04491c6ce29ac3131f3fabe7cf52ad0a5a2133f987f5f7bcf43d133bb10e71",
+      "note": "#3 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "88ff75440962e47b2ebc31468baa68638266988bcbd2d0fcd7cb1e1845771dd9",
+      "note": "#3 L5 xp 53"
+    },
+    {
+      "kind": "challenge",
+      "txid": "aacadd478ffd490f31abe97b843252532f219f1f0f92ae00fb360df290d540b8",
+      "note": "#7 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "7fb5620404e8335dcb734cba636725fe9d8ea8ff0bb8ef192bb23f8caf141aa4",
+      "note": "#7 L4 xp 14"
+    },
+    {
+      "kind": "challenge",
+      "txid": "99a120f4aba7a8d55fa3baa9ed5e9b38b223d848422cc97370ea0bdbfe62a1d2",
+      "note": "#14 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "4b9e4d136a768246df932cba1d28b6921c7131110fd83add66ee631229239370",
+      "note": "#14 L4 xp 45"
+    },
+    {
+      "kind": "challenge",
+      "txid": "646447dc7a54a1b761545b041a2f586e684a0a3b168c4df3ee67cc0ca6233826",
+      "note": "#14 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "ffcc4108593d48fdcda6d9b69d37492393c7f16373694f790b2fb8a56b47df61",
+      "note": "#14 L4 xp 69"
+    },
+    {
+      "kind": "challenge",
+      "txid": "e943bbc39f6f01d16478610e2ca363fb18fcf96f86d5efc7cbe4b94b4c90df5a",
+      "note": "#3 vs #4"
+    },
+    {
+      "kind": "forge",
+      "txid": "61993c403d02d2832ff84f1bca603e133a3902b7ab3c1db06d2b1892d0aa7d49",
+      "note": "#3 L5 xp 76"
+    },
+    {
+      "kind": "challenge",
+      "txid": "b037902dc1f07368c3d10c4b1b7989030239f52ca43c630e72d76dea4cda0f5d",
+      "note": "#3 vs #18"
+    },
+    {
+      "kind": "forge",
+      "txid": "c6f6d9dcc11d3aeb6758295668d7683bba57d99878120cf5873c9c1c1163f040",
+      "note": "#3 L5 xp 99"
+    },
+    {
+      "kind": "challenge",
+      "txid": "48dfa937de599ed925e510f58555cef517b4734e842b1353d9cf922687095c67",
+      "note": "#3 vs #31"
+    },
+    {
+      "kind": "forge",
+      "txid": "f9f1dee63caa50166d2085eb21e84ee50699a69cbe5977e23d5b8419e203f60a",
+      "note": "#3 L6 xp 22"
+    },
+    {
+      "kind": "challenge",
+      "txid": "664882e3d2764776a713f909cbccd242a9b2309b54922f2e6003a367583b0587",
+      "note": "#14 vs #23"
+    },
+    {
+      "kind": "forge",
+      "txid": "48f5853af1253ca0958ccd4f306b9289a31122fe48dbf5ece17d5107e859843f",
+      "note": "#14 L5 xp 12"
+    },
+    {
+      "kind": "challenge",
+      "txid": "9f90ebfea9b8749f7afe297500f3bcf782a3e2d66d69471f9f8bb50b006271a9",
+      "note": "#3 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "6b63d4ebb0d04ca0e8be784af2700bee9b01abdaa170951ee952aa1ace9dde1e",
+      "note": "#3 L6 xp 48"
+    },
+    {
+      "kind": "challenge",
+      "txid": "87b53f2039ad24f3f38dd9f712961445b67c38c0ba57f387a6be6a46475a98df",
+      "note": "#3 vs #30"
+    },
+    {
+      "kind": "forge",
+      "txid": "423dce4586f20d2d6cd5d5ab5178fcb9bc80727786afc95f79087679ede64f88",
+      "note": "#3 L6 xp 72"
+    },
+    {
+      "kind": "challenge",
+      "txid": "5445cf99a03b5574e7a1154905b2e7f453b647c459549fa0a5b9016f990773fc",
+      "note": "#2 vs #23"
+    },
+    {
+      "kind": "forge",
+      "txid": "5231f72226662336f697ba084b2ffc9722746af216397053263e3947865eabb0",
+      "note": "#2 L1 xp 15"
+    },
+    {
+      "kind": "challenge",
+      "txid": "4efd452c737979b8648b6cf537b3265685e5b62f0ec9f3b991535f9bfd2b3c5c",
+      "note": "#3 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "4589ad6f4dba114ab3ca2bb0ffedd94dfe8e67cd8b5ebe44cbf07e4c920afd4c",
+      "note": "#3 L6 xp 95"
+    },
+    {
+      "kind": "challenge",
+      "txid": "5acace5b7c51c522d4414a5f21eb120f16ce563c2ec86c8b212d4d89648e3088",
+      "note": "#7 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "381be514a41b05b18d59b120f6b2195c1b4ef0a7e3970f9a118ec05757e06e84",
+      "note": "#7 L4 xp 37"
+    },
+    {
+      "kind": "challenge",
+      "txid": "adaca047181879ab9dbd90b130ba58842a03f1e4932e1ad613301a8f99bfe2ea",
+      "note": "#6 vs #4"
+    },
+    {
+      "kind": "forge",
+      "txid": "2d8773c1f08cadae47696ee36702ccef80307e08dd44679461d592db07dafcc6",
+      "note": "#6 L1 xp 18"
+    },
+    {
+      "kind": "challenge",
+      "txid": "82b2c9803fb1d691a64d722b246f58080bc2a14f53491b4d708568715dc36987",
+      "note": "#2 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "793f2902f32f63a903766dde9b1d4b528853c2090d1b1b10cc95ca62e97d8362",
+      "note": "#2 L2 xp 9"
+    },
+    {
+      "kind": "challenge",
+      "txid": "64123e59f4284c2c9f90c8754c253964c28e28a3df6397448ec115c87d94d02a",
+      "note": "#7 vs #18"
+    },
+    {
+      "kind": "forge",
+      "txid": "3923d5835d820f8ae65d6c5c2848b86571145471a90f5097320a5d7662e8cda2",
+      "note": "#7 L4 xp 59"
+    },
+    {
+      "kind": "challenge",
+      "txid": "a90945a2d932156f0f999def4149ef9613dee295dfcbb93d093ca418e7bd35d3",
+      "note": "#7 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "1dd5012ace342e268821823dcfd2f7982aba852b83c5d79b5fda2550e7b41d23",
+      "note": "#7 L5 xp 0"
+    },
+    {
+      "kind": "challenge",
+      "txid": "0edc859a800634c13a75edc7f808c888af3c31a71e62a0688bdddb48450e6808",
+      "note": "#14 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "61d0e71413fcf68b3868c3fb28f83f521904d4582cdb8908bef3637f6487a2d2",
+      "note": "#14 L5 xp 33"
+    },
+    {
+      "kind": "challenge",
+      "txid": "71a162892d24f241c9d3d54833611d1bb168cabe8f412491ae3dbb5c06059b10",
+      "note": "#2 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "c9621ae0281cba9186fb263dd261ad19500e43e2560268e19850e4a3a3556be9",
+      "note": "#2 L2 xp 26"
+    },
+    {
+      "kind": "challenge",
+      "txid": "7b99347928049f6289ab4b8230a344b72432fd5f3a0905dd4dd6a231daa2f7bd",
+      "note": "#6 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "5220a57d183e9ab56d6b9c1b4c7e8aea5be48a753513dc39896c3da49449abf3",
+      "note": "#6 L2 xp 14"
+    },
+    {
+      "kind": "challenge",
+      "txid": "0787c6d176641520658010e33cab60f608ee5213996d77cd8cd18cbcb9ebd4f5",
+      "note": "#3 vs #30"
+    },
+    {
+      "kind": "forge",
+      "txid": "13cbaa9d0a20080cd6786a8cedd6affe2f6407ca154534025f393238b480c8c4",
+      "note": "#3 L6 xp 115"
+    },
+    {
+      "kind": "challenge",
+      "txid": "31c85a337a6962cbba7d3182161899f746f21076c7046c076f80e2641ef9263e",
+      "note": "#3 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "da43acab3ee16e60bc5e2a147a1abb587d3cba11ecad2e4c7fc0a1b8c0d375f1",
+      "note": "#3 L7 xp 14"
+    },
+    {
+      "kind": "challenge",
+      "txid": "fbd5a08a21e67d7a290934b1c2700f563466f1c2222b1134c1937b1cc4958256",
+      "note": "#14 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "71fb76d3578ef21b4a6f730a7f52a84b4412d99955508255f51f96907415c6bd",
+      "note": "#14 L5 xp 54"
+    },
+    {
+      "kind": "challenge",
+      "txid": "68db46d37c8805b6b48c5e13ad051b3ace0325360e89bf0866aa9111aef97453",
+      "note": "#14 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "1191b14adebdb255975ed1c8717e8168067c25e79a35ff775b11f3825e3cf24b",
+      "note": "#14 L5 xp 73"
+    },
+    {
+      "kind": "challenge",
+      "txid": "853885284dfe81352b83cbd9b40ca681688e3454b9441fd3c499ee51098b4d6a",
+      "note": "#2 vs #31"
+    },
+    {
+      "kind": "forge",
+      "txid": "e9276392639d2fda4faaea41ce02d2b82ab7f12ef398da05436f5731d6e4b81f",
+      "note": "#2 L3 xp 1"
+    },
+    {
+      "kind": "challenge",
+      "txid": "da7775b881a6921a2bec6de3cde2f0deee59519928201278288bd513632abe1e",
+      "note": "#14 vs #2"
+    },
+    {
+      "kind": "forge",
+      "txid": "fc5c68b899937f751da5fad5151456ccaef57a1ccccea1804ffcd2d48cdd7ec9",
+      "note": "#14 L5 xp 92"
+    },
+    {
+      "kind": "challenge",
+      "txid": "afe73056d698159c9938d7510ee587bca2b7a99e467dbf2bd40d661ff28f794d",
+      "note": "#15 vs #4"
+    },
+    {
+      "kind": "forge",
+      "txid": "0011ccbbd7c92ea9ee585236ea82d338074fb5d63ea847cc2efb5fcdfb3dfdfc",
+      "note": "#15 L1 xp 14"
+    },
+    {
+      "kind": "challenge",
+      "txid": "4edd2bd00bb3b58efd43f6c5c6696e7408623ff4e567e61d68c6cca2f3612e06",
+      "note": "#15 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "640b1a1857c8305f99e4e0964340f0daa551e062aa8598847d07e3a7bfe9e1fb",
+      "note": "#15 L2 xp 8"
+    },
+    {
+      "kind": "challenge",
+      "txid": "237ba04d928aa0a4b6be5d34cbada02446ee0132429651e551fa788752989d5a",
+      "note": "#14 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "535b27d76990185ea7d14e3011d99ffff04afeb0d8e82d1d570b8f934e0e4d52",
+      "note": "#14 L6 xp 11"
+    },
+    {
+      "kind": "challenge",
+      "txid": "22167df0a67f6afe9ad38928888f8d0fd3caa4ea5df9b9fc4e74c8e6a44c7eb1",
+      "note": "#6 vs #18"
+    },
+    {
+      "kind": "forge",
+      "txid": "04595d491bfe7f956b846d1fd5d6749a9aaf542ec27eea53cf8adcbf63c24588",
+      "note": "#6 L2 xp 32"
+    },
+    {
+      "kind": "challenge",
+      "txid": "20eb8f8c153effc7a2b2a183416abfb1a29534e0dcfe591ec5c8ebf3e13c99ca",
+      "note": "#7 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "5ec0f0bd8475725344f556614406d5cbd912542d27dd6dc52b5d749856178272",
+      "note": "#7 L5 xp 20"
+    },
+    {
+      "kind": "challenge",
+      "txid": "0628a7eff79e0ae3785032823ebc3abe412f2338a3d9c0038ba60122d72d9e2f",
+      "note": "#7 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "6892190a4b27ccdc30362e1179b02beaa653372807978739c415aa43f63ce903",
+      "note": "#7 L5 xp 40"
+    },
+    {
+      "kind": "challenge",
+      "txid": "72fb6ab3db1cfbbc165f38a27583268797ef1797e6d39f19b65ee4b503e21e0f",
+      "note": "#2 vs #23"
+    },
+    {
+      "kind": "forge",
+      "txid": "2eaaae8db711742c5a8f39aee9c24f9a2128f504c6a72c38b62ef5c826810c5b",
+      "note": "#2 L3 xp 17"
+    },
+    {
+      "kind": "challenge",
+      "txid": "84f0b245528033b6f9cdc6f31a64f000fb8c842851b046677ae1df1771fc09e0",
+      "note": "#6 vs #18"
+    },
+    {
+      "kind": "forge",
+      "txid": "12c74a4a23ca720c6d5e950489b092da40b4916ee33905b3bae27fab45354c70",
+      "note": "#6 L3 xp 7"
+    },
+    {
+      "kind": "challenge",
+      "txid": "9a20c0e2ba97cc707925ad5a87340f3deb79ab5325cea7bf83dd4928ca1cae26",
+      "note": "#2 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "92892b4791315ab0197875be9c4ef6221a9069a845121b01dda1f56706147ea8",
+      "note": "#2 L3 xp 33"
+    },
+    {
+      "kind": "challenge",
+      "txid": "562dbd5865990157259aa183cb176b4ce420f20621b1469281b7fc3015e94add",
+      "note": "#7 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "aaec721b27535d057fbb4f6eeca875488de3f8b3eec5b52476120a22842b629c",
+      "note": "#7 L5 xp 59"
+    },
+    {
+      "kind": "challenge",
+      "txid": "faa04b7a1f77910c6a7b1760baa83890a56931f034191c2a7304acfbf5e32764",
+      "note": "#7 vs #2"
+    },
+    {
+      "kind": "forge",
+      "txid": "eb3dd0076bd99ddd6ca5b6476a2c56b66d5f2c10cf255411f0e3353eda5b9191",
+      "note": "#7 L5 xp 78"
+    },
+    {
+      "kind": "challenge",
+      "txid": "5bf96cfc372ac9ecb98127541f8d33aea306ddfeb640442566072810c8c74528",
+      "note": "#2 vs #23"
+    },
+    {
+      "kind": "forge",
+      "txid": "9ac6c997b20e25b5297c20fbb07ee2e8dcc12f3b1b32d8021b6668cb966bfae9",
+      "note": "#2 L3 xp 47"
+    },
+    {
+      "kind": "challenge",
+      "txid": "a3cd4b8f320b566b6701a043121caeccb3d63157648fb27dff888ef1169e8fc9",
+      "note": "#3 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "66b69096d980728aeecdf3ff05edc5ae03a0c54056f3933d1c64fb44373cd1d2",
+      "note": "#3 L7 xp 32"
+    },
+    {
+      "kind": "challenge",
+      "txid": "66d1891e13441dbc53316f104354e71673005ffacd5f71e488867eed2695f7a3",
+      "note": "#2 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "93d71e0e237c29db8281eb888f70d0b935260248e57edae81f2e634435cfe926",
+      "note": "#2 L4 xp 1"
+    },
+    {
+      "kind": "challenge",
+      "txid": "e626068948151a03603691aaab625555cd691b20fbb7ca4b3ef8ba6b26b3538e",
+      "note": "#7 vs #2"
+    },
+    {
+      "kind": "forge",
+      "txid": "446aa1c0b9c9c224d0a35ebc2adbbc263f1cafa564948aaed5164d7ec1505b54",
+      "note": "#7 L5 xp 97"
+    },
+    {
+      "kind": "challenge",
+      "txid": "57f9d7d8f77b837ae8f61c4608ab4be9bf45af1a90d265f6f0cf5d7173f70112",
+      "note": "#7 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "c9ede3bc55d64b79b3f0b101fe6bcdb0bcf7f82f3c29683a59e674f49100cb43",
+      "note": "#7 L6 xp 15"
+    },
+    {
+      "kind": "challenge",
+      "txid": "9e8d6ecca5d3f79c7e4114399b3dc2b8b4bd43f1c76629f10385a8af7b6e9c9d",
+      "note": "#14 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "14433b45e0e2bc9c400a64ac7dee8dabef9e80e13f408ee7448c733b26ff3c8d",
+      "note": "#14 L6 xp 30"
+    },
+    {
+      "kind": "challenge",
+      "txid": "9b448119b898cee581bae13dbb5bc9d5c996c7487ac3b505acbc7f00edf58527",
+      "note": "#14 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "3b55225c77fe9062dc055733a1b5f11bdd66f0e684bdf6ca9a5c12f9af8cfe80",
+      "note": "#14 L6 xp 48"
+    },
+    {
+      "kind": "challenge",
+      "txid": "1bea8cc622ba869f809d289ccdf809de456207702e2cbe9c2648ca70298fe237",
+      "note": "#12 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "e198ef9155a4c3d1aa20f384fdfbe93708e6b0179c1e89556ff4ce926c7005eb",
+      "note": "#12 L1 xp 13"
+    },
+    {
+      "kind": "challenge",
+      "txid": "f7903f75a4fdfa6710b841d853059598171765eb9adb8fd49be5b5bdcb1334cf",
+      "note": "#15 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "993163f51cd7ab1930bc0577e712c5103d17a202996610f505842c85e72f53ed",
+      "note": "#15 L2 xp 21"
+    },
+    {
+      "kind": "challenge",
+      "txid": "f9044f60cd03136461532512d43258f59749a03c4fa1d641bf55969177375916",
+      "note": "#31 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "507fc90430bff0904279dd53e3cadd17733b4ae23c752169bd66352c02174fd1",
+      "note": "#31 L1 xp 12"
+    },
+    {
+      "kind": "challenge",
+      "txid": "3056803f2e69e50048771d190a687e44bdf9fa9ce6deab6ab28a43db0b0d0074",
+      "note": "#6 vs #30"
+    },
+    {
+      "kind": "forge",
+      "txid": "ae0ce55fe9a3e7a0455b610fbf22915d4f7dc063a87d06f8de51c4a8f24f3644",
+      "note": "#6 L3 xp 23"
+    },
+    {
+      "kind": "challenge",
+      "txid": "aa4e1736bbbc4fa27bb2f919b93f2fae49bd3d34521a4939dce4204d695aac76",
+      "note": "#14 vs #4"
+    },
+    {
+      "kind": "forge",
+      "txid": "24192e5c2a70440117356be866043695472f41db47ed3f6c6ee1dace8c72bac9",
+      "note": "#14 L6 xp 64"
+    },
+    {
+      "kind": "challenge",
+      "txid": "d28073db972cdea83cd67a3061fcfed4ad8767fe3ed7a964d53d249a63efb258",
+      "note": "#3 vs #31"
+    },
+    {
+      "kind": "forge",
+      "txid": "31763341d81f9854f910ee43bc17686ff2ef151015d56790c6296b36174b2403",
+      "note": "#3 L7 xp 48"
+    },
+    {
+      "kind": "challenge",
+      "txid": "ee83c04c6b81d64121e9b4c291bbb1f2877d3a9b8060eb087db9be66c9d19664",
+      "note": "#15 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "966b36fa70f9ad3402a4699c5046bfff714c6b6551694277cfed8c851ee9460b",
+      "note": "#15 L2 xp 33"
+    },
+    {
+      "kind": "challenge",
+      "txid": "dd94685ecc029d9c6bb076059c1d632940f4917a4f57b58699030ff7d2011cf8",
+      "note": "#14 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "463a3045e3e0877c577154231a85252d6b44d5584edccd32e6711d4fe32fc460",
+      "note": "#14 L6 xp 80"
+    },
+    {
+      "kind": "challenge",
+      "txid": "177dfde156a6ea699f5a1c2daa6be28676ed71edeab24313a9e773a64f53ba15",
+      "note": "#15 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "a3936305c2a74c4ffd4d36fbcb14654eecfbc80087bdb858ed5c6bf1ab44bb8b",
+      "note": "#15 L3 xp 7"
+    },
+    {
+      "kind": "challenge",
+      "txid": "66cc416ebd866bce8796bbabfd37af69a45643bb3cb598bf1b265fc79a672d79",
+      "note": "#3 vs #2"
+    },
+    {
+      "kind": "forge",
+      "txid": "228e1561eb7ab3d4a6681906b6fb30bcf8955d010d534d77da58cc3b490c4155",
+      "note": "#3 L7 xp 64"
+    },
+    {
+      "kind": "challenge",
+      "txid": "d6992cb4c368d7fb568f7d9dccf5036ddef3ed134f7a8908bf56e03cae23e2d8",
+      "note": "#3 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "b1ccc75044a7457b921a36e6bc1183d1801c4238b7d0292d06fb07857feb690a",
+      "note": "#3 L7 xp 80"
+    },
+    {
+      "kind": "challenge",
+      "txid": "17d7d428d10b2039c9f2cfe90bd5bf7b86f6c38acbd4d55f4de92d49d0494b9a",
+      "note": "#14 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "eee6830a8e6c49db195a68072ce0ead925b00e32471475459c86d051e1555cce",
+      "note": "#14 L6 xp 96"
+    },
+    {
+      "kind": "challenge",
+      "txid": "a411441af24364123c11ee586b29a99769cdaa2349474b4b720f1a62f7515431",
+      "note": "#3 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "2cfef41a6e636b7f96b206a46028e1d7464e5f86ac5675ab90528cc83ca8f7d7",
+      "note": "#3 L7 xp 96"
+    },
+    {
+      "kind": "challenge",
+      "txid": "f4284acce4a8b3332175968a91c6eb788a059773454c0e7d30fb78ba79bdcab3",
+      "note": "#12 vs #23"
+    },
+    {
+      "kind": "forge",
+      "txid": "c93ec105f4c373c431c2723e91aebc50e1ceec6a5bf92e32264582ae492cc950",
+      "note": "#12 L2 xp 4"
+    },
+    {
+      "kind": "challenge",
+      "txid": "17135d9baf9bba88159ea2766a8a7548cdbfda8a3aa8ae4fde2b3c214f006ba5",
+      "note": "#3 vs #31"
+    },
+    {
+      "kind": "forge",
+      "txid": "9b93acdb6867055081504709f814223c8a974c2015ba5379993ddf334cb5500d",
+      "note": "#3 L7 xp 111"
+    },
+    {
+      "kind": "challenge",
+      "txid": "ff0930534324382cdbe1cb0254ad746aac760cfe2aa22b7343edd33627e90489",
+      "note": "#14 vs #30"
+    },
+    {
+      "kind": "forge",
+      "txid": "f21d4e80030acb68da071091e69cdbf6d73bdcc7c4a923affe5a3252f6841a30",
+      "note": "#14 L6 xp 111"
+    },
+    {
+      "kind": "challenge",
+      "txid": "77f7df731db224d43e7c269f384b92a5ea6f8de6fdf15028d8576d465a2d0a3b",
+      "note": "#3 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "b7b3738a1654ae87b2a4c0d8c64d9a402ba64721856fa9413ea1fe26294c3a9c",
+      "note": "#3 L7 xp 126"
+    },
+    {
+      "kind": "challenge",
+      "txid": "68fefbf0bdb7fe862d1c0c1a4fd511ff852b4e755d8179eb521670ecde2561f7",
+      "note": "#31 vs #18"
+    },
+    {
+      "kind": "forge",
+      "txid": "3542ef08cfd7740271b402a81a0c5f0cfda95322de2ca23220114f4b1666aa66",
+      "note": "#31 L2 xp 2"
+    },
+    {
+      "kind": "challenge",
+      "txid": "33ece94ad4fe3ab52230fb38ad58f5066825bb8c201cd9e0a937e168b73a25b4",
+      "note": "#3 vs #31"
+    },
+    {
+      "kind": "forge",
+      "txid": "f014b1db3b5bdb905951f496b4551c532574c945dc2498435bd696a25491422f",
+      "note": "#3 L8 xp 1"
+    },
+    {
+      "kind": "challenge",
+      "txid": "1ee5c3549df343f25543da290bb6a02f08899fc21b3f06a8a7668d268d2a5a86",
+      "note": "#14 vs #3"
+    },
+    {
+      "kind": "forge",
+      "txid": "a0942d219e723af9731e728c0648ff91ce80528175e2ab2b61ed9747d240767a",
+      "note": "#14 L7 xp 6"
+    },
+    {
+      "kind": "challenge",
+      "txid": "70bdbf57989a3b4f9baf5aa6dc334b4cdf8d9541d77b25bb2ecad0cbf76c7be3",
+      "note": "#2 vs #14"
+    },
+    {
+      "kind": "forge",
+      "txid": "bc9c387ed77639652f16bbe72d56f0d9a73657029fd999fe9927e3b4c926d846",
+      "note": "#2 L4 xp 15"
+    },
+    {
+      "kind": "challenge",
+      "txid": "4002aae3b4ba861476ce8310023918c6ba2c44b1b5bb7b2a11e070f6e3b9a661",
+      "note": "#15 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "893992760010d9295d5adfd3c7b797ce3d27cda2f2f08ae621dfa094ea5fa125",
+      "note": "#15 L3 xp 21"
+    },
+    {
+      "kind": "challenge",
+      "txid": "bbc0d197a25f0d888710a66731bbced74c5605634db54e8e2e19e3c0b1c8d041",
+      "note": "#6 vs #2"
+    },
+    {
+      "kind": "forge",
+      "txid": "22eb1f97103615161b638dbb505f39b1413a7c4841517ffc8f63c99d06f34626",
+      "note": "#6 L3 xp 36"
+    },
+    {
+      "kind": "challenge",
+      "txid": "3e806810e73bcb9a6eeb5a68bcc33166a73af2d84c2d5e13fe157a364c5ad1d5",
+      "note": "#15 vs #7"
+    },
+    {
+      "kind": "forge",
+      "txid": "25cf4a15b9ac3bf8ca3d1b0af0f2551e7cc502ef82858a7919905e6c8c1b0a0c",
+      "note": "#15 L3 xp 34"
+    },
+    {
+      "kind": "challenge",
+      "txid": "a16547f57dbc1b296df9bff3de4d582219a4e14f07d4d8190278ca8fe3dfd41e",
+      "note": "#4 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "6a0be94e697bc8773a5b7f440991f881241ff871b6326924f70b643eef73574c",
+      "note": "#4 L1 xp 12"
+    },
+    {
+      "kind": "challenge",
+      "txid": "9dfc9ec58bca0e518887f736dd0e34bad5f4ef1f4edd3dc1918228f1af86bff1",
+      "note": "#6 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "3bfaa49e609415a946b36f623772f51295f8d3657f1ced8d6e983102da2987a9",
+      "note": "#6 L3 xp 49"
+    },
+    {
+      "kind": "challenge",
+      "txid": "e11a1ec48eaaa619fbd81cf484992554496615e903affef1c74e2b0e1e6b75ca",
+      "note": "#12 vs #4"
+    },
+    {
+      "kind": "forge",
+      "txid": "e5cf4ed73c66e59ee9a3c8a262e889cb3071bfc94260d23ead5f52d7732d793d",
+      "note": "#12 L2 xp 16"
+    },
+    {
+      "kind": "challenge",
+      "txid": "953af10dd562b353b4b997deac5b13a0d70ea4c29074ae7025112f2e8c908e9d",
+      "note": "#15 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "b1642a5f0df2a31f38fedcd9f94223d46ce59c66e4ef7c2433a589d532862143",
+      "note": "#15 L3 xp 46"
+    },
+    {
+      "kind": "challenge",
+      "txid": "2b926ae406c9ac0dc743da813ae476d48a835a1ccf79b449c13f936adb14ee7a",
+      "note": "#6 vs #2"
+    },
+    {
+      "kind": "forge",
+      "txid": "58e55dd87c1fd33dcdf0869284142a258da0cf2666af4bdd2b123d5c5e4c786c",
+      "note": "#6 L4 xp 1"
+    },
+    {
+      "kind": "challenge",
+      "txid": "e5cbb617fe5d4aa7b4799aa9cdd38ae5a3721f06d6a166a9bd35af98c4b26b68",
+      "note": "#15 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "0bf404aa69af4441db73d34f616baf991c83d331675befd72a096ef3cb9996af",
+      "note": "#15 L3 xp 59"
+    },
+    {
+      "kind": "challenge",
+      "txid": "82ff03791e2117b90aa67fd726d3e9099bc9abb22b6af06a75bed3187681f822",
+      "note": "#15 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "c7e44f075760733c02a0df830ab66436be890ca3c24f990c3105007887206923",
+      "note": "#15 L4 xp 12"
+    },
+    {
+      "kind": "challenge",
+      "txid": "74af9addb2c2a68eb96fe085a160233e0c56c93ca4902fc56af3d03db89de2f1",
+      "note": "#2 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "dbdc66a36de5fe7a1b8a9ef7a28e6eafd0ce95c7cdb909e2bffbdffea89e4c58",
+      "note": "#2 L4 xp 27"
+    },
+    {
+      "kind": "challenge",
+      "txid": "493a8b7fda89a963edfe7a629b43395e21a03577622b10fb0189d83a3dfc6461",
+      "note": "#4 vs #30"
+    },
+    {
+      "kind": "forge",
+      "txid": "3ef49a67653b33fb023852e42b05f524b875ad1885aec892c8ed51e31f11b99c",
+      "note": "#4 L2 xp 3"
+    },
+    {
+      "kind": "challenge",
+      "txid": "e8bd21202cbc998c069b8901191d87c7673c33acefb40d428b5abeb45ac59429",
+      "note": "#2 vs #4"
+    },
+    {
+      "kind": "forge",
+      "txid": "5c2e9dd2a2522f3407037dfb2f49705f084eb81792d2384bdaa69da5e0b2e2b0",
+      "note": "#2 L4 xp 39"
+    },
+    {
+      "kind": "challenge",
+      "txid": "1e1919790b16a4d328111c7444a674a85dcef6fed1de548182c7b8d2279a6e64",
+      "note": "#2 vs #23"
+    },
+    {
+      "kind": "forge",
+      "txid": "86c663cd3ade78993e065d8c5da78d05d4d003f849d27b1649c5bc1bdaa9cff9",
+      "note": "#2 L4 xp 50"
+    },
+    {
+      "kind": "challenge",
+      "txid": "80153b4abf6180f31a1cf412dd6c060e169976f509f98cda8ae585658622b229",
+      "note": "#2 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "ba401e6815a239883d01c8865a4e3a7d0b412ceaf06b13963720d5d01a1c3155",
+      "note": "#2 L4 xp 61"
+    },
+    {
+      "kind": "challenge",
+      "txid": "19c1bf49fc1031bc32bae42d03ec795bc8391785ba11366782e84a91148956c4",
+      "note": "#2 vs #6"
+    },
+    {
+      "kind": "forge",
+      "txid": "64cf6cbc35bae7604fe6388ffc13176cf4bda288b541b3729a24e3b4bdc29315",
+      "note": "#2 L4 xp 72"
+    },
+    {
+      "kind": "challenge",
+      "txid": "faa23bc4b31e98cc84fc940f922a5cf90aa20f1e465bef05985cfae5cc9edb85",
+      "note": "#2 vs #31"
+    },
+    {
+      "kind": "forge",
+      "txid": "975c1765991a989dc792ca52b4d0f03fd302fb1bc5e6896356fb99e3a95f8016",
+      "note": "#2 L5 xp 3"
+    },
+    {
+      "kind": "challenge",
+      "txid": "1ac7e73536bd97be0550014e77d425b292a2abfe2a7a396a3782f2de006b7d88",
+      "note": "#31 vs #15"
+    },
+    {
+      "kind": "forge",
+      "txid": "4009f6f9bce1e188c36fce6f66810b3c9d1e8293d39b1bc1c5199e107fdcfce6",
+      "note": "#31 L2 xp 12"
+    },
+    {
+      "kind": "challenge",
+      "txid": "a8e883246adae7fbb6e6f88f98b19e0f3b69efce548ef3ade019f7f419859c0d",
+      "note": "#12 vs #18"
+    },
+    {
+      "kind": "forge",
+      "txid": "95166d0448286ab240bab5181345071849ddc2f8fed39a06b1b8c091b06ee021",
+      "note": "#12 L2 xp 26"
+    },
+    {
+      "kind": "challenge",
+      "txid": "8e37e922a0409a1cd11453b354a7f8dda5b98b48afd155741cb6bbf09db3a672",
+      "note": "#12 vs #4"
+    },
+    {
+      "kind": "forge",
+      "txid": "eb5d254cdbec2c4eda0fb5fce3e3d60d04cfb42ce7f4cac06faa9df1a52135dd",
+      "note": "#12 L2 xp 36"
+    },
+    {
+      "kind": "challenge",
+      "txid": "471351d5d169997cb9d8a4ae11130d66d2f6d30e6e4ee50b7febe28488210603",
+      "note": "#12 vs #31"
+    },
+    {
+      "kind": "forge",
+      "txid": "86b17e58b565924e979fa6895870ddb01f750f021acf6e83fd1c63ac2cfd3a5a",
+      "note": "#12 L3 xp 6"
+    },
+    {
+      "kind": "challenge",
+      "txid": "f60fd981f773789c2b4f0d2960c150a62017890ee0af7185def894a2c3ea9f87",
+      "note": "#30 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "cdaef0232fa87612cf8689b8abce547f313fc52f699c9481a0dacceeab753961",
+      "note": "#30 L1 xp 11"
+    },
+    {
+      "kind": "challenge",
+      "txid": "cb0f8980d692fa393e9e54e31f6afb81e2ac79ea86b35caef66f0127fbf53e15",
+      "note": "#31 vs #30"
+    },
+    {
+      "kind": "forge",
+      "txid": "b4e7c20b8b800df82db130b8599b3fa77c0e5aaa1fbd6853a99183a19cabd7c6",
+      "note": "#31 L2 xp 21"
+    },
+    {
+      "kind": "challenge",
+      "txid": "8853033d4beafef9f5acb791adf6474c5a46bbe083963c75ec7abf35fc9eb905",
+      "note": "#31 vs #18"
+    },
+    {
+      "kind": "forge",
+      "txid": "224fed366c2ca79046567aa354b720fe3d54b57569c816f051db05b6876e0002",
+      "note": "#31 L2 xp 30"
+    },
+    {
+      "kind": "challenge",
+      "txid": "f2135b15595e3870368a16fa86d0799ef535e130384ca7962db2483ab8fc2f69",
+      "note": "#31 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "751378147d0252d902cfc7fec9a1261043d71c213d9eb227bcf44b83d73824a2",
+      "note": "#31 L2 xp 39"
+    },
+    {
+      "kind": "challenge",
+      "txid": "823cec2af647bf6e343ffba33e61c1c30475d003749b0044ef237db0f909b4ed",
+      "note": "#31 vs #12"
+    },
+    {
+      "kind": "forge",
+      "txid": "e45547ed412cfb7ac7c52c62fca96ad40cc6f0f17828bc86ed53891f261757b6",
+      "note": "#31 L3 xp 7"
+    },
+    {
+      "kind": "challenge",
+      "txid": "82fda72540ace4b8274677bbcdc878afe4295fc1e2cbe907b1df507b9649fb3e",
+      "note": "#30 vs #23"
+    },
+    {
+      "kind": "forge",
+      "txid": "48a231cfce044733d4bbb6a00f5460aa7f2135115c9ce6d9364760bed0e886dc",
+      "note": "#30 L1 xp 19"
+    },
+    {
+      "kind": "challenge",
+      "txid": "7698421c952a13964ffff5a2399034ad332c7ae5fab85be41ca9ce643c861a2c",
+      "note": "#30 vs #4"
+    },
+    {
+      "kind": "forge",
+      "txid": "aab4a3e32d5e748ec8d04e44ef60f0320fed10971b4711bb976c01a0b7545de9",
+      "note": "#30 L2 xp 7"
+    }
+  ]
+}
