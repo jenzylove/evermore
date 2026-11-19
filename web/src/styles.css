@@ -1,9 +1,9 @@
-@font-face { font-family: Cinzel; src: url(/fonts/cinzel-latin-600-normal.woff2) format('woff2'); font-weight: 600; font-display: block; }
-@font-face { font-family: Cinzel; src: url(/fonts/cinzel-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: block; }
-@font-face { font-family: Cinzel; src: url(/fonts/cinzel-latin-900-normal.woff2) format('woff2'); font-weight: 900; font-display: block; }
-@font-face { font-family: 'Barlow Condensed'; src: url(/fonts/barlow-condensed-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-display: block; }
-@font-face { font-family: 'Barlow Condensed'; src: url(/fonts/barlow-condensed-latin-600-normal.woff2) format('woff2'); font-weight: 600; font-display: block; }
-@font-face { font-family: 'Barlow Condensed'; src: url(/fonts/barlow-condensed-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: block; }
+@font-face { font-family: Cinzel; src: url(/fonts/cinzel-latin-600-normal.woff2) format('woff2'); font-weight: 600; font-display: fallback; }
+@font-face { font-family: Cinzel; src: url(/fonts/cinzel-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: fallback; }
+@font-face { font-family: Cinzel; src: url(/fonts/cinzel-latin-900-normal.woff2) format('woff2'); font-weight: 900; font-display: fallback; }
+@font-face { font-family: 'Barlow Condensed'; src: url(/fonts/barlow-condensed-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Barlow Condensed'; src: url(/fonts/barlow-condensed-latin-600-normal.woff2) format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Barlow Condensed'; src: url(/fonts/barlow-condensed-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: swap; }
 
 :root {
   --ink: #050c22;
