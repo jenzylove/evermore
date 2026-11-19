@@ -166,10 +166,11 @@ export function fundSatchelRequest(walletCoins: Input[], satchel: Satchel, amoun
 }
 
 /** Satchel pays BCH back to the wallet (no wallet prompt). Sends everything when amount is omitted. */
-export function satchelWithdraw(satchel: Satchel, coins: Utxo[], toLock: Uint8Array, amount?: bigint, feeRate = 1): Built {
+export function satchelWithdraw(satchel: Satchel, coins: Utxo[], toLock: Uint8Array, amount?: bigint, feeRate = 1, burnTickets: Utxo[] = []): Built {
   if (amount === undefined) {
-    // sweep: one output, fee off the top
-    const inputs = satchel.inputs(coins.filter((c) => !c.token));
+    // sweep: one output, fee off the top; stale tickets (lost or abandoned duels) are burned and their sats reclaimed
+    if (burnTickets.some((t) => t.token?.nft?.commitment[0] !== 0x54)) throw new Error('only tickets can be burned in a sweep');
+    const inputs = [...satchel.inputs(burnTickets), ...satchel.inputs(coins.filter((c) => !c.token))];
     const total = inputs.reduce((a, i) => a + i.utxo.satoshis, 0n);
     const probe = finalize({ kind: 'withdraw', inputs, outputs: [{ lockingBytecode: toLock, valueSatoshis: 0n }] }, { feeRate });
     return finalize({ kind: 'withdraw', inputs, outputs: [{ lockingBytecode: toLock, valueSatoshis: total - BigInt(probe.size * feeRate) - 2n }] }, { feeRate });

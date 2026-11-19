@@ -1,0 +1,116 @@
+{
+  "$schema": "https://cashtokens.org/bcmr-v2.schema.json",
+  "version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "latestRevision": "2026-11-19T16:25:40.561Z",
+  "registryIdentity": {
+    "name": "Evermore",
+    "description": "Evermore game registry",
+    "uris": {
+      "web": "https://evermore-alpha-nine.vercel.app"
+    }
+  },
+  "identities": {
+    "7efdf7b03d20338e9331a76314eb87edf8e2ed022bed899a072dabf9eb0269b6": {
+      "2026-11-19T16:25:40.561Z": {
+        "name": "Evermore",
+        "description": "Heroes that live on Bitcoin Cash. Games die. Heroes do not.",
+        "uris": {
+          "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/icon.png",
+          "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/icon.png",
+          "web": "https://evermore-alpha-nine.vercel.app"
+        },
+        "token": {
+          "category": "7efdf7b03d20338e9331a76314eb87edf8e2ed022bed899a072dabf9eb0269b6",
+          "symbol": "EVR",
+          "nfts": {
+            "description": "Evermore heroes and gear",
+            "fields": {
+              "commitment": {
+                "name": "Save data",
+                "description": "Hero or gear state, written only by the Evermore covenants",
+                "encoding": {
+                  "type": "binary"
+                }
+              }
+            },
+            "parse": {
+              "bytecode": "00cf76517f7578557f77517f757e6b6b",
+              "types": {
+                "4500": {
+                  "name": "Evermore Blade",
+                  "description": "Gear won by beating a ghost at least 3 levels above. Total gear supply is capped by the covenant.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-0.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-0.png"
+                  }
+                },
+                "4501": {
+                  "name": "Evermore Shield",
+                  "description": "Gear won by beating a ghost at least 3 levels above. Total gear supply is capped by the covenant.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-1.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-1.png"
+                  }
+                },
+                "4502": {
+                  "name": "Evermore Charm",
+                  "description": "Gear won by beating a ghost at least 3 levels above. Total gear supply is capped by the covenant.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-2.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-2.png"
+                  }
+                },
+                "4800": {
+                  "name": "Evermore Knight",
+                  "description": "A Knight hero. Every level was earned in a duel the chain replayed; its ghost earns a fee each time someone challenges it.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/knight.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/knight.png"
+                  }
+                },
+                "4801": {
+                  "name": "Evermore Rogue",
+                  "description": "A Rogue hero. Every level was earned in a duel the chain replayed; its ghost earns a fee each time someone challenges it.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/rogue.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/rogue.png"
+                  }
+                },
+                "4802": {
+                  "name": "Evermore Mage",
+                  "description": "A Mage hero. Every level was earned in a duel the chain replayed; its ghost earns a fee each time someone challenges it.",
+                  "fields": [
+                    "commitment"
+                  ],
+                  "uris": {
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/mage.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/mage.png"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

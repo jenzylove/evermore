@@ -160,6 +160,61 @@ contract Lane(
         }
     }
 
+    // =================================================================== SYNC
+    // Fees follow the hero: point its ghost's owner at the P2PKH the hero is moved to, without
+    // waiting for a level up. The hero's own signature is the proof of ownership (it is spent
+    // here from a P2PKH); it may go back to itself or to another P2PKH (Send home in one tx).
+    // In:  0 lane, 1 hero (P2PKH, signed by its holder), 2 the hero's own ghost, 3+ funding.
+    // Out: 0 lane unchanged, 1 hero (same commitment) to a P2PKH, 2 ghost with owner = that
+    //      pkh (everything else kept), 3 optional change.
+    function sync() {
+        require(this.activeInputIndex == 0);
+        bytes laneCat = tx.inputs[0].tokenCategory;
+        bytes cat, bytes cap = laneCat.split(32);
+        require(cap == 0x02);
+        // Stops: a fake hero (other category, mutable, wrong tag or length), or one held by a
+        // covenant (a listed hero at Sale): only a key holder can prove ownership.
+        require(tx.inputs[1].tokenCategory == cat);
+        bytes hero = tx.inputs[1].nftCommitment;
+        require(hero.length == 23);
+        require(hero.split(1)[0] == 0x48);
+        bytes inLock = tx.inputs[1].lockingBytecode;
+        require(inLock.length == 25);
+        require(inLock.split(3)[0] == 0x76a914);
+        require(inLock.split(23)[1] == 0x88ac);
+        // Stops: rewriting someone else's ghost (must be this hero's own ghost, at the Arena).
+        require(tx.inputs[2].tokenCategory == cat);
+        require(tx.inputs[2].lockingBytecode == arenaLock);
+        bytes own = tx.inputs[2].nftCommitment;
+        require(own.length == 39);
+        require(own.split(5)[0] == 0x47 + hero.slice(1, 5));
+
+        require(tx.outputs.length <= 4);
+        // 0 lane back unchanged.
+        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == laneCat);
+        require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment);
+        require(tx.outputs[0].value >= tx.inputs[0].value);
+        // 1 the same hero, unchanged, to a P2PKH (its new owner).
+        // Stops: editing the hero, sending it to a covenant (the ghost needs an owner pkh).
+        bytes heroLock = tx.outputs[1].lockingBytecode;
+        require(heroLock.length == 25);
+        require(heroLock.split(3)[0] == 0x76a914);
+        require(heroLock.split(23)[1] == 0x88ac);
+        require(tx.outputs[1].tokenCategory == cat);
+        require(tx.outputs[1].nftCommitment == hero);
+        // 2 the ghost back at the Arena, owner = the hero's new pkh, stats and counters kept.
+        // Stops: paying fees to a third party, editing the ghost's stats or counters.
+        require(tx.outputs[2].lockingBytecode == arenaLock);
+        require(tx.outputs[2].tokenCategory == cat);
+        require(tx.outputs[2].nftCommitment == own.split(15)[0] + heroLock.slice(3, 23) + own.split(35)[1]);
+        require(tx.outputs[2].value >= tx.inputs[2].value);
+        // 3 optional change. Stops: minting extra NFTs.
+        if (tx.outputs.length == 4) {
+            require(tx.outputs[3].tokenCategory == 0x);
+        }
+    }
+
     // ================================================================== FORGE
     // Replay the duel from the move list; if the hero really won, write its new XP,
     // level and stats.

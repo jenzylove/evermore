@@ -255,6 +255,60 @@ export function forgeDraft(game: Game, a: ForgeArgs) {
   return { draft: { kind: 'forge', inputs, outputs } as Draft, result: r, drop };
 }
 
+// ------------------------------------------------------------------ SYNC
+export type SyncArgs = {
+  lane: Utxo;
+  hero: Input;          // the hero in a P2PKH + its holder's unlock (the signature is the proof)
+  ownGhost: Utxo;       // the hero's own ghost at the Arena
+  toLock?: Uint8Array;  // P2PKH the hero goes to (default: back to itself); the ghost owner becomes its pkh
+};
+/**
+ * Fees follow the owner: rewrite the hero's ghost owner to the pkh holding the hero. With
+ * `toLock` this is also Send home (or any move) in the same transaction.
+ */
+export function syncDraft(game: Game, a: SyncArgs) {
+  if (!isGame(game, a.lane) || a.lane.token!.nft?.capability !== 'minting') throw new Error('not a lane UTXO');
+  if (!isGame(game, a.hero.utxo) || commitmentOf(a.hero.utxo)[0] !== 0x48) throw new Error('not a hero');
+  if (!isP2pkh(a.hero.utxo.lockingBytecode)) throw new Error('only a hero held in a P2PKH can sync its ghost');
+  if (!isGame(game, a.ownGhost) || !eq(a.ownGhost.lockingBytecode, game.arenaLock)) throw new Error('not a ghost at the Arena');
+  const hero = decodeHero(commitmentOf(a.hero.utxo));
+  const ghost = decodeGhost(commitmentOf(a.ownGhost));
+  if (ghost.id !== hero.id) throw new Error('ownGhost is not this hero\'s ghost');
+  const toLock = a.toLock ?? a.hero.utxo.lockingBytecode;
+  if (!isP2pkh(toLock)) throw new Error('the hero must go to a P2PKH address');
+  const cat = game.categoryBin;
+  const draft: Draft = {
+    kind: 'sync',
+    inputs: [
+      { utxo: a.lane, unlock: { type: 'contract', contract: game.lane, fn: 'sync', args: [] } },
+      a.hero,
+      { utxo: a.ownGhost, unlock: { type: 'contract', contract: game.arena, fn: 'fight', args: [] } },
+    ],
+    outputs: [
+      { lockingBytecode: a.lane.lockingBytecode, valueSatoshis: a.lane.satoshis, token: a.lane.token },
+      { lockingBytecode: toLock, valueSatoshis: a.hero.utxo.satoshis, token: a.hero.utxo.token },
+      { lockingBytecode: game.arenaLock, valueSatoshis: a.ownGhost.satoshis, token: nft(cat, 'none', encodeGhost({ ...ghost, ownerPkh: pkhOfLock(toLock) })) },
+    ],
+  };
+  return { draft, ghost };
+}
+/** True when the ghost already pays the pkh of `lock` (no sync needed). */
+export const ghostPays = (ghostUtxo: Utxo, lock: Uint8Array) => isP2pkh(lock) && eq(decodeGhost(commitmentOf(ghostUtxo)).ownerPkh, pkhOfLock(lock));
+
+// ------------------------------------------------------------------ RECLAIM
+/** True for a game ticket UTXO. */
+export const isTicket = (game: Game, u: Utxo) => isGame(game, u) && u.token!.nft?.commitment[0] === 0x54;
+/**
+ * Reclaim tickets of lost or abandoned duels: the holder spends them from its own P2PKH and
+ * the NFTs are burned (no output carries them); their sats go to `toLock` (via finalize's
+ * change). No covenant is involved: a ticket only matters to a forge, which needs a win.
+ */
+export function reclaimDraft(game: Game, tickets: Input[]): Draft {
+  if (!tickets.length) throw new Error('no tickets to reclaim');
+  for (const t of tickets) if (!isTicket(game, t.utxo)) throw new Error(`${t.utxo.txid}:${t.utxo.vout} is not a ticket; only tickets are reclaimed`);
+  return { kind: 'reclaim', inputs: tickets, outputs: [] };
+}
+
 // ------------------------------------------------------------------ SALE
 /** OP_RETURN 'EVR1' sellerPkh20 price8 that lets clients find a listing and rebuild its address. */
 export const encodeListingTag = (sellerPkh: Uint8Array, price: bigint) => {

@@ -1,111 +1,115 @@
 {
   "network": "chipnet",
-  "category": "39f93c4462d990e5c2cee900c11aba6b7e74439d81301f26515cb2a856766c0c",
+  "category": "7efdf7b03d20338e9331a76314eb87edf8e2ed022bed899a072dabf9eb0269b6",
   "treasuryPkh": "8ca9bee22639c8ef2c9fc847ec8c19a03a92541c",
-  "raisePrice": "50000",
-  "challengeFee": "4000",
-  "forgeFee": "2000",
+  "raisePrice": "119000",
+  "challengeFee": "9500",
+  "forgeFee": "4800",
   "gearCap": "5000",
-  "authbaseTxid": "39f93c4462d990e5c2cee900c11aba6b7e74439d81301f26515cb2a856766c0c",
-  "genesisTxid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+  "authbaseTxid": "7efdf7b03d20338e9331a76314eb87edf8e2ed022bed899a072dabf9eb0269b6",
+  "genesisTxid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
   "authhead": {
-    "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+    "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
     "vout": 0
   },
   "deployer": "bchtest:qzx2n0hzycuu3mevnlyy0myvrxsr4yj5rsrp65x2mg",
   "addresses": {
-    "lane": "bchtest:pwxqps92grqdv2570vwk76vr3hmeh64j6yv2es2d3lw8quzjnmwgulf96x57e",
-    "arena": "bchtest:pws5p77kresc9ncfx7fu8d427hjdfgn4n00v74lzj7e8xk4wcvgdjjq8nheq8",
-    "counter": "bchtest:pv2xddqu4l9cr07n2a3gkwsqagduujscjunrh0h0ed9grnl34ndy27twdv9gf",
+    "lane": "bchtest:pvn2c9dcu7s0w53dvmh6vtredyj9dxfedc82ht6ztyta2vk5aye2c88dt9ekf",
+    "arena": "bchtest:pvqvfpmx0l6evf8wfmaqw4zslf3tulx79wa5daed0gwv9yysyx9h2stcvk7jd",
+    "counter": "bchtest:pdag8tmf4q4qsx6gffv0t6wc29j785e49zpya7vs4cwl4l9vzhwks60lzzk7z",
     "bazaar": "bchtest:qqwp6qu3xumk9q2nz4kps4racz7utqktnq3e4wc2ep",
     "treasury": "bchtest:qzx2n0hzycuu3mevnlyy0myvrxsr4yj5rsrp65x2mg"
   },
   "lanes": [
     {
       "lane": 0,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 1
     },
     {
       "lane": 1,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 2
     },
     {
       "lane": 2,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 3
     },
     {
       "lane": 3,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 4
     },
     {
       "lane": 4,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 5
     },
     {
       "lane": 5,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 6
     },
     {
       "lane": 6,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 7
     },
     {
       "lane": 7,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 8
     },
     {
       "lane": 8,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 9
     },
     {
       "lane": 9,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 10
     },
     {
       "lane": 10,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 11
     },
     {
       "lane": 11,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 12
     },
     {
       "lane": 12,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 13
     },
     {
       "lane": 13,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 14
     },
     {
       "lane": 14,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 15
     },
     {
       "lane": 15,
-      "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+      "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
       "vout": 16
     }
   ],
   "counter": {
-    "txid": "3358ac2ba5e6c27ace9fbdbd8d560de38befabe0f67de6d2ce003dfa05b7c74b",
+    "txid": "fb579ab0905c40e438529c8345330bcc652d9abdc922ffc8eba743190b11a2e3",
     "vout": 17
   },
-  "bcmr": null,
-  "createdAt": "2026-11-17T13:10:35.210Z"
+  "bcmr": {
+    "url": "https://evermore-alpha-nine.vercel.app/bcmr/evermore.json",
+    "sha256": "ed097768e9a1754917ce8b6d3aa28e7d76264bb575f5bc9267321e8ab184a466",
+    "file": "web/public/bcmr/evermore.json"
+  },
+  "createdAt": "2026-11-19T16:25:41.793Z"
 }

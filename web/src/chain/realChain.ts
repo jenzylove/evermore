@@ -38,6 +38,8 @@ export type RealChainOptions = {
   satchel: E.Satchel;
   storage: KV;
   wallet?: HomeWallet | null;
+  /** public labels for house heroes (wardens), id -> name; the player's own names win */
+  labels?: Record<string, string>;
   /** USD per BCH for showing amounts; null keeps the last known value */
   price?: () => Promise<number | null>;
   /** test hook: log every broadcast */
@@ -57,6 +59,7 @@ export class RealChain implements GameChain {
   readonly satchelKey: E.Satchel;
   wallet: HomeWallet | null;
   private kv: KV;
+  private labels: Record<string, string>;
   private authhead: { txid: string; vout: number } | null;
   private usd = 0;
   private price?: RealChainOptions['price'];
@@ -74,6 +77,7 @@ export class RealChain implements GameChain {
     this.chain = new E.Chain(o.net);
     this.satchelKey = o.satchel;
     this.kv = o.storage;
+    this.labels = o.labels ?? {};
     this.authhead = o.deployment.authhead ?? null;
     this.wallet = o.wallet ?? null;
     this.price = o.price;
@@ -92,10 +96,12 @@ export class RealChain implements GameChain {
 
   // ------------------------------------------------------------------ names (kept in this browser)
   private names(): Record<string, string> {
-    try { return JSON.parse(this.kv.getItem(`evermore.names.${this.net}`) ?? '{}'); } catch { return {}; }
+    try { return { ...this.labels, ...JSON.parse(this.kv.getItem(`evermore.names.${this.net}`) ?? '{}') }; } catch { return { ...this.labels }; }
   }
   private setName(id: number, name: string) {
-    const n = this.names(); n[id] = name; this.kv.setItem(`evermore.names.${this.net}`, JSON.stringify(n));
+    let n: Record<string, string> = {};
+    try { n = JSON.parse(this.kv.getItem(`evermore.names.${this.net}`) ?? '{}'); } catch { /* start fresh */ }
+    n[id] = name; this.kv.setItem(`evermore.names.${this.net}`, JSON.stringify(n));
   }
   /** Names are a local label only (the commitment has no room for one); others see the class and id. */
   nameOf(id: number, cls: number) { return this.names()[id] ?? `${CLASS[cls] ?? 'Hero'} #${id}`; }
@@ -252,14 +258,57 @@ export class RealChain implements GameChain {
       const r = await this.laneTx('challenge', async (lane) => {
         const g = await this.chain.ghost(this.game, ghostId);
         if (!g) throw new Error('That ghost has left the Arena.');
-        return E.challengeDraft(this.game, lane, g.utxo, heroId, this.satchelKey.lock).draft;
+        const d = E.challengeDraft(this.game, lane, g.utxo, heroId, this.satchelKey.lock).draft;
+        // auto sweep: a new challenge means every older ticket is from a lost or abandoned duel
+        // (the client plays one duel at a time); burn them here and get their sats back
+        d.inputs.push(...this.satchelKey.inputs(await this.staleTickets()));
+        return d;
       });
       const t = E.decodeTicket(r.built.outputs[3].token!.nft!.commitment);
       const seed = E.seedOf(E.ticketSeedHash(t));
+      this.tickets.clear(); // older tickets were burned in this challenge
       this.tickets.set(`${heroId}:${ghostId}:${seed}`, E.utxoOf({ txid: r.txid, outputs: r.built.outputs }, 3));
       const snap = E.decodeGhost(r.built.inputs[1].utxo.token!.nft!.commitment); // the ghost as read before the challenge
       return { heroId, ghost: this.ghostView(snap, new Set()), seed, receipt: this.receipt(r.txid) };
     });
+  }
+
+  /** Tickets in the Satchel (all of them are stale once a new challenge starts). */
+  private async staleTickets(): Promise<Utxo[]> {
+    return (await this.chain.holdings(this.game, this.satchelKey.lock)).tickets.map((x) => x.utxo);
+  }
+  /** Burn every ticket in the Satchel (lost or abandoned duels) and keep their sats. Null when there are none. */
+  reclaimTickets(): Promise<Receipt | null> {
+    return this.serial(async () => {
+      const ts = await this.staleTickets();
+      if (!ts.length) return null;
+      const built = await this.fundAndFinalize(E.reclaimDraft(this.game, this.satchelKey.inputs(ts)));
+      const txid = await this.chain.broadcast(built.hex);
+      this.tickets.clear();
+      this.done('reclaim', txid);
+      return this.receipt(txid);
+    });
+  }
+  /**
+   * Fees follow the owner: point hero `heroId`'s ghost at the P2PKH now holding it (Satchel
+   * signed). Skipped when the ghost already pays there. Best effort after a buy or bring back:
+   * the move itself already succeeded, so a failure here is logged, not thrown.
+   */
+  private async syncNow(heroId: number, heroUtxo?: Utxo): Promise<string | null> {
+    try {
+      const h = heroUtxo ?? (await this.satchelHero(heroId)).utxo;
+      const first = await this.chain.ghost(this.game, heroId);
+      if (!first || E.ghostPays(first.utxo, h.lockingBytecode)) return null;
+      const r = await this.laneTx('sync', async (lane) => {
+        const g = await this.chain.ghost(this.game, heroId);
+        if (!g) throw new Error('ghost not found');
+        return E.syncDraft(this.game, { lane, hero: this.satchelKey.inputs([h])[0], ownGhost: g.utxo }).draft;
+      });
+      return r.txid;
+    } catch (e) {
+      console.warn(`sync of hero ${heroId} failed (fees still go to the previous owner until the next level up): ${String((e as Error)?.message ?? e)}`);
+      return null;
+    }
   }
 
   private async findTicket(t: Ticket): Promise<Utxo> {
@@ -345,6 +394,7 @@ export class RealChain implements GameChain {
       const built = await this.fundAndFinalize(E.buyDraft(this.game, [l], this.satchelKey.lock));
       const txid = await this.chain.broadcast(built.hex);
       this.done('buy', txid);
+      if (l.hero) await this.syncNow(l.hero.id, E.utxoOf({ txid, outputs: built.outputs }, 1));
       return this.receipt(txid);
     });
   }
@@ -368,7 +418,20 @@ export class RealChain implements GameChain {
       const inSatchel = s.heroes.find((x) => x.hero.id === heroId);
       if (inSatchel) {
         if (!this.wallet) throw new Error('Connect your wallet first so your hero has a home to go to.');
-        const built = E.sendHome(this.satchelKey, [inSatchel.utxo], await this.satchelCoins(), this.wallet.receiveLock(), this.game.cfg.feeRate);
+        const home = this.wallet.receiveLock();
+        const own = await this.chain.ghost(this.game, heroId);
+        if (own && !E.ghostPays(own.utxo, home)) {
+          // Send home and sync in one Satchel signed tx: the ghost's fees follow the hero home
+          const r = await this.laneTx('send-home', async (lane) => {
+            const g = await this.chain.ghost(this.game, heroId);
+            const h = await this.satchelHero(heroId);
+            if (!g) throw new Error("That hero's ghost has left the Arena.");
+            const d = E.syncDraft(this.game, { lane, hero: this.satchelKey.inputs([h.utxo])[0], ownGhost: g.utxo, toLock: home }).draft;
+            return d;
+          });
+          return this.receipt(r.txid);
+        }
+        const built = E.sendHome(this.satchelKey, [inSatchel.utxo], await this.satchelCoins(), home, this.game.cfg.feeRate);
         const txid = await this.chain.broadcast(built.hex);
         this.done('send-home', txid);
         return this.receipt(txid);
@@ -396,6 +459,8 @@ export class RealChain implements GameChain {
     const { hex: h } = E.acceptWalletSignature(built, signed);
     const txid = await this.chain.broadcast(h);
     this.done('bring-back', txid);
+    // the hero is back in the Satchel: its ghost's fees follow it here (Satchel signed, no popup)
+    await this.syncNow(heroId, E.utxoOf({ txid, outputs: built.outputs }, 0));
     return this.receipt(txid);
   }
   private isHero(u: Utxo, id: number) {
@@ -431,7 +496,9 @@ export class RealChain implements GameChain {
   withdrawAll(): Promise<Receipt> {
     return this.serial(async () => {
       if (!this.wallet) throw new Error('Connect your wallet first.');
-      const built = E.satchelWithdraw(this.satchelKey, await this.satchelCoins(), this.wallet.receiveLock(), undefined, this.game.cfg.feeRate);
+      // auto sweep: coins plus every stale ticket (burned, sats reclaimed)
+      const built = E.satchelWithdraw(this.satchelKey, await this.satchelCoins(), this.wallet.receiveLock(), undefined, this.game.cfg.feeRate, await this.staleTickets());
+      this.tickets.clear();
       const txid = await this.chain.broadcast(built.hex);
       this.done('withdraw', txid);
       return this.receipt(txid);

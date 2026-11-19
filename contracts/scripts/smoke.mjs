@@ -1,41 +1,21 @@
-// Chipnet smoke run against the deployed game: raise two heroes, challenge one hero's ghost
-// with the other (paying again until the style is winnable), forge the win. Every step reads
-// the chain through the sdk (Fulcrum), builds with the sdk, and broadcasts with conflict retry.
+// Smoke run against the deployed game: raise two heroes, challenge one hero's ghost with the
+// other (each re-challenge burns the previous, lost ticket in the same tx), forge the win,
+// reclaim a stale ticket on its own, and sync: move a hero to another key with its ghost's
+// fees following it in the same tx. Every step reads the chain through the sdk, builds with
+// the sdk, and broadcasts with conflict retry.
 //
-//   node scripts/smoke.mjs        (after genesis.mjs run; uses the deployer key as the Satchel)
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import * as E from '@evermore/sdk';
+//   node scripts/smoke.mjs [--net chipnet|mainnet] [--dry]
+//   (--dry: in memory chain, every tx VM verified, nothing broadcast; mainnet requires --dry
+//    or --broadcast-mainnet)
+import { E, NET, DRY, link, loadKey, setup } from './lib.mjs';
 
-const NET = 'chipnet';
-const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const dep = JSON.parse(fs.readFileSync(path.join(root, 'deployments', `${NET}.json`), 'utf8'));
-const KEY_FILE = process.env.EVERMORE_KEY_FILE ?? 'C:\\Users\\LENOVO\\relic-launch\\keys\\evermore-chipnet-deployer.wif';
-const me = process.env.EVERMORE_DEPLOYER_WIF ? E.Satchel.fromWif(process.env.EVERMORE_DEPLOYER_WIF) : E.Satchel.fromWif(fs.readFileSync(KEY_FILE, 'utf8').trim());
-const game = E.gameFromDeployment(dep);
-const chain = new E.Chain(NET);
-const link = (t) => E.network(NET).explorerTx(t);
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const isAuthhead = (c) => c.txid === dep.authhead?.txid && c.vout === dep.authhead?.vout;
-const coins = async () => (await chain.coins(me.lock)).filter((c) => !isAuthhead(c));
-
-async function laneTx(label, make) {
-  const avoid = [];
-  const r = await chain.submit(async () => {
-    const lanes = await chain.lanes(game);
-    const l = E.pickLane(lanes, avoid);
-    avoid.push(l.lane.lane);
-    const draft = await make(l.utxo);
-    return E.finalize(draft, { funding: me.inputs(await coins()), changeLock: me.lock });
-  });
-  console.log(`${label.padEnd(10)} ${link(r.txid)}${r.attempts > 1 ? ` (${r.attempts} attempts)` : ''}`);
-  await sleep(1500);
-  return r;
-}
+const me = loadKey('deployer');
+const { game, chain, coins, send, laneTx, fabricated } = setup(me);
+const other = DRY ? E.Satchel.generate() : loadKey('test-buyer');
 
 async function main() {
-  console.log(`connected ${await chain.connect()}; player ${me.address(NET)}`);
+  console.log(`connected ${await chain.connect()}; ${NET}${fabricated ? ' (fabricated deployment)' : ''}; player ${me.address(NET)}`);
+  console.log(`fees      raise ${game.params.raisePrice}, challenge ${game.params.challengeFee}, forge ${game.params.forgeFee}`);
   const r1 = await laneTx('raise', (lane) => E.raiseDraft(game, lane, 0, me.lock).draft);
   const r2 = await laneTx('raise', (lane) => E.raiseDraft(game, lane, 2, me.lock).draft);
   const hero = E.decodeHero(r1.built.outputs[1].token.nft.commitment);
@@ -44,11 +24,16 @@ async function main() {
 
   let ticketUtxo = null, moves = null;
   for (let t = 0; t < 12 && !moves; t++) {
-    const c = await laneTx('challenge', async (lane) => E.challengeDraft(game, lane, (await chain.ghost(game, foe.id)).utxo, hero.id, me.lock).draft);
+    const c = await laneTx('challenge', async (lane) => {
+      const d = E.challengeDraft(game, lane, (await chain.ghost(game, foe.id)).utxo, hero.id, me.lock).draft;
+      // auto sweep: the previous (lost) ticket rides along and is burned, its sats reclaimed
+      d.inputs.push(...me.inputs((await chain.holdings(game, me.lock)).tickets.map((x) => x.utxo)));
+      return d;
+    });
     const ticket = E.decodeTicket(c.built.outputs[3].token.nft.commitment);
     moves = E.solve(hero, ticket, E.seedOf(E.ticketSeedHash(ticket)));
     ticketUtxo = E.utxoOf({ txid: c.txid, outputs: c.built.outputs }, 3);
-    if (!moves) console.log('           style not winnable; challenging again (every reroll is a paid challenge)');
+    if (!moves) console.log('           style not winnable; challenging again (the lost ticket is burned in the next challenge)');
   }
   if (!moves) throw new Error('no winnable style after 12 challenges');
   const f = await laneTx('forge', async (lane) => {
@@ -60,6 +45,20 @@ async function main() {
   });
   const after = E.decodeHero(f.built.outputs[1].token.nft.commitment);
   console.log(`hero #${hero.id}: L${hero.level} -> L${after.level}, xp ${after.xp}, wins ${after.wins}`);
+
+  // reclaim on its own: Mage challenges the Knight, walks away, burns the ticket
+  await laneTx('challenge', async (lane) => E.challengeDraft(game, lane, (await chain.ghost(game, hero.id)).utxo, foe.id, me.lock).draft);
+  const stale = (await chain.holdings(game, me.lock)).tickets.map((x) => x.utxo);
+  const rc = E.finalize(E.reclaimDraft(game, me.inputs(stale)), { funding: me.inputs(await coins()), changeLock: me.lock });
+  console.log(`reclaim    ${link(await send(rc))} (${stale.length} ticket(s) burned, sats back)`);
+
+  // sync: the Mage moves to another key and its ghost's fees follow it in the same tx
+  const s = await laneTx('sync', async (lane) => {
+    const h = (await chain.holdings(game, me.lock)).heroes.find((x) => x.hero.id === foe.id);
+    return E.syncDraft(game, { lane, hero: me.inputs([h.utxo])[0], ownGhost: (await chain.ghost(game, foe.id)).utxo, toLock: other.lock }).draft;
+  });
+  const g = E.decodeGhost(s.built.outputs[2].token.nft.commitment);
+  console.log(`ghost #${foe.id} now pays ${E.lockToAddress(E.p2pkhLock(g.ownerPkh), game.cfg.prefix)} (the hero's new holder)`);
   await chain.disconnect();
 }
 main().catch(async (e) => { console.error(e.message ?? e); await chain.disconnect().catch(() => {}); process.exit(1); });

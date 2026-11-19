@@ -1,18 +1,26 @@
-// Evermore genesis (chipnet only).
+// Evermore genesis (chipnet, or mainnet when explicitly asked).
 //
-//   node scripts/genesis.mjs            status: deployer address, balance, deployment
-//   node scripts/genesis.mjs run        prep tx + genesis tx (16 lanes, 1 counter, BCMR hook)
-//   node scripts/genesis.mjs run --dry  build + VM verify only (fabricated coin if unfunded)
-//   node scripts/genesis.mjs bcmr       publish a new BCMR OP_RETURN from the authhead
+//   node scripts/genesis.mjs [--net chipnet|mainnet]            status: deployer address, balance, deployment
+//   node scripts/genesis.mjs run [--net ...]                    prep tx + genesis tx (16 lanes, 1 counter, BCMR)
+//   node scripts/genesis.mjs run --dry [--net ...]              build + VM verify only (fabricated coin if unfunded)
+//   node scripts/genesis.mjs run --net mainnet --broadcast-mainnet   the real mainnet deploy (owner approved step)
+//   node scripts/genesis.mjs bcmr [--net ...]                   republish the BCMR OP_RETURN from the authhead
 //
-// Deployer key: env EVERMORE_DEPLOYER_WIF, else the file at EVERMORE_KEY_FILE (default
-// C:\Users\LENOVO\relic-launch\keys\evermore-chipnet-deployer.wif, outside git). Generated if
-// missing. The WIF is never printed.
+// Deployer key: env EVERMORE_DEPLOYER_WIF, else EVERMORE_KEY_FILE, else
+// C:\Users\LENOVO\relic-launch\keys\evermore-<net>-deployer.wif (outside git). A chipnet key is
+// generated if missing; a mainnet key never is. The WIF is never printed.
 //
-// Env (all optional): TREASURY_PKH (hex, default deployer), RAISE_PRICE (50000),
-// CHALLENGE_FEE (4000), FORGE_FEE (2000), GEAR_CAP (5000), BCMR_URL (where the registry
-// will be hosted byte exact, e.g. https://evermore.example/bcmr.json), BCMR_ART_BASE,
-// BCMR_WEB, FEE_RATE (1).
+// Fees (sats, tuned to USD at BCH about $210, same on both nets so chipnet plays like mainnet):
+// RAISE_PRICE 119000 (~$0.25, treasury), CHALLENGE_FEE 9500 (~2 cents, ghost owner),
+// FORGE_FEE 4800 (~1 cent, treasury), GEAR_CAP 5000. Env overrides each; TREASURY_PKH (hex,
+// default deployer), FEE_RATE (1).
+//
+// BCMR: the registry is written to web/public/bcmr/evermore.json (served byte exact at
+// https://evermore-alpha-nine.vercel.app/bcmr/evermore.json once the site deploys) and its
+// sha256 + URL go in the genesis OP_RETURN. The file keeps the other network's live identity,
+// so one URL serves chipnet and mainnet; after a mainnet genesis rewrites it, run
+// `bcmr --net chipnet` so chipnet's authchain commits the new hash too. Then ask Paytaca to
+// reindex (the URL is printed).
 //
 // Authchain (BCMR): category = prep txid = authbase. Genesis spends prep:0 and pays its
 // output 0 (1,000 sats) back to the deployer: that is the authhead. Never spend it except
@@ -23,21 +31,29 @@ import { fileURLToPath } from 'node:url';
 import { binToHex, hexToBin, utf8ToBin } from '@bitauth/libauth';
 import * as E from '@evermore/sdk';
 
-const NET = process.env.EVERMORE_NETWORK ?? 'chipnet';
-if (NET !== 'chipnet') {
-  console.error(`Refusing to run on ${NET}: this script deploys to chipnet only. Mainnet deploy is a separate, owner approved step.`);
-  process.exit(1);
-}
+const argNet = process.argv.indexOf('--net');
+const NET = argNet > 0 ? process.argv[argNet + 1] : (process.env.EVERMORE_NETWORK ?? 'chipnet');
+if (NET !== 'chipnet' && NET !== 'mainnet') { console.error(`unknown network ${NET}`); process.exit(1); }
+const OTHER = NET === 'mainnet' ? 'chipnet' : 'mainnet';
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const depFile = path.join(root, 'deployments', `${NET}.json`);
-const regFile = path.join(root, 'deployments', `bcmr-${NET}.json`);
-const KEY_FILE = process.env.EVERMORE_KEY_FILE ?? 'C:\\Users\\LENOVO\\relic-launch\\keys\\evermore-chipnet-deployer.wif';
+const regFile = path.join(root, '..', 'web', 'public', 'bcmr', 'evermore.json');
+const regCopy = path.join(root, 'deployments', `bcmr-${NET}.json`);
+const KEY_FILE = process.env.EVERMORE_KEY_FILE ?? `C:\\Users\\LENOVO\\relic-launch\\keys\\evermore-${NET}-deployer.wif`;
 const FEE_RATE = Number(process.env.FEE_RATE ?? 1);
-const FAUCETS = ['https://tbch.googol.cash', 'https://chipnet.bch.ninja'];
+const FAUCETS = NET === 'chipnet' ? ['https://tbch.googol.cash', 'https://chipnet.bch.ninja'] : ['a mainnet wallet (real BCH)'];
+const BCMR_URL = process.env.BCMR_URL ?? E.BCMR_URL;
+const FEES = {
+  raisePrice: BigInt(process.env.RAISE_PRICE ?? 119000),
+  challengeFee: BigInt(process.env.CHALLENGE_FEE ?? 9500),
+  forgeFee: BigInt(process.env.FORGE_FEE ?? 4800),
+  gearCap: BigInt(process.env.GEAR_CAP ?? 5000),
+};
 
 function loadKey() {
   if (process.env.EVERMORE_DEPLOYER_WIF) return { satchel: E.Satchel.fromWif(process.env.EVERMORE_DEPLOYER_WIF.trim()), source: 'env EVERMORE_DEPLOYER_WIF' };
   if (fs.existsSync(KEY_FILE)) return { satchel: E.Satchel.fromWif(fs.readFileSync(KEY_FILE, 'utf8').trim()), source: KEY_FILE };
+  if (NET === 'mainnet') throw new Error(`mainnet deployer key not found at ${KEY_FILE} (never generated by this script)`);
   const s = E.Satchel.generate();
   fs.mkdirSync(path.dirname(KEY_FILE), { recursive: true });
   fs.writeFileSync(KEY_FILE, s.toWif(NET) + '\n', { mode: 0o600 });
@@ -72,6 +88,7 @@ async function main() {
     // --dry: build and VM verify both transactions (with a fabricated coin if unfunded), broadcast nothing, write nothing
     const dry = process.argv.includes('--dry');
     if (dry && bal === 0n) { spendable.push({ txid: 'ee'.repeat(32), vout: 3, satoshis: 100000n, lockingBytecode: dk.lock }); bal = 100000n; }
+    if (NET === 'mainnet' && !dry && !process.argv.includes('--broadcast-mainnet')) throw new Error('mainnet: pass --dry to rehearse, or --broadcast-mainnet for the real, owner approved deploy');
     if (dep?.genesisTxid && !dry && !process.argv.includes('--force')) throw new Error(`already deployed (${dep.genesisTxid}); pass --force to make a new game`);
     const need = 16n * 1000n + 1000n + 1000n + 6000n;
     if (bal < need) {
@@ -87,30 +104,35 @@ async function main() {
     const params = {
       category,
       treasuryPkh: process.env.TREASURY_PKH ?? binToHex(dk.pkh),
-      raisePrice: BigInt(process.env.RAISE_PRICE ?? 50000),
-      challengeFee: BigInt(process.env.CHALLENGE_FEE ?? 4000),
-      forgeFee: BigInt(process.env.FORGE_FEE ?? 2000),
-      gearCap: BigInt(process.env.GEAR_CAP ?? 5000),
+      ...FEES,
     };
     const game = E.makeGame(params, NET);
     const cat = hexToBin(category);
     const tok = (capability, commitment) => ({ category: cat, amount: 0n, nft: { capability, commitment } });
 
     // 2. BCMR registry (category now known); hash committed on chain, file hosted later byte exact
+    // keep the other network's live identity in the same file (one URL for both)
+    const keep = {};
+    const otherFile = path.join(root, 'deployments', `${OTHER}.json`);
+    const otherDep = fs.existsSync(otherFile) ? JSON.parse(fs.readFileSync(otherFile, 'utf8')) : null;
+    if (otherDep && fs.existsSync(regFile)) {
+      const old = JSON.parse(fs.readFileSync(regFile, 'utf8'));
+      if (old.identities?.[otherDep.category]) keep[otherDep.category] = old.identities[otherDep.category];
+    }
     const registry = E.buildRegistry({
-      category,
-      artBase: process.env.BCMR_ART_BASE ?? 'https://evermore.example/art',
-      web: process.env.BCMR_WEB ?? 'https://evermore.example',
+      category, keep,
+      artBase: process.env.BCMR_ART_BASE ?? E.BCMR_ART,
+      web: process.env.BCMR_WEB ?? E.BCMR_SITE,
     });
     const regBytes = utf8ToBin(JSON.stringify(registry, null, 2) + '\n');
-    const bcmr = process.env.BCMR_URL ? E.bcmrOpReturn(regBytes, process.env.BCMR_URL) : null;
+    const bcmr = E.bcmrOpReturn(regBytes, BCMR_URL);
 
     // 3. genesis: spends prep:0; out 0 authhead, 1..16 lanes, 17 counter, [18 BCMR], change
     const outputs = [
       { lockingBytecode: dk.lock, valueSatoshis: 1000n },
       ...Array.from({ length: 16 }, (_, n) => ({ lockingBytecode: game.laneLock, valueSatoshis: E.TOKEN_SATS, token: tok('minting', E.encodeLane({ lane: n, ctr: 0 })) })),
       { lockingBytecode: game.counterLock, valueSatoshis: E.TOKEN_SATS, token: tok('none', E.encodeCounter(0)) },
-      ...(bcmr ? [{ lockingBytecode: bcmr.lock, valueSatoshis: 0n }] : []),
+      { lockingBytecode: bcmr.lock, valueSatoshis: 0n },
     ];
     const genesis = E.finalize({ kind: 'genesis', inputs: dk.inputs([E.utxoOf(prep, 0)]), outputs }, { changeLock: dk.lock, feeRate: FEE_RATE });
     const gv = E.verify(genesis); if (gv !== true) throw new Error(`genesis fails the VM: ${gv}`);
@@ -119,10 +141,13 @@ async function main() {
 
     console.log(`\nprep     ${prep.txid} (${prep.size} B), VM ok`);
     console.log(`genesis  ${genesis.txid} (${genesis.size} B, ${genesis.outputs.length} outputs), VM ok`);
+    console.log(`fees     raise ${params.raisePrice}, challenge ${params.challengeFee}, forge ${params.forgeFee} sats; gear cap ${params.gearCap}`);
+    console.log(`bcmr     ${BCMR_URL} sha256 ${bcmr.sha256}${Object.keys(keep).length ? ` (keeps ${OTHER} ${Object.keys(keep)[0]})` : ''}`);
     console.log(`lane     ${game.address(game.laneLock)}\narena    ${game.address(game.arenaLock)}\ncounter  ${game.address(game.counterLock)}`);
     if (dry) { console.log('\n--dry: nothing broadcast, nothing written'); await chain.disconnect(); return; }
     fs.mkdirSync(path.dirname(regFile), { recursive: true });
     fs.writeFileSync(regFile, regBytes);
+    fs.writeFileSync(regCopy, regBytes);
     const p = await chain.broadcast(prep.hex);
     console.log(`         broadcast ${link(p)}`);
     const g = await chain.broadcast(genesis.hex);
@@ -137,19 +162,19 @@ async function main() {
       addresses: { lane: game.address(game.laneLock), arena: game.address(game.arenaLock), counter: game.address(game.counterLock), bazaar: game.address(game.bazaarLock), treasury: game.address(game.treasuryLock) },
       lanes: Array.from({ length: 16 }, (_, n) => ({ lane: n, txid: genesis.txid, vout: n + 1 })),
       counter: { txid: genesis.txid, vout: 17 },
-      bcmr: bcmr ? { url: process.env.BCMR_URL, sha256: bcmr.sha256, file: path.relative(root, regFile) } : null,
+      bcmr: { url: BCMR_URL, sha256: bcmr.sha256, file: 'web/public/bcmr/evermore.json' },
       createdAt: new Date().toISOString(),
     };
     fs.writeFileSync(depFile, JSON.stringify(deployment, null, 2) + '\n');
-    console.log(`\nwrote ${path.relative(root, depFile)}${bcmr ? ` and ${path.relative(root, regFile)} (host it byte exact at ${process.env.BCMR_URL})` : ` and ${path.relative(root, regFile)} (no BCMR_URL: publish later with "bcmr")`}`);
+    console.log(`\nwrote ${path.relative(root, depFile)} and web/public/bcmr/evermore.json: deploy the site so ${BCMR_URL} serves it byte exact,`);
+    console.log(`then ask Paytaca to reindex: curl ${E.paytacaReindexUrl(category, NET)}`);
     await chain.disconnect();
     return;
   }
 
   if (mode === 'bcmr') {
     if (!dep) throw new Error('no deployment yet');
-    const url = process.env.BCMR_URL;
-    if (!url) throw new Error('set BCMR_URL to where the registry is hosted');
+    const url = BCMR_URL;
     const file = process.env.BCMR_FILE ?? regFile;
     const bytes = new Uint8Array(fs.readFileSync(file));
     const op = E.bcmrOpReturn(bytes, url);
@@ -161,9 +186,9 @@ async function main() {
     const v = E.verify(b); if (v !== true) throw new Error(v);
     const id = await chain.broadcast(b.hex);
     dep.authhead = { txid: id, vout: 0 };
-    dep.bcmr = { url, sha256: op.sha256, file: path.relative(root, file) };
+    dep.bcmr = { url, sha256: op.sha256, file: 'web/public/bcmr/evermore.json' };
     fs.writeFileSync(depFile, JSON.stringify(dep, null, 2) + '\n');
-    console.log(`bcmr published ${link(id)} sha256 ${op.sha256}`);
+    console.log(`bcmr published ${link(id)} sha256 ${op.sha256}\nreindex: curl ${E.paytacaReindexUrl(dep.category, NET)}`);
     await chain.disconnect();
     return;
   }

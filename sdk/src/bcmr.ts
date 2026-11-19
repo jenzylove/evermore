@@ -20,7 +20,17 @@ export type RegistryOptions = {
   symbol?: string;
   description?: string;
   timestamp?: string;
+  /** identities already published in this registry file (e.g. chipnet kept beside mainnet) */
+  keep?: Record<string, unknown>;
 };
+
+/** Where the registry is hosted (served by the web app from web/public/bcmr/). */
+export const BCMR_SITE = 'https://evermore-alpha-nine.vercel.app';
+export const BCMR_URL = `${BCMR_SITE}/bcmr/evermore.json`;
+export const BCMR_ART = `${BCMR_SITE}/bcmr/art`;
+/** Paytaca's BCMR indexer: ask it to re-read the authchain after a (re)publish. */
+export const paytacaReindexUrl = (category: string, net: 'mainnet' | 'chipnet') =>
+  `https://${net === 'mainnet' ? 'bcmr' : 'bcmr-chipnet'}.paytaca.com/api/bcmr/${category}/reindex/`;
 
 export function buildRegistry(o: RegistryOptions) {
   const ts = o.timestamp ?? new Date().toISOString();
@@ -28,10 +38,10 @@ export function buildRegistry(o: RegistryOptions) {
 
   const types: Record<string, unknown> = {};
   ['Knight', 'Rogue', 'Mage'].forEach((n, i) => {
-    types[`480${i}`] = { name: `Evermore ${n}`, description: `A ${n} hero. Every level was earned in a duel the chain replayed.`, fields: ['commitment'], uris: art(`${n.toLowerCase()}.png`) };
+    types[`480${i}`] = { name: `Evermore ${n}`, description: `A ${n} hero. Every level was earned in a duel the chain replayed; its ghost earns a fee each time someone challenges it.`, fields: ['commitment'], uris: art(`${n.toLowerCase()}.png`) };
   });
   ['Blade', 'Shield', 'Charm'].forEach((n, i) => {
-    types[`450${i}`] = { name: `Evermore ${n}`, description: `Gear won by beating a ghost 3+ levels above. Capped supply.`, fields: ['commitment'], uris: art(`gear-${i}.png`) };
+    types[`450${i}`] = { name: `Evermore ${n}`, description: `Gear won by beating a ghost at least 3 levels above. Total gear supply is capped by the covenant.`, fields: ['commitment'], uris: art(`gear-${i}.png`) };
   });
   return {
     $schema: 'https://cashtokens.org/bcmr-v2.schema.json',
@@ -39,14 +49,15 @@ export function buildRegistry(o: RegistryOptions) {
     latestRevision: ts,
     registryIdentity: { name: 'Evermore', description: 'Evermore game registry', uris: { web: o.web } },
     identities: {
+      ...(o.keep ?? {}),
       [o.category]: {
         [ts]: {
           name: o.name ?? 'Evermore',
           description: o.description ?? 'Heroes that live on Bitcoin Cash. Games die. Heroes do not.',
-          uris: { icon: o.icon ?? `${o.artBase}/icon.png`, web: o.web },
+          uris: { icon: o.icon ?? `${o.artBase}/icon.png`, image: o.icon ?? `${o.artBase}/icon.png`, web: o.web },
           token: {
             category: o.category,
-            symbol: o.symbol ?? 'EVER',
+            symbol: o.symbol ?? 'EVR',
             nfts: { description: 'Evermore heroes and gear', fields, parse: { bytecode: BCMR_PARSE_BYTECODE, types } },
           },
         },

@@ -5,26 +5,27 @@
     "minor": 0,
     "patch": 0
   },
-  "latestRevision": "2026-11-17T13:10:34.387Z",
+  "latestRevision": "2026-11-19T16:25:40.561Z",
   "registryIdentity": {
     "name": "Evermore",
     "description": "Evermore game registry",
     "uris": {
-      "web": "https://evermore.example"
+      "web": "https://evermore-alpha-nine.vercel.app"
     }
   },
   "identities": {
-    "39f93c4462d990e5c2cee900c11aba6b7e74439d81301f26515cb2a856766c0c": {
-      "2026-11-17T13:10:34.387Z": {
+    "7efdf7b03d20338e9331a76314eb87edf8e2ed022bed899a072dabf9eb0269b6": {
+      "2026-11-19T16:25:40.561Z": {
         "name": "Evermore",
         "description": "Heroes that live on Bitcoin Cash. Games die. Heroes do not.",
         "uris": {
-          "icon": "https://evermore.example/art/icon.png",
-          "web": "https://evermore.example"
+          "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/icon.png",
+          "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/icon.png",
+          "web": "https://evermore-alpha-nine.vercel.app"
         },
         "token": {
-          "category": "39f93c4462d990e5c2cee900c11aba6b7e74439d81301f26515cb2a856766c0c",
-          "symbol": "EVER",
+          "category": "7efdf7b03d20338e9331a76314eb87edf8e2ed022bed899a072dabf9eb0269b6",
+          "symbol": "EVR",
           "nfts": {
             "description": "Evermore heroes and gear",
             "fields": {
@@ -41,68 +42,68 @@
               "types": {
                 "4500": {
                   "name": "Evermore Blade",
-                  "description": "Gear won by beating a ghost 3+ levels above. Capped supply.",
+                  "description": "Gear won by beating a ghost at least 3 levels above. Total gear supply is capped by the covenant.",
                   "fields": [
                     "commitment"
                   ],
                   "uris": {
-                    "icon": "https://evermore.example/art/gear-0.png",
-                    "image": "https://evermore.example/art/gear-0.png"
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-0.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-0.png"
                   }
                 },
                 "4501": {
                   "name": "Evermore Shield",
-                  "description": "Gear won by beating a ghost 3+ levels above. Capped supply.",
+                  "description": "Gear won by beating a ghost at least 3 levels above. Total gear supply is capped by the covenant.",
                   "fields": [
                     "commitment"
                   ],
                   "uris": {
-                    "icon": "https://evermore.example/art/gear-1.png",
-                    "image": "https://evermore.example/art/gear-1.png"
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-1.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-1.png"
                   }
                 },
                 "4502": {
                   "name": "Evermore Charm",
-                  "description": "Gear won by beating a ghost 3+ levels above. Capped supply.",
+                  "description": "Gear won by beating a ghost at least 3 levels above. Total gear supply is capped by the covenant.",
                   "fields": [
                     "commitment"
                   ],
                   "uris": {
-                    "icon": "https://evermore.example/art/gear-2.png",
-                    "image": "https://evermore.example/art/gear-2.png"
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-2.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/gear-2.png"
                   }
                 },
                 "4800": {
                   "name": "Evermore Knight",
-                  "description": "A Knight hero. Every level was earned in a duel the chain replayed.",
+                  "description": "A Knight hero. Every level was earned in a duel the chain replayed; its ghost earns a fee each time someone challenges it.",
                   "fields": [
                     "commitment"
                   ],
                   "uris": {
-                    "icon": "https://evermore.example/art/knight.png",
-                    "image": "https://evermore.example/art/knight.png"
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/knight.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/knight.png"
                   }
                 },
                 "4801": {
                   "name": "Evermore Rogue",
-                  "description": "A Rogue hero. Every level was earned in a duel the chain replayed.",
+                  "description": "A Rogue hero. Every level was earned in a duel the chain replayed; its ghost earns a fee each time someone challenges it.",
                   "fields": [
                     "commitment"
                   ],
                   "uris": {
-                    "icon": "https://evermore.example/art/rogue.png",
-                    "image": "https://evermore.example/art/rogue.png"
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/rogue.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/rogue.png"
                   }
                 },
                 "4802": {
                   "name": "Evermore Mage",
-                  "description": "A Mage hero. Every level was earned in a duel the chain replayed.",
+                  "description": "A Mage hero. Every level was earned in a duel the chain replayed; its ghost earns a fee each time someone challenges it.",
                   "fields": [
                     "commitment"
                   ],
                   "uris": {
-                    "icon": "https://evermore.example/art/mage.png",
-                    "image": "https://evermore.example/art/mage.png"
+                    "icon": "https://evermore-alpha-nine.vercel.app/bcmr/art/mage.png",
+                    "image": "https://evermore-alpha-nine.vercel.app/bcmr/art/mage.png"
                   }
                 }
               }

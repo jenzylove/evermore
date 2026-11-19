@@ -1,6 +1,6 @@
 # Evermore threat model
 
-Four covenants (CashScript 0.14, BCH 2026 VM): **Lane** (raise, challenge, forge), **Arena** (holds ghosts), **Counter** (gear supply), **Sale** (one listing). Sources in `src/`, every `require` commented with what it stops. Tests in `test/` run each attack below in the 2026 VM (standard mode) and check the failure comes from a covenant input, not from fee or dust policy.
+Four covenants (CashScript 0.14, BCH 2026 VM): **Lane** (raise, challenge, sync, forge), **Arena** (holds ghosts), **Counter** (gear supply), **Sale** (one listing). Sources in `src/`, every `require` commented with what it stops. Tests in `test/` run each attack below in the 2026 VM (standard mode) and check the failure comes from a covenant input, not from fee or dust policy.
 
 ## The invariant everything rests on
 
@@ -29,6 +29,10 @@ Four covenants (CashScript 0.14, BCH 2026 VM): **Lane** (raise, challenge, forge
 | Strip the lane's minting capability or steal a lane | Every path pins output 0 to the Lane bytecode with the same category and capability | lane made immutable |
 | Underpay a listing, pay with the token, settle two listings with one payment | Sale pays the seller P2PKH >= price, no token, at the output index equal to its input index | buy rejected cases |
 | Cancel someone else's listing | `cancel` needs a pubkey hashing to sellerPkh and its signature | cancel by someone else; seller pubkey, other key |
+| Point someone else's ghost at yourself (steal its challenge fees) | `sync` needs the hero spent from a P2PKH (its holder's signature) and the ghost at index 2 to be that hero's own (`'G' + hero id`) | sync rejected: someone else's ghost; old owner signing |
+| Use sync to edit a ghost or hero, reset counters, mint, or pay a third party | Hero output is the input commitment byte for byte to a P2PKH; ghost output is the input with only bytes 15..35 replaced by that P2PKH's pkh; max 4 outputs, change holds no token | sync rejected cases (owner to a third party, stats, counters, hero edited, covenant target, extra NFT, lane altered, ticket as hero, counter burn) |
+| Sync a listed hero (held by Sale) | the hero input must be a P2PKH; a Sale path would also need its own output index to pay the seller in plain BCH | sdk refuses; covenant requires P2PKH lock |
+| Burn someone else's ticket | a ticket sits in its holder's P2PKH; only that key can spend it | reclaim by someone else fails the signature |
 | Overflow a counter so a ghost can never be challenged again | beaten and defences are 2 bytes and saturate at 32767 (`min(x + 1, 32767)`) instead of failing | defences saturate |
 
 There is **no admin path**: no key can edit, take or delete a hero, ghost, gear, lane or the counter. The treasury key only receives fees.
@@ -45,7 +49,7 @@ Selene, over WizardConnect, refuses to sign any transaction whose source outputs
 - **Alt hero farming.** A player can raise several heroes and challenge their own alts' ghosts (the fee goes back to themselves). The covenant only stops a hero fighting its own ghost. Each alt costs the raise price, each forge the forge fee, XP decays with the target's beaten counter, and gear needs a ghost 3+ levels above, so farming gear means levelling an alt first. Gear is capped, so it is a paid race, not an infinite mint. A player with many heroes can also pick which of them challenges a ghost, which gives them a few previewed styles to choose from; each still costs a challenge fee.
 - **Styles are previewable.** With no txid term the seed is known before paying. Rerolling a style needs another paid challenge (defences + 1) or another hero. A player or bot that computes the best moves still pays every fee and earns XP honestly; this is not anti cheat for solving.
 - **Ghost contention retries.** A ghost is one UTXO: challenges and forges against it serialize, and a level up forge also spends the hero's own ghost, which someone may be challenging at that moment. Unconfirmed chaining works; the losing transaction is rejected as a double spend and the client rebuilds on the newest outpoint (`Chain.submit` retries). Lanes never collide across numbers (16 lanes, picked at random); the gear Counter serializes drops (rare).
-- **Fees follow the hero only at level up.** A sold or sent home hero's ghost keeps paying the previous owner until the new owner's first level up.
+- **Fees follow the hero on sync.** The client syncs after buy and bring back and sends home as a sync, so its own moves keep the ghost's owner current. A hero moved by another app (a plain wallet send) keeps paying the previous owner until its holder runs a sync or levels up. A ticket burned by its holder is gone; that only forfeits a duel the holder already paid for.
 - **Hero must be in a P2PKH to raise or level up** (the ghost owner pkh is read from it). Selene, Cashonize, Paytaca and the Satchel are P2PKH.
 - **Level cap 127**: the forge that would make 128 fails. **Counters saturate at 32767**: after that a ghost's style for a given hero no longer changes and XP from it is already near zero.
 - **Dust**: each ghost locks 1,000 sats forever (priced into the raise).

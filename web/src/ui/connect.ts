@@ -10,6 +10,8 @@ import { h, money, toast } from './kit';
 
 const MODE_KEY = 'evermore.mode';
 const deployments = import.meta.glob('../../../contracts/deployments/{chipnet,mainnet}.json', { eager: true, import: 'default' }) as Record<string, Deployment>;
+/** House heroes (scripts/wardens.mjs): id -> name, shown to every player. */
+const wardens = import.meta.glob('../../../contracts/deployments/wardens-{chipnet,mainnet}.json', { eager: true, import: 'default' }) as Record<string, { category: string; labels: Record<string, string> }>;
 
 /** Network from VITE_EVERMORE_NET, else ?net= / localStorage, else chipnet. */
 export function realNet(): NetworkName {
@@ -47,7 +49,9 @@ export function realChain(): RealChain {
   if (!wif) { wif = E.Satchel.generate().toWif(net); store.setItem(sk, wif); }
   const wallet = WizardWallet.remembered(net);
   if (wallet) resume(wallet);
-  real = new RealChain({ deployment: dep, net, satchel: E.Satchel.fromWif(wif), storage: store, wallet, price: bchUsd, onBroadcast: receipt });
+  const w = Object.entries(wardens).find(([p]) => p.endsWith(`/wardens-${net}.json`))?.[1];
+  const labels = w && w.category === dep.category ? w.labels : {};
+  real = new RealChain({ deployment: dep, net, labels, satchel: E.Satchel.fromWif(wif), storage: store, wallet, price: bchUsd, onBroadcast: receipt });
   if (wallet) wallet.onChange = () => renderChrome();
   return real;
 }

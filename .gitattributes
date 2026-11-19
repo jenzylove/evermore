@@ -1,0 +1,2 @@
+web/public/bcmr/*.json -text
+contracts/deployments/bcmr-*.json -text
