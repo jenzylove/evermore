@@ -87,6 +87,13 @@ Not yet on chain: a gear drop (needs a ghost 3+ levels above the hero; the Arena
 - again: challenge https://chipnet.imaginary.cash/tx/f9f8b99885ecdaedbbb398f7c1c938ffd5ffaf5a036d7307d18b5e11e2b583b7, forge https://chipnet.imaginary.cash/tx/c282365212da4457e81d1b975fe3b4fdfa7875c62bb51156f28aafbb4fa70846 (L2, 3 wins)
 - Script fixes: the forge seal is now `.sealed a`; the post forge read and the connect sheet check wait for Fulcrum / render instead of reading once.
 
+**Wardens on chipnet** (`node scripts/wardens.mjs`): 12 raises plus 111 duels the covenant replayed, 235 txs, 638,233 sats spent (tx fees and dust). Ladder: Aldric #3 Knight L8, Brenna #14 Rogue L7, Corvin #7 Mage L6, Dagny #2 Knight L5, Edric #15 Rogue L4, Fenna #6 Mage L4, Garrick #31 Knight L3, Hester #12 Rogue L3, Isolde #4 Mage L2, Joren #30 Knight L2, Kestra #23 Rogue L1, Lucan #18 Mage L1. A new L1 player now meets 6 ghosts at L4 or higher (gear range). Every txid is in `contracts/deployments/wardens-chipnet.json`.
+- first raise https://chipnet.imaginary.cash/tx/2ad3e4291b01cdf4f1bcf126cd00168c3f1e8ca2106d580ee3fabfcfbbac1da0
+- first forge https://chipnet.imaginary.cash/tx/e5648f0094b7cdeaf09569a8f8166a489e83e4381ffc41eed326850a252858c2
+- Aldric reaches L8 https://chipnet.imaginary.cash/tx/f014b1db3b5bdb905951f496b4551c532574c945dc2498435bd696a25491422f
+- last forge https://chipnet.imaginary.cash/tx/aab4a3e32d5e748ec8d04e44ef60f0320fed10971b4711bb976c01a0b7545de9
+- Fix during the run: Fulcrum can lag a moment behind our own last forge, so the forge now re-reads the hero and re-solves against it (the first attempt stopped at step 1; the run resumed from its state file).
+
 **BCMR**: `web/public/bcmr/evermore.json` (Evermore, EVR, types 4800..4802 Knight/Rogue/Mage with portraits rendered from the game, 4500..4502 Blade/Shield/Charm, icon) and `web/public/bcmr/art/*.png`. Byte exact: `-text` in .gitattributes.
 
 **Mainnet day, in order**
