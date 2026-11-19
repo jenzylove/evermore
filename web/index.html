@@ -3,12 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#05080f" />
+  <meta name="theme-color" content="#071330" />
   <title>Evermore</title>
   <meta name="description" content="A hero duel game on Bitcoin Cash. Games die. Heroes don't." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2305080f'/%3E%3Cpath d='M6 11l5 5 5-9 5 9 5-5-2 13H8z' fill='none' stroke='%23dcc08a' stroke-width='2'/%3E%3C/svg%3E" />
-  <link rel="preload" href="/fonts/cinzel-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23071330'/%3E%3Cpath d='M6 11l5 5 5-9 5 9 5-5-2 13H8z' fill='none' stroke='%23ffcf7a' stroke-width='2'/%3E%3C/svg%3E" />
+  <link rel="preload" href="/fonts/cinzel-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high" />
+  <link rel="preload" href="/fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high" />
+  <link rel="preload" href="/fonts/barlow-condensed-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/poster-p.webp" as="image" media="(orientation: portrait)" fetchpriority="high" />
+  <link rel="preload" href="/poster-l.webp" as="image" media="(orientation: landscape)" fetchpriority="high" />
 </head>
 <body>
   <canvas id="world"></canvas>
@@ -16,7 +19,28 @@
   <div id="flash"></div>
   <main id="ui"></main>
   <div id="chrome"></div>
-  <div id="veil"><h1>Evermore</h1><p>Lighting the hall</p><i></i></div>
+  <!-- The front door is here in the page itself, over a still of the hall, so it can be tapped before the 3D has loaded.
+       It is the same layout as the 3D front door (ui/front.ts), which takes over without a jump when the hall is lit. -->
+  <div id="veil">
+    <section class="screen front still">
+      <div class="title"><h1><span>E</span><span>v</span><span>e</span><span>r</span><span>m</span><span>o</span><span>r</span><span>e</span></h1><div class="line">Games die. Heroes don't.</div><div class="chainline"><i class="bchm"></i>Every hero lives on Bitcoin Cash</div></div>
+      <div class="cta">
+        <button class="btn prime" data-go="practice">Raise a hero <small>practice, free</small></button>
+        <button class="btn bch" data-go="real"><i class="bchm"></i>Play for real</button>
+        <p class="lighting"><span>Lighting the hall</span><i></i></p>
+      </div>
+    </section>
+  </div>
+  <script>
+    try { if (localStorage.getItem('evermore.mode') === 'real') { document.querySelector('#veil .prime').innerHTML = 'Enter the hall <small>on Bitcoin Cash</small>'; document.querySelector('#veil .bch').lastChild.textContent = 'Wallet and Satchel'; } } catch (e) {}
+    // a tap before the hall is lit is remembered and acted on the moment it is (see main.ts)
+    document.getElementById('veil').addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-go]'); if (!b) return;
+      window.__intent = b.getAttribute('data-go');
+      this.classList.add('waiting'); b.classList.add('chosen');
+      this.querySelector('.lighting span').textContent = 'Opening the hall';
+    });
+  </script>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

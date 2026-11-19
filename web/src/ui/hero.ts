@@ -64,7 +64,8 @@ register('hero', root => {
       ...(['hp', 'atk', 'def', 'spd'] as const).map(k => h('span', {}, `${k.toUpperCase()} `, h('b', {}, String(hero[k])))));
     const next = [3, 5, 7, 10].find(l => l > hero.level);
     const earned = h('div', { class: 'earned', style: 'text-align:center' },
-      hero.defences ? h('span', {}, `Defended ${hero.defences} times, `, h('b', {}, `+${money(hero.earnedSats, f.usdPerBch)}`)) : h('span', { class: 'dim' }, 'Its ghost stands in the Arena. Every challenge pays you.'),
+      hero.defences ? h('span', {}, 'Your echo earned ', h('b', { class: isPractice() ? '' : 'bch-t' }, money(hero.earnedSats, f.usdPerBch)), ` from ${hero.defences} challenger${hero.defences === 1 ? '' : 's'}`)
+        : h('span', { class: 'dim' }, `Its echo stands in the Arena. Every challenge pays you ${money(f.challengeSats, f.usdPerBch)}${isPractice() ? ' (practice purse)' : ''}.`),
       h('div', { class: 'dim', style: 'font-size:14px;margin-top:4px' }, `${hero.wins} win${hero.wins === 1 ? '' : 's'} · ${hero.xp} of ${xpNeed(hero.level)} XP${next ? ` · new look at level ${next}` : ''}`));
     info.append(pick, xp, stats, earned);
     if (gear.length) info.append(h('div', { class: 'gearline' }, 'Wearing', ...gear.slice(0, 6).map(g => { const c = gearIcon(g.kind, g.tier); c.setAttribute('aria-label', gearName(g.kind, g.tier)); const s = h('span', { title: gearName(g.kind, g.tier) }); s.append(c); return s; })));

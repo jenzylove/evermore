@@ -1,6 +1,6 @@
 // App state, routing and the little bit of chrome that sits over the game.
 import type { GameChain, HeroView, Ticket } from './chain/types';
-import { PracticeChain } from './chain/practice';
+import { PracticeHall } from './game/practiceHall';
 import { world } from './three/world';
 import { h, icon, shortCents } from './ui/kit';
 import { isMuted, setMuted, sfx, unlock } from './audio/sfx';
@@ -9,7 +9,7 @@ export type Route = 'front' | 'raise' | 'arena' | 'duel' | 'hero' | 'bazaar';
 
 /** The live chain, set by the sdk when it is wired in; null means only practice exists. */
 let realChain: GameChain | null = null;
-export const practice = new PracticeChain();
+export const practice = new PracticeHall();
 export const app = {
   chain: practice as GameChain,
   heroId: null as number | null,
@@ -58,19 +58,21 @@ addEventListener('popstate', () => {
 let chromeGen = 0;
 export async function renderChrome() {
   const gen = ++chromeGen;
-  const s = app.route !== 'front' && app.route !== 'duel' ? await app.chain.satchel() : null;
+  const P = isPractice();
+  const s = app.route !== 'duel' && (!P || app.route !== 'front') ? await app.chain.satchel().catch(() => null) : null;
   if (gen !== chromeGen) return; // a newer render won
   const c = document.getElementById('chrome')!; c.innerHTML = '';
   const mute = h('button', { class: 'mute', 'aria-label': 'Sound', onClick: () => { unlock(); setMuted(!isMuted()); renderChrome(); } }, icon(isMuted() ? 'muted' : 'sound'));
-  // the mode tag opens "Play for real" (wallet, Satchel, switch); real play names its network
+  // the mode tag: practice offers the way to real play; real play names its network and the wallet, in Bitcoin Cash green
   const openConnect = () => import('./ui/connect').then(m => m.openConnect());
-  if (app.route !== 'duel') c.append(h('div', { class: 'tag', role: 'button', tabindex: '0', style: 'cursor:pointer', 'data-mode': app.chain.mode, onClick: openConnect },
-    ...(isPractice() ? [h('b', {}, 'Practice'), h('span', {}, 'nothing on chain · play for real')]
-      : [h('b', {}, app.chain.mode === 'chipnet' ? 'Chipnet' : 'Mainnet'), h('span', {}, app.chain.mode === 'chipnet' ? 'test coins' : 'real BCH')])));
-  if (s) {
+  if (app.route !== 'duel') c.append(h('div', { class: 'tag', 'data-mode': app.chain.mode },
+    ...(P ? [h('b', {}, 'Practice'), app.route === 'front' ? null : h('button', { class: 'go-real', onClick: openConnect }, h('i', { class: 'bchm' }), 'Play for real')]
+      : [h('button', { class: 'chip', onClick: openConnect }, h('i', { class: 'bchm' }), h('b', {}, app.chain.mode === 'chipnet' ? 'Chipnet' : 'Bitcoin Cash'),
+          h('span', {}, s?.connected ?? 'connect wallet'))])));
+  if (s && app.route !== 'front') {
     const f = app.chain.fees();
-    c.append(h('button', { class: 'pouch dim', 'aria-label': 'Satchel', onClick: () => import('./ui/satchel').then(m => m.openSatchel()) },
-      icon('pouch'), shortCents(s.sats, f.usdPerBch)));
+    c.append(h('button', { class: `pouch${P ? ' dim' : ' real'}`, 'aria-label': 'Satchel', onClick: () => import('./ui/satchel').then(m => m.openSatchel()) },
+      icon('pouch'), shortCents(s.sats, f.usdPerBch), P ? null : h('small', {}, `${(s.sats / 1e8).toFixed(s.sats >= 1e6 ? 4 : 5)} BCH`)));
   }
   c.append(mute);
 }

@@ -21,6 +21,17 @@ export const ease = {
 
 const params = new URLSearchParams(location.search);
 const coarse = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
+// a low end device: few cores or little memory (Chrome reports deviceMemory, others leave it out)
+const nav = navigator as Navigator & { deviceMemory?: number };
+const lowEnd = (nav.deviceMemory ?? 8) <= 4 || (nav.hardwareConcurrency || 8) <= 4;
+/** a GPU that is known to be weak or software only drops straight to the lowest look */
+const weakGpu = (r: THREE.WebGLRenderer) => {
+  try {
+    const gl = r.getContext(); const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+    return /Mali-[GT]?\d|Adreno \(TM\) [3-5]\d\d|PowerVR|SwiftShader|llvmpipe|Intel\(R\) HD Graphics [2-5]\d\d/i.test(name);
+  } catch { return false; }
+};
 
 class Engine {
   renderer!: THREE.WebGLRenderer;
@@ -30,7 +41,7 @@ class Engine {
   env: THREE.Texture | null = null;
   bloom!: BloomEffect;
   vignette!: VignetteEffect;
-  tier: Tier = (params.has('q') ? Math.max(0, Math.min(2, Number(params.get('q')))) : coarse ? 1 : 2) as Tier;
+  tier: Tier = (params.has('q') ? Math.max(0, Math.min(2, Number(params.get('q')))) : coarse ? (lowEnd ? 0 : 1) : lowEnd ? 1 : 2) as Tier;
   /** scaled game time in seconds */
   t = 0;
   stop = 0;     // hit stop left, ms of real time
@@ -49,11 +60,12 @@ class Engine {
     r.toneMapping = THREE.NoToneMapping; // tone mapping happens in the composer
     r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFSoftShadowMap;
+    if (!params.has('q') && weakGpu(r)) this.tier = 0;
     const pm = new THREE.PMREMGenerator(r);
     // reflections only on metal (set per material), so the many plain materials stay cheap to compile
     this.env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
-    this.scene.background = new THREE.Color('#070b16');
-    this.scene.fog = new THREE.Fog('#0d1526', 14, 46);
+    this.scene.background = new THREE.Color('#0a1838');
+    this.scene.fog = new THREE.Fog('#132a5e', 15, 50);
     this.buildComposer();
     this.fit();
     addEventListener('resize', () => this.fit());
@@ -81,10 +93,11 @@ class Engine {
     this.composer?.dispose();
     const c = this.composer = new EffectComposer(r, { frameBufferType: THREE.HalfFloatType, multisampling: 0 });
     c.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new BloomEffect({ mipmapBlur: true, luminanceThreshold: 0.82, luminanceSmoothing: 0.18, intensity: 0.9, radius: 0.72 });
-    this.vignette = new VignetteEffect({ offset: 0.28, darkness: 0.62 });
-    const fx: import('postprocessing').Effect[] = [this.bloom, new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }), new HueSaturationEffect({ saturation: -0.08 }),
-      new BrightnessContrastEffect({ contrast: 0.09, brightness: 0.0 }), this.vignette];
+    // phones and weak GPUs blur the bloom at half resolution; it reads the same and costs a quarter
+    this.bloom = new BloomEffect({ mipmapBlur: true, luminanceThreshold: 0.7, luminanceSmoothing: 0.22, intensity: 1.15, radius: 0.74, resolutionScale: this.tier >= 2 ? 1 : 0.5 });
+    this.vignette = new VignetteEffect({ offset: 0.3, darkness: 0.5 });
+    const fx: import('postprocessing').Effect[] = [this.bloom, new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }), new HueSaturationEffect({ saturation: 0.16 }),
+      new BrightnessContrastEffect({ contrast: 0.13, brightness: 0.02 }), this.vignette];
     if (this.tier >= 1) fx.push(new SMAAEffect({ preset: this.tier >= 2 ? SMAAPreset.HIGH : SMAAPreset.MEDIUM }));
     c.addPass(new EffectPass(this.camera, ...fx));
   }
@@ -119,6 +132,18 @@ class Engine {
   tierListeners = new Set<(t: Tier) => void>();
   /** a fresh scene gets a fresh look at the frame rate */
   rewatch() { this.settled = false; this.frames = []; }
+
+  /**
+   * Compile the shaders these objects need, lit by the hall and for the composer's linear target (the one every frame
+   * renders into). Where the GPU compiles in parallel (KHR_parallel_shader_compile) this does not hold the main thread.
+   */
+  async precompile(o: THREE.Object3D) {
+    const r = this.renderer;
+    r.setRenderTarget(this.composer.inputBuffer);
+    const p = r.compileAsync(o, this.camera, this.scene);
+    r.setRenderTarget(null);
+    await p;
+  }
 
   onTick(f: (dt: number, t: number) => void) { this.ticks.add(f); return () => { this.ticks.delete(f); }; }
   onReal(f: (real: number) => void) { this.realTicks.add(f); return () => { this.realTicks.delete(f); }; }

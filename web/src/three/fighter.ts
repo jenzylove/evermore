@@ -184,7 +184,7 @@ export class Fighter {
   mixer: THREE.AnimationMixer;
   private actions = new Map<Clip, THREE.AnimationAction>();
   private cur: THREE.AnimationAction | null = null;
-  private u: U = { uT: { value: 0 }, uVein: { value: 0 }, uVeinC: { value: new THREE.Color() }, uFlash: { value: 0 }, uGhost: { value: 0 }, uRim: { value: new THREE.Color('#9fd6ff') }, uRimK: { value: 0 }, uDis: { value: 0 }, uDisC: { value: new THREE.Color('#fff1cf') } };
+  private u: U = { uT: { value: 0 }, uVein: { value: 0 }, uVeinC: { value: new THREE.Color() }, uFlash: { value: 0 }, uGhost: { value: 0 }, uRim: { value: new THREE.Color('#7fdcff') }, uRimK: { value: 0 }, uDis: { value: 0 }, uDisC: { value: new THREE.Color('#fff1cf') } };
   private anchors: Record<string, THREE.Object3D> = {};
   private lookGroup: THREE.Object3D[] = [];
   private aura: { pts: THREE.Points; seed: Float32Array; ring: THREE.Mesh; halo?: THREE.Object3D; hand?: THREE.Sprite } | null = null;

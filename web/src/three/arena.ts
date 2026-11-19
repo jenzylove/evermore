@@ -68,7 +68,7 @@ function floorTexture() {
     L *= 0.92 + 0.08 * nz(u * 9 + 5.7, v * 9 + 3.3);
     const k = (j * n + i) * 4;
     // seams are a thread of pale gold inlay with a dark hairline either side
-    const R = L * 0.96 * (1 - seam * 0.4) + seam * 0.5 * (seam > 0.6 ? 1 : 0), G = L * 0.99 * (1 - seam * 0.4) + seam * 0.4 * (seam > 0.6 ? 1 : 0), B = L * 1.05 * (1 - seam * 0.4) + seam * 0.22 * (seam > 0.6 ? 1 : 0);
+    const R = L * 0.93 * (1 - seam * 0.4) + seam * 0.92 * (seam > 0.6 ? 1 : 0), G = L * 1.0 * (1 - seam * 0.4) + seam * 0.7 * (seam > 0.6 ? 1 : 0), B = L * 1.12 * (1 - seam * 0.4) + seam * 0.3 * (seam > 0.6 ? 1 : 0);
     img.data[k] = Math.min(255, R * 255); img.data[k + 1] = Math.min(255, G * 255); img.data[k + 2] = Math.min(255, B * 255); img.data[k + 3] = 255;
   }
   x.putImageData(img, 0, 0);
@@ -97,6 +97,19 @@ function softDot() {
 }
 export const DOT = softDot();
 
+/**
+ * The stone's textures are made in code (floorTexture and friends) but baked to WebP once (scripts/bake-textures.ts),
+ * so a phone downloads 200 KB instead of spending seconds of main thread on a million pixels of noise.
+ * If a baked file is missing the texture is made in code as before.
+ */
+const texLoader = new THREE.TextureLoader();
+function baked(name: string, make: () => THREE.Texture) {
+  const t = texLoader.load(`/tex/${name}.webp`, undefined, undefined, () => { t.image = make().image; t.needsUpdate = true; });
+  return t;
+}
+/** the canvases behind the baked textures (dev only, used by the bake script) */
+export const bakeCanvases = () => ({ floor: floorTexture().image as HTMLCanvasElement, column: columnTexture().image as HTMLCanvasElement, grain: grainTexture().image as HTMLCanvasElement });
+
 /** a shaft of light: a soft open cone, bright at its core, fading top and bottom */
 export const shaftMaterial = (color: string, a: number) => new THREE.ShaderMaterial({
   transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
@@ -119,33 +132,34 @@ export type Arena = {
   statues(kits: { scene: THREE.Object3D; clips: Map<string, THREE.AnimationClip> }[]): void;
 };
 
-const MOON = '#cfdcff', GOLD = '#f2d49a';
+const MOON = '#b8d2ff', GOLD = '#ffc874', CYAN = '#6fe6ff';
 
 export function buildArena(): Arena {
   const S = engine.scene;
-  const grain = grainTexture();
+  const grain = baked('grain', grainTexture); grain.wrapS = grain.wrapT = THREE.RepeatWrapping;
+  const floorTex = baked('floor', floorTexture); floorTex.colorSpace = THREE.SRGBColorSpace; floorTex.anisotropy = 8;
 
   // ---- floor: a wide marble hall, polished enough to catch the moon ----
-  const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture(), roughnessMap: grain, bumpMap: grain, bumpScale: 0.35, roughness: 0.3, metalness: 0.0, envMap: engine.env, envMapIntensity: 0.3 });
+  const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, color: '#c4cfee', roughnessMap: grain, bumpMap: grain, bumpScale: 0.35, roughness: 0.3, metalness: 0.0, envMap: engine.env, envMapIntensity: 0.3 });
   floorMat.roughnessMap!.repeat.set(10, 10); floorMat.bumpMap!.repeat.set(10, 10);
   const floor = new THREE.Mesh(new THREE.CircleGeometry(13, 128), floorMat);
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; S.add(floor);
   // the outer court, where the statues stand: darker, plainer stone
-  const court = new THREE.Mesh(new THREE.RingGeometry(12.98, 70, 96, 1), new THREE.MeshStandardMaterial({ color: '#2a2f3a', roughness: 0.9, bumpMap: grain, bumpScale: 0.8 }));
+  const court = new THREE.Mesh(new THREE.RingGeometry(12.98, 70, 96, 1), new THREE.MeshStandardMaterial({ color: '#283458', roughness: 0.9, bumpMap: grain, bumpScale: 0.8 }));
   court.rotation.x = -Math.PI / 2; court.position.y = -0.005; court.receiveShadow = true; S.add(court);
 
   // ---- runes written in the floor: a wide outer band and the duel circle ----
   const ringTex = runeDisc({ count: 48, seed: 3, r0: 0.86, r1: 0.94, lines: [0.84, 0.96, 0.985, 0.42, 0.44] });
-  const ringMat = runeMaterial(ringTex, GOLD, 48); ringMat.uniforms.uK.value = 0.32;
+  const ringMat = runeMaterial(ringTex, GOLD, 48); ringMat.uniforms.uK.value = 0.85; ringMat.uniforms.uBase.value = 0.4;
   const ring = new THREE.Mesh(new THREE.PlaneGeometry(19, 19), ringMat);
   ring.rotation.x = -Math.PI / 2; ring.position.y = 0.006; S.add(ring);
   const innerTex = runeDisc({ count: 24, seed: 11, r0: 0.78, r1: 0.92, lines: [0.76, 0.94] });
-  const innerMat = runeMaterial(innerTex, MOON, 24); innerMat.uniforms.uK.value = 0.4;
+  const innerMat = runeMaterial(innerTex, CYAN, 24); innerMat.uniforms.uK.value = 1.0; innerMat.uniforms.uBase.value = 0.45;
   const inner = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 7.4), innerMat);
   inner.rotation.x = -Math.PI / 2; inner.position.y = 0.008; S.add(inner);
 
   // ---- the colonnade: twelve fluted columns joined by arches ----
-  const colTex = columnTexture();
+  const colTex = baked('column', columnTexture); colTex.colorSpace = THREE.SRGBColorSpace; colTex.wrapS = colTex.wrapT = THREE.RepeatWrapping; colTex.anisotropy = 4;
   const colMat = new THREE.MeshStandardMaterial({ map: colTex, roughness: 0.55, bumpMap: grain, bumpScale: 0.4 });
   colMat.map!.repeat.set(1, 3);
   const stoneMat = new THREE.MeshStandardMaterial({ color: '#8d93a0', roughness: 0.7, bumpMap: grain, bumpScale: 0.6 });
@@ -182,22 +196,22 @@ export function buildArena(): Arena {
     mesh.position.set(x, len / 2 - 0.2, z); mesh.rotation.set(tiltX, 0, tiltZ); S.add(mesh);
     return mesh;
   };
-  addShaft(0.6, -0.4, 1.8, 3.4, 16, 0.05, -0.12, 0.085);
-  [[-6.5, -6.2, 0.18], [6.8, -5.6, -0.2], [-8.4, 2.6, 0.24], [8.2, 3.4, -0.22]].forEach(([x, z, t], i) => addShaft(x, z, 0.6, 1.3, 15, 0.12 * (i % 2 ? 1 : -1), t, 0.06));
+  addShaft(0.6, -0.4, 1.8, 3.4, 16, 0.05, -0.12, 0.12);
+  [[-6.5, -6.2, 0.18], [6.8, -5.6, -0.2], [-8.4, 2.6, 0.24], [8.2, 3.4, -0.22]].forEach(([x, z, t], i) => addShaft(x, z, 0.6, 1.3, 15, 0.12 * (i % 2 ? 1 : -1), t, 0.085, i % 2 ? '#8fdcff' : MOON));
   // pools of moonlight on the floor where the shafts land
   const pool = (x: number, z: number, s: number, a: number) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: DOT, color: new THREE.Color(MOON).multiplyScalar(a), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     m.rotation.x = -Math.PI / 2; m.position.set(x, 0.01, z); S.add(m);
   };
-  pool(0, 0, 9, 0.1);
+  pool(0, 0, 9, 0.17);
 
   // ---- motes drifting through the hall: pale gold and moon blue, twinkling ----
   const DN = 520, dGeo = new THREE.BufferGeometry(), dPos = new Float32Array(DN * 3), dCol = new Float32Array(DN * 3), dSeed = new Float32Array(DN), dBase = new Float32Array(DN * 3);
-  const gold = new THREE.Color(GOLD), moon = new THREE.Color(MOON);
+  const gold = new THREE.Color(GOLD), moon = new THREE.Color(MOON), cyan = new THREE.Color(CYAN);
   for (let i = 0; i < DN; i++) {
     const a = Math.random() * 7, r = Math.sqrt(Math.random()) * 10.5;
     dPos[i * 3] = Math.cos(a) * r; dPos[i * 3 + 1] = Math.random() * 8; dPos[i * 3 + 2] = Math.sin(a) * r; dSeed[i] = Math.random() * 100;
-    const c = Math.random() < 0.45 ? gold : moon; const k = 0.6 + Math.random() * 1.2;
+    const u = Math.random(), c = u < 0.42 ? gold : u < 0.72 ? cyan : moon; const k = 0.9 + Math.random() * 1.6;
     dBase.set([c.r * k, c.g * k, c.b * k], i * 3);
   }
   dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
@@ -208,20 +222,20 @@ export function buildArena(): Arena {
   // ---- a moon, low behind the hall, with a halo ----
   const moonDisc = new THREE.Sprite(new THREE.SpriteMaterial({ map: DOT, color: new THREE.Color('#dfe8ff').multiplyScalar(1.6), fog: false, depthWrite: false, transparent: true }));
   moonDisc.scale.setScalar(9); moonDisc.position.set(-14, 24, -46); S.add(moonDisc);
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: DOT, color: new THREE.Color('#5d78b8').multiplyScalar(0.5), fog: false, depthWrite: false, transparent: true, blending: THREE.AdditiveBlending }));
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: DOT, color: new THREE.Color('#4f86ff').multiplyScalar(0.75), fog: false, depthWrite: false, transparent: true, blending: THREE.AdditiveBlending }));
   halo.scale.setScalar(40); halo.position.copy(moonDisc.position).add(new THREE.Vector3(0, 0, -1)); S.add(halo);
 
   // ---- lights ----
-  const key = new THREE.SpotLight(MOON, 560, 36, 0.5, 0.75, 1.4);
+  const key = new THREE.SpotLight(MOON, 640, 36, 0.5, 0.75, 1.4);
   key.position.set(-2.6, 12, 5.2); key.target.position.set(0, 0.8, 0);
   key.castShadow = true; key.shadow.mapSize.setScalar(engine.tier >= 2 ? 2048 : engine.tier === 1 ? 1024 : 512);
   key.shadow.bias = -0.0002; key.shadow.normalBias = 0.03; key.shadow.camera.near = 4; key.shadow.camera.far = 26; key.shadow.radius = 4;
   S.add(key, key.target);
-  const rim = new THREE.DirectionalLight(GOLD, 2.0); rim.position.set(4, 5, -8); S.add(rim);
-  const rim2 = new THREE.DirectionalLight('#7f9cff', 0.9); rim2.position.set(-6, 3, -6); S.add(rim2);
-  const hemi = new THREE.HemisphereLight('#5d72a8', '#161a24', 1.0); S.add(hemi);
+  const rim = new THREE.DirectionalLight(GOLD, 2.6); rim.position.set(4, 5, -8); S.add(rim);
+  const rim2 = new THREE.DirectionalLight('#4fb4ff', 1.5); rim2.position.set(-6, 3, -6); S.add(rim2);
+  const hemi = new THREE.HemisphereLight('#6f92f0', '#1b2448', 1.2); S.add(hemi);
   // the statues catch a cold wash so they read in the fog
-  const wash = new THREE.DirectionalLight('#b4c6ee', 2.4); wash.position.set(0, 10, 12); wash.target.position.set(0, 4, -24); S.add(wash, wash.target);
+  const wash = new THREE.DirectionalLight('#a8c4ff', 2.8); wash.position.set(0, 10, 12); wash.target.position.set(0, 4, -24); S.add(wash, wash.target);
 
   let dimV = 0, dimTarget = 0;
   const base0 = { key: key.intensity, rim: rim.intensity, hemi: hemi.intensity, shaft: shafts.map(m => m.uniforms.uA.value as number) };
@@ -241,7 +255,7 @@ export function buildArena(): Arena {
     dimV += (dimTarget - dimV) * (1 - Math.exp(-dt * 9));
     key.intensity = base0.key * (1 - dimV * 0.55); rim.intensity = base0.rim * (1 + dimV * 0.4); hemi.intensity = base0.hemi * (1 - dimV * 0.6);
     shafts.forEach((m, i) => { m.uniforms.uA.value = base0.shaft[i] * (1 - dimV * 0.6); m.uniforms.uT.value = t; });
-    innerMat.uniforms.uK.value = 0.4 + dimV * 0.5;
+    innerMat.uniforms.uK.value = 1.0 + dimV * 0.4;
   });
 
   let raised = false;
@@ -252,7 +266,7 @@ export function buildArena(): Arena {
     statues(kits) {
       if (raised) return; raised = true;
       // past champions, carved twelve times life size, each frozen in its moment
-      const stone = new THREE.MeshStandardMaterial({ color: '#c3cad8', emissive: '#1c2740', roughness: 0.75, metalness: 0, bumpMap: grain, bumpScale: 1.2 });
+      const stone = new THREE.MeshStandardMaterial({ color: '#c8d2e6', emissive: '#203a78', roughness: 0.75, metalness: 0, bumpMap: grain, bumpScale: 1.2 });
       const plinthMat = new THREE.MeshStandardMaterial({ color: '#6a7182', roughness: 0.85, bumpMap: grain, bumpScale: 1 });
       const spots: [number, number, string, number][] = [[-Math.PI / 2 - 0.62, 1, 'taunt', 0.5], [-Math.PI / 2 + 0.62, 2, 'victory', 1.4],
         [-Math.PI / 2 + 1.5, 0, 'taunt', 1.0], [-Math.PI / 2 - 1.5, 1, 'victory', 1.1], [Math.PI / 2 - 0.5, 2, 'taunt', 0.8], [Math.PI / 2 + 0.5, 0, 'victory', 1.6]];

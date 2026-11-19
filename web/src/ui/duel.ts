@@ -305,7 +305,7 @@ register('duel', root => {
       center.append(h('div', { class: 'titlecard' }, h('h2', { class: 'fallen' }, 'Fallen'),
         h('p', {}, outOfRounds ? `${G.name} held out for 12 rounds` : `${G.name} holds the hall`)));
       const panel = h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' },
-        h('p', { class: 'dim', style: 'margin:0 0 4px' }, isPractice() ? 'Practice. Nothing was lost.' : `Your ${money(f.challengeSats, f.usdPerBch)} went to its owner. Your hero keeps everything else.`),
+        h('p', { class: 'dim', style: 'margin:0 0 4px' }, isPractice() ? 'Practice. Nothing was lost.' : `Your ${money(f.challengeSats, f.usdPerBch)} went to its keeper, ${G.owner}. Your hero keeps everything else.`),
         h('p', { class: 'dim', style: 'margin:0' }, 'Its moves are shown before each round. Guard on its Strikes, Special when it Guards.'),
         h('div', { class: 'row' },
           h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Arena'),
@@ -329,7 +329,7 @@ register('duel', root => {
     const hero0 = hero!;
     const a = A!;
     const rite = beginRite(a);
-    const seal = h('div', { class: 'seal' }, h('span', { class: 'dot' }), isPractice() ? 'Practice · forging in your browser' : 'Forging on Bitcoin Cash');
+    const seal = h('div', { class: `seal${isPractice() ? '' : ' pending'}` }, h('span', { class: 'dot' }), isPractice() ? 'Practice · forging in your browser' : 'Sealing on Bitcoin Cash');
     const xpI = h('i', {}), xpBar = h('div', { class: 'xpbar' }, xpI);
     const xpL = h('span', {}), xpR = h('span', {});
     const extra = h('div', {});
@@ -345,7 +345,13 @@ register('duel', root => {
     await minimum;
     seal.innerHTML = '';
     if (res.receipt.explorer) {
-      seal.replaceWith(h('a', { class: 'seal', href: res.receipt.explorer, target: '_blank', rel: 'noopener' }, h('span', { class: 'dot' }), 'Sealed on Bitcoin Cash', icon('link')));
+      // the chain moment: the seal turns Bitcoin Cash green and a green ring of light runs out across the floor
+      seal.replaceWith(h('div', { class: 'sealed', 'data-txid': res.receipt.txid ?? '' }, h('i', { class: 'bchm' }), 'Sealed on Bitcoin Cash',
+        h('a', { href: res.receipt.explorer, target: '_blank', rel: 'noopener' }, 'view', icon('link'))));
+      const feet = a.root.position.clone().setY(0.05);
+      shock(feet, '#0ac18e', 5.2, 1.2); shock(feet, '#43f0bd', 3.2, 0.8);
+      sparks(feet.clone().setY(0.4), 60, ['#0ac18e', '#7af7cf', '#ffffff'], 2.6, -1, 1.6);
+      sfx.chime(4);
     } else seal.append(h('span', { class: 'dot' }), 'Practice · not sealed on chain');
     card.style.transition = 'transform 600ms, opacity 600ms'; card.style.transform = 'translateY(-16px)'; card.style.opacity = '0';
     const need0 = xpNeed(hero0.level);

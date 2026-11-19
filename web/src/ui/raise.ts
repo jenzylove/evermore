@@ -80,7 +80,7 @@ register('raise', root => {
   root.append(h('section', { class: 'screen raise' },
     h('div', { class: 'top' }, h('div', { class: 'eyebrow' }, 'Raise a hero')),
     h('div', { class: 'panel scrim-b' }, h('div', { class: 'wrap' }, tabs, blurb, stats, h('div', { class: 'namerow' }, name, dice), go1,
-      h('p', { class: 'fine' }, isPractice() ? 'Practice hero. It lives in this browser only.' : 'Your hero is a token in your wallet. Nobody can delete it.')))));
+      h('p', { class: 'fine' }, isPractice() ? 'Practice hero. It lives in this browser only.' : 'A real hero on Bitcoin Cash. It stays in your play Satchel until you send it home to your wallet, and nobody can delete it.')))));
 
   async function raise() {
     go1.setAttribute('disabled', '');

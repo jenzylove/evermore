@@ -9,7 +9,7 @@ import { runeDisc, runeMaterial } from './runes';
 import type { Fighter } from './fighter';
 import { world } from './world';
 
-export const GHOST_LIGHT = '#bfe3ff';
+export const GHOST_LIGHT = '#86e4ff';
 const SHARD_GOLD = '#ffe9bf';
 
 // ---- trails: a camera facing ribbon behind a moving point ----
@@ -76,7 +76,7 @@ export function nameLabel(name: string, owner?: string, color = GHOST_LIGHT) {
   return m;
 }
 
-export type GhostFx = { ring: THREE.Mesh | null; label: THREE.Mesh | null; setFocus(k: number): void; shatter(): Promise<void> };
+export type GhostFx = { ring: THREE.Mesh | null; label: THREE.Mesh | null; setFocus(k: number): void; shatter(): Promise<void>; dispose(): void };
 
 /** dress a fighter as a ghost: trails, its name in light, and the means to shatter it */
 export function haunt(f: Fighter, o: { name: string; owner?: string; ring?: boolean; label?: boolean; color?: string; lift?: number }): GhostFx {
@@ -93,7 +93,7 @@ export function haunt(f: Fighter, o: { name: string; owner?: string; ring?: bool
   }
   if (o.label) label = world.extra(nameLabel(o.name, o.owner, color));
   let focus = 1, alive = true;
-  world.tick((_dt, t) => {
+  const off = world.tick((_dt, t) => {
     const vis = f.root.visible && alive;
     trails.forEach(tr => tr.update(vis));
     if (ring && ringMat) {
@@ -113,6 +113,17 @@ export function haunt(f: Fighter, o: { name: string; owner?: string; ring?: bool
     async shatter() {
       alive = false;
       await shatter(f, color);
+    },
+    /** take the trails, ring and label down (the fighter itself is the caller's) */
+    dispose() {
+      off();
+      for (const o of [...trails.map(t => t.mesh), ring, label]) {
+        if (!o) continue;
+        world.unextra(o);
+        o.geometry.dispose();
+        const m = o.material as THREE.Material & { map?: THREE.Texture; uniforms?: { uMap?: { value: THREE.Texture } } };
+        m.map?.dispose(); m.uniforms?.uMap?.value?.dispose(); m.dispose();
+      }
     },
   };
 }

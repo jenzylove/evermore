@@ -49,12 +49,12 @@ export function toast(msg: string, err = false) {
 
 export function money(sats: number, usdPerBch: number) {
   const c = (sats / 1e8) * usdPerBch * 100;
-  if (c < 99.5) return `${Math.max(1, Math.round(c))} cent${Math.round(c) === 1 ? '' : 's'}`;
+  if (c < 99.5) { const n = sats > 0 ? Math.max(1, Math.round(c)) : 0; return `${n} cent${n === 1 ? '' : 's'}`; }
   return `$${(c / 100).toFixed(2)}`;
 }
 export const shortCents = (sats: number, usdPerBch: number) => {
   const c = (sats / 1e8) * usdPerBch * 100;
-  return c < 99.5 ? `${Math.max(1, Math.round(c))}¢` : `$${(c / 100).toFixed(2)}`;
+  return c < 99.5 ? `${sats > 0 ? Math.max(1, Math.round(c)) : 0}¢` : `$${(c / 100).toFixed(2)}`;
 };
 
 export const GEAR_NAMES = [['Iron Blade', 'Gem Blade', 'Gold Blade'], ['Old Mace', 'War Axe', 'Long Spear'], ['Red Flask', 'Blue Flask', 'Gold Flask']];
