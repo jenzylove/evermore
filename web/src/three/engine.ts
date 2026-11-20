@@ -90,7 +90,9 @@ class Engine {
 
   private buildComposer() {
     const r = this.renderer;
-    this.composer?.dispose();
+    // build the new composer first and dispose the old one only after the new one has drawn a frame, so a quality
+    // change never shows a black frame
+    const old = this.composer;
     const c = this.composer = new EffectComposer(r, { frameBufferType: THREE.HalfFloatType, multisampling: 0 });
     c.addPass(new RenderPass(this.scene, this.camera));
     // phones and weak GPUs blur the bloom at half resolution; it reads the same and costs a quarter
@@ -100,11 +102,12 @@ class Engine {
       new BrightnessContrastEffect({ contrast: 0.13, brightness: 0.02 }), this.vignette];
     if (this.tier >= 1) fx.push(new SMAAEffect({ preset: this.tier >= 2 ? SMAAPreset.HIGH : SMAAPreset.MEDIUM }));
     c.addPass(new EffectPass(this.camera, ...fx));
+    if (old) requestAnimationFrame(() => requestAnimationFrame(() => old.dispose()));
   }
 
   fit() {
     const r = this.renderer; if (!r) return;
-    const dpr = Math.min(devicePixelRatio || 1, [1, 1.5, 1.75][this.tier]);
+    const dpr = Math.min(devicePixelRatio || 1, [1.5, 2, 2.25][this.tier]);
     r.setPixelRatio(dpr);
     r.setSize(innerWidth, innerHeight, false);
     this.composer.setSize(innerWidth, innerHeight);

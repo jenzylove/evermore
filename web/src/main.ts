@@ -21,6 +21,8 @@ async function boot() {
   const intent = window.__intent;
   if (intent === 'practice') await startPlaying();
   else { go(['raise', 'arena', 'hero', 'bazaar'].includes(r0) ? r0 : 'front', false); if (intent === 'real') playForReal(); }
+  // let the lit hall draw a few real frames before the still lifts, so the hand over never shows a black frame
+  for (let i = 0; i < 4; i++) await new Promise(r => requestAnimationFrame(() => r(null)));
   const veil = document.getElementById('veil');
   if (veil) { veil.classList.add('gone'); setTimeout(() => veil.remove(), 900); }
   // now compile the rest of the game's shaders, a batch at a time, while the player looks at the door

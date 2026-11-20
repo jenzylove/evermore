@@ -1,46 +1,209 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#071330" />
-  <title>Evermore</title>
-  <meta name="description" content="A hero duel game on Bitcoin Cash. Games die. Heroes don't." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23071330'/%3E%3Cpath d='M6 11l5 5 5-9 5 9 5-5-2 13H8z' fill='none' stroke='%23ffcf7a' stroke-width='2'/%3E%3C/svg%3E" />
-  <link rel="preload" href="/fonts/cinzel-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high" />
-  <link rel="preload" href="/fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high" />
-  <link rel="preload" href="/fonts/barlow-condensed-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/poster-p.webp" as="image" media="(orientation: portrait)" fetchpriority="high" />
-  <link rel="preload" href="/poster-l.webp" as="image" media="(orientation: landscape)" fetchpriority="high" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#06102a" />
+<title>Evermore · Games die. Heroes don't.</title>
+<meta name="description" content="A hero duel game on Bitcoin Cash. Every level is earned in a fight the chain checks, your hero earns while you sleep, and nobody can shut it down." />
+<meta property="og:title" content="Evermore" />
+<meta property="og:description" content="Games die. Heroes don't. A hero duel game where every hero lives on Bitcoin Cash." />
+<meta property="og:image" content="/landing/front.webp" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23071330'/%3E%3Cpath d='M6 11l5 5 5-9 5 9 5-5-2 13H8z' fill='none' stroke='%23ffcf7a' stroke-width='2'/%3E%3C/svg%3E" />
+<link rel="preload" href="/fonts/cinzel-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/poster-l.webp" as="image" media="(min-width: 821px)" fetchpriority="high" />
+<link rel="preload" href="/poster-p.webp" as="image" media="(max-width: 820px)" fetchpriority="high" />
+<link rel="prefetch" href="/play" />
+<style>
+@font-face{font-family:Cinzel;src:url(/fonts/cinzel-latin-900-normal.woff2) format('woff2');font-weight:900;font-display:swap}
+@font-face{font-family:Barlow;src:url(/fonts/barlow-condensed-latin-600-normal.woff2) format('woff2');font-weight:600;font-display:swap}
+@font-face{font-family:Barlow;src:url(/fonts/barlow-condensed-latin-700-normal.woff2) format('woff2');font-weight:700;font-display:swap}
+:root{--ink:#06102a;--ink2:#0b1d4a;--gold:#ffcf7a;--gold2:#ffb347;--cyan:#7fe8ff;--bch:#0ac18e;--text:#e8eefc;--dim:#9fb0d6}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font:600 18px/1.5 Barlow,'Arial Narrow',sans-serif;letter-spacing:.02em;overflow-x:hidden}
+a{color:inherit}
+.banner{position:relative;z-index:5;display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;align-items:center;padding:8px 16px;background:#030a1c;border-bottom:1px solid rgba(127,232,255,.15);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.banner a{text-decoration:none;color:var(--text)}.banner a:hover{color:var(--gold)}
+.banner .addr{color:var(--bch);text-transform:none;letter-spacing:.02em;word-break:break-all;cursor:copy}
+.hero{position:relative;min-height:100svh;display:grid;justify-items:center;align-items:start;text-align:center;padding:90px 16px 70px;overflow:hidden}
+.hero .bg{position:absolute;inset:0;background:url(/poster-l.webp) center 85%/cover no-repeat;transform:scale(1.06);animation:drift 22s ease-in-out infinite alternate;filter:saturate(1.15) brightness(.82)}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 0,rgba(6,16,42,.35) 55%,var(--ink) 100%),linear-gradient(to bottom,rgba(6,16,42,.2),transparent 30%,var(--ink) 96%)}
+@keyframes drift{to{transform:scale(1.12) translateY(-12px)}}
+.hero .in{position:relative;z-index:2;max-width:900px;width:100%;display:flex;flex-direction:column;align-items:center;min-height:calc(100svh - 170px)}.hero .cta{margin-top:auto}
+h1{font:900 clamp(56px,13vw,150px)/.95 Cinzel,serif;letter-spacing:.02em;background:linear-gradient(180deg,#fff7df 10%,var(--gold) 55%,#b9782a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 30px rgba(255,190,90,.35))}
+.tag{margin-top:14px;font-size:clamp(16px,3.4vw,22px);letter-spacing:.42em;text-transform:uppercase}
+.chain{margin-top:12px;color:var(--bch);letter-spacing:.14em;text-transform:uppercase;font-size:15px}
+.cta{margin-top:34px;display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:16px 34px;font:700 18px Barlow,sans-serif;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%,0 50%);transition:transform .2s,filter .2s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.12)}
+.gold{background:linear-gradient(180deg,#ffe2a6,var(--gold2));color:#2a1700}
+.green{background:linear-gradient(180deg,#2fe0ad,var(--bch));color:#022a1d}
+.ghostb{background:rgba(127,232,255,.1);color:var(--cyan);box-shadow:inset 0 0 0 1px rgba(127,232,255,.4)}
+.scroll{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:2;color:var(--dim);font-size:12px;letter-spacing:.3em;text-transform:uppercase;animation:bob 2s ease-in-out infinite}
+@keyframes bob{50%{transform:translate(-50%,6px)}}
+section.s{max-width:1180px;margin:0 auto;padding:110px 20px}
+.num{font:900 15px Cinzel,serif;color:var(--gold);letter-spacing:.3em}
+h2{font:900 clamp(32px,6vw,58px)/1.05 Cinzel,serif;margin:10px 0 18px;color:#fff6e2}
+.lead{max-width:720px;color:var(--dim);font-size:clamp(17px,2.2vw,21px)}
+.split{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center}
+.shot{width:100%;border-radius:6px;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(127,232,255,.15);display:block}
+.deaths{margin-top:26px;display:grid;gap:14px}
+.deaths div{padding-left:18px;border-left:2px solid rgba(255,207,122,.5)}
+.deaths b{color:var(--text);font-size:20px}.deaths span{display:block;color:var(--dim);font-size:16px}
+.steps{margin-top:46px;display:grid;grid-template-columns:repeat(3,1fr);gap:46px 40px}
+.steps i{font:900 44px Cinzel,serif;color:rgba(255,207,122,.28);font-style:normal;display:block;line-height:1}
+.steps h3{font:700 22px Barlow,sans-serif;letter-spacing:.14em;text-transform:uppercase;margin:6px 0 6px;color:#fff}
+.steps p{color:var(--dim);font-size:17px}
+.green-t{color:var(--bch)}
+.fighters{margin-top:44px;display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
+.fighter{position:relative;text-align:center}
+.fighter img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;mask-image:linear-gradient(to bottom,#000 70%,transparent);-webkit-mask-image:linear-gradient(to bottom,#000 70%,transparent)}
+.fighter h3{font:900 28px Cinzel,serif;margin-top:-30px;position:relative;color:var(--gold)}
+.fighter p{color:var(--dim);font-size:16px;margin-top:4px}
+.stat{display:flex;justify-content:center;gap:14px;margin-top:8px;font-size:14px;letter-spacing:.12em;color:var(--cyan)}
+.why{margin-top:44px;display:grid;grid-template-columns:repeat(2,1fr);gap:26px 50px}
+.why div{padding:6px 0 6px 20px;border-left:2px solid var(--bch)}
+.why h3{font:700 20px Barlow,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#fff}
+.why p{color:var(--dim);font-size:17px;margin-top:4px}
+.proof{margin-top:30px;display:flex;flex-wrap:wrap;gap:10px}
+.proof a{padding:9px 16px;font-size:15px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--bch);box-shadow:inset 0 0 0 1px rgba(10,193,142,.45);border-radius:2px}
+.proof a:hover{background:rgba(10,193,142,.12)}
+.faq{margin-top:34px;max-width:820px}
+details{border-bottom:1px solid rgba(127,232,255,.14);padding:18px 0}
+summary{cursor:pointer;font:700 20px Barlow,sans-serif;letter-spacing:.06em;list-style:none;display:flex;justify-content:space-between;gap:20px}
+summary::after{content:"+";color:var(--gold);font-size:24px;line-height:1}details[open] summary::after{content:"−"}
+details p{color:var(--dim);margin-top:10px;font-size:17px}
+.final{text-align:center;padding:120px 20px;background:radial-gradient(ellipse at 50% 100%,rgba(255,207,122,.14),transparent 60%)}
+footer{border-top:1px solid rgba(127,232,255,.12);padding:40px 20px 50px;text-align:center;color:var(--dim);font-size:15px}
+footer .links{display:flex;flex-wrap:wrap;gap:10px 26px;justify-content:center;margin-bottom:14px}
+footer a{text-decoration:none;color:var(--text)}footer a:hover{color:var(--gold)}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .9s ease,transform .9s ease}.reveal.on{opacity:1;transform:none}
+@media (max-width:820px){.hero .bg{background-image:url(/poster-p.webp)}.banner{font-size:11px;gap:4px 12px;padding:6px 12px}.banner .addr{font-size:10px}.split,.steps,.fighters,.why{grid-template-columns:1fr}.split{gap:30px}section.s{padding:80px 18px}.fighters{gap:40px}.fighter img{max-width:420px;margin:0 auto}}
+@media (prefers-reduced-motion:reduce){.hero .bg,.scroll{animation:none}.reveal{opacity:1;transform:none}}
+</style>
 </head>
 <body>
-  <canvas id="world"></canvas>
-  <div id="fx"></div>
-  <div id="flash"></div>
-  <main id="ui"></main>
-  <div id="chrome"></div>
-  <!-- The front door is here in the page itself, over a still of the hall, so it can be tapped before the 3D has loaded.
-       It is the same layout as the 3D front door (ui/front.ts), which takes over without a jump when the hall is lit. -->
-  <div id="veil">
-    <section class="screen front still">
-      <div class="title"><h1><span>E</span><span>v</span><span>e</span><span>r</span><span>m</span><span>o</span><span>r</span><span>e</span></h1><div class="line">Games die. Heroes don't.</div><div class="chainline"><i class="bchm"></i>Every hero lives on Bitcoin Cash</div></div>
-      <div class="cta">
-        <button class="btn prime" data-go="practice">Raise a hero <small>practice, free</small></button>
-        <button class="btn bch" data-go="real"><i class="bchm"></i>Play for real</button>
-        <p class="lighting"><span>Lighting the hall</span><i></i></p>
-      </div>
-    </section>
+<div class="banner">
+  <span>BCH BLAZE 2026</span>
+  <a href="#deck" id="deckLink">Slide deck</a>
+  <a href="https://github.com/jenzylove/evermore" rel="noopener">Source code</a>
+  <span>CashTokens address <span class="addr" title="Tap to copy">bitcoincash:zr8mczprtn20l62z0d286as0x2euxryysyt6ptjql6</span></span>
+</div>
+
+<header class="hero">
+  <div class="bg"></div>
+  <div class="in">
+    <h1>Evermore</h1>
+    <div class="tag">Games die. Heroes don't.</div>
+    <div class="chain">Every hero lives on Bitcoin Cash</div>
+    <div class="cta">
+      <a class="btn gold" href="/play">Play now</a>
+      <a class="btn green" href="/play?real=1">Play for real</a>
+    </div>
   </div>
-  <script>
-    try { if (localStorage.getItem('evermore.mode') === 'real') { document.querySelector('#veil .prime').innerHTML = 'Enter the hall <small>on Bitcoin Cash</small>'; document.querySelector('#veil .bch').lastChild.textContent = 'Wallet and Satchel'; } } catch (e) {}
-    // a tap before the hall is lit is remembered and acted on the moment it is (see main.ts)
-    document.getElementById('veil').addEventListener('click', function (e) {
-      var b = e.target.closest && e.target.closest('[data-go]'); if (!b) return;
-      window.__intent = b.getAttribute('data-go');
-      this.classList.add('waiting'); b.classList.add('chosen');
-      this.querySelector('.lighting span').textContent = 'Opening the hall';
-    });
-  </script>
-  <script type="module" src="/src/main.ts"></script>
+  <div class="scroll">Scroll</div>
+</header>
+
+<section class="s split reveal">
+  <div>
+    <div class="num">01 · The problem</div>
+    <h2>The games you love can be switched off.</h2>
+    <p class="lead">Years of play, gone with one announcement. Everything you earned lives on someone else's server, and the server always wins.</p>
+    <div class="deaths">
+      <div><b>The Crew</b><span>Shut down by Ubisoft on Apr 1 2024. Every copy stopped working.</span></div>
+      <div><b>Concord</b><span>Pulled by Sony two weeks after launch in 2024.</span></div>
+      <div><b>Anthem</b><span>EA switched off its servers on Jan 12 2026. Everything players earned is gone.</span></div>
+      <div><b>1.29 million</b><span>verified signatures on the Stop Killing Games EU initiative, sent to the European Commission in Jan 2026.</span></div>
+    </div>
+  </div>
+  <img class="shot" src="/landing/arena.webp" alt="The arena of echoes in Evermore" loading="lazy" width="1600" height="1000" />
+</section>
+
+<section class="s reveal">
+  <div class="num">02 · How it plays</div>
+  <h2>Raise a hero. Fight the echoes. Keep it forever.</h2>
+  <div class="steps">
+    <div><i>I</i><h3>Raise</h3><p>Choose a Knight, a Rogue or a Mage. Your hero is minted as a token you own, with its level and stats written inside it.</p></div>
+    <div><i>II</i><h3>Challenge</h3><p>Every opponent is the echo of a real player's hero. Pick one you can beat. Your challenge pays <span class="green-t">2 cents to its keeper</span>.</p></div>
+    <div><i>III</i><h3>Duel</h3><p>Strike, Guard or Special, round by round. Read the echo's style, charge your special, land the last blow.</p></div>
+    <div><i>IV</i><h3>Forge</h3><p>Win and Bitcoin Cash replays the fight before it seals your new level. Armour, glow, a halo, a crown: your hero changes as it grows.</p></div>
+    <div><i>V</i><h3>Earn while away</h3><p>Your own hero stands in the arena as an echo. Every player who challenges it pays you, even while you sleep.</p></div>
+    <div><i>VI</i><h3>Trade</h3><p>A levelled hero is worth real money. Sell it to anyone, hero and payment swap in one transaction.</p></div>
+  </div>
+</section>
+
+<section class="s split reveal">
+  <img class="shot" src="/landing/duel.webp" alt="A duel against an echo" loading="lazy" width="1600" height="1000" />
+  <div>
+    <div class="num">03 · The duel</div>
+    <h2>Every opponent is a real player's echo.</h2>
+    <p class="lead">Echoes are made of light and fight the way their hero was built. Beat one and it shatters into a thousand slivers. Lose and you learn its style for next time.</p>
+  </div>
+</section>
+
+<section class="s reveal">
+  <div class="num">04 · The fighters</div>
+  <h2>Three paths to glory.</h2>
+  <div class="fighters">
+    <div class="fighter"><img src="/bcmr/art/knight.png" alt="Knight" loading="lazy" width="512" height="512" /><h3>Knight</h3><p>Heavy armour, steady blade. Outlasts anyone.</p><div class="stat"><span>HP 60</span><span>ATK 10</span><span>DEF 8</span></div></div>
+    <div class="fighter"><img src="/bcmr/art/rogue.png" alt="Rogue" loading="lazy" width="512" height="512" /><h3>Rogue</h3><p>Fast hands, faster feet. Always strikes first.</p><div class="stat"><span>HP 45</span><span>ATK 12</span><span>SPD 9</span></div></div>
+    <div class="fighter"><img src="/bcmr/art/mage.png" alt="Mage" loading="lazy" width="512" height="512" /><h3>Mage</h3><p>Fragile, ruinous. Ends fights in one cast.</p><div class="stat"><span>HP 40</span><span>ATK 15</span><span>SPD 6</span></div></div>
+  </div>
+</section>
+
+<section class="s split reveal">
+  <div>
+    <div class="num">05 · The forge</div>
+    <h2>Progress you can see.</h2>
+    <p class="lead">Each level is sealed on chain and shows on your hero: shoulder plates, veins of light, a burning hand, a halo, a crown. A level ten hero looks like it earned it, because it did.</p>
+  </div>
+  <img class="shot" src="/landing/forge.webp" alt="The forge level up" loading="lazy" width="1600" height="1000" />
+</section>
+
+<section class="s reveal">
+  <div class="num">06 · Why Bitcoin Cash</div>
+  <h2>The chain is the referee.</h2>
+  <div class="why">
+    <div><h3>Every win is checked</h3><p>A Bitcoin Cash contract replays your moves before your hero can level up. A fake win is rejected by the network itself.</p></div>
+    <div><h3>Your hero is yours</h3><p>Heroes and gear are CashTokens in your own wallet. No company can delete, freeze or confiscate them.</p></div>
+    <div><h3>Keepers are paid instantly</h3><p>The challenge fee goes to the echo's keeper inside the same transaction. No middleman, no payout queue.</p></div>
+    <div><h3>No off switch</h3><p>The game is a page that reads the chain. Anyone can host a copy. If we vanish, your hero and the arena live on.</p></div>
+  </div>
+  <div class="proof" id="proof">
+    <a href="https://chipnet.imaginary.cash/tx/f014b1db3b5bdb905951f496b4551c532574c945dc2498435bd696a25491422f" rel="noopener">A Warden reaching level 8</a>
+    <a href="https://chipnet.imaginary.cash/tx/07566f90b9ed2d1dc355db278cb9991e5c96c99d465bb3bf8172f7992c4d9545" rel="noopener">Fees following a new owner</a>
+    <a href="https://chipnet.imaginary.cash/tx/360ab8beb88751256689bd838b3f26674b61beb9a4f9ca5dbdfa36af407486f0" rel="noopener">A forge from the game page</a>
+  </div>
+</section>
+
+<section class="s reveal">
+  <div class="num">07 · Questions</div>
+  <h2>Before you raise.</h2>
+  <div class="faq">
+    <details><summary>Do I need crypto to play?</summary><p>No. Practice runs fully in your browser for free. Play for real when you want your hero on chain.</p></details>
+    <details><summary>What does it cost?</summary><p>Raising a hero is about 25 cents. A challenge pays 2 cents to the echo's keeper, and a won forge about 1 cent. Network fees are under a cent.</p></details>
+    <details><summary>Which wallets work?</summary><p>Selene, Cashonize and Paytaca through WizardConnect. Duels use a small play satchel in your browser, so there are no popups mid fight. Send your hero home to your wallet any time.</p></details>
+    <details><summary>Can someone cheat their way to a high level?</summary><p>No. The contract replays every duel from both heroes' stats and the moves played. A level only exists if the win was real.</p></details>
+    <details><summary>What happens if Evermore shuts down?</summary><p>Nothing happens to your hero. It is a token in your wallet and the rules live in Bitcoin Cash contracts. Anyone can run the game page.</p></details>
+  </div>
+</section>
+
+<div class="final reveal">
+  <h2>Your hero is waiting.</h2>
+  <div class="cta"><a class="btn gold" href="/play">Play now</a><a class="btn green" href="/play?real=1">Play for real</a></div>
+</div>
+
+<footer>
+  <div class="links"><a href="/play">Play</a><a href="#proof">Proof on chain</a><a href="https://github.com/jenzylove/evermore" rel="noopener">Source</a><a href="#deck">Slide deck</a></div>
+  <div>Evermore · built for BCH BLAZE 2026 · heroes live on Bitcoin Cash</div>
+</footer>
+
+<script>
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target)}})},{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el)});
+  var a=document.querySelector('.banner .addr');a.addEventListener('click',function(){navigator.clipboard&&navigator.clipboard.writeText(a.textContent).then(function(){var t=a.textContent;a.textContent='copied';setTimeout(function(){a.textContent=t},1200)})});
+</script>
 </body>
 </html>
