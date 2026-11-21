@@ -102,8 +102,7 @@ No seasons, no resets. One arena that never closes.
 | Part | Status |
 |---|---|
 | Contracts | Live on BCH mainnet |
-| Raise, challenge, forge, sync, reclaim | Live on mainnet, each one a transaction you can open |
-| List, buy, cancel | Live in the game; first run end to end on chipnet |
+| Raise, challenge, forge, sync, reclaim, list, buy, cancel | Live on mainnet, each one a transaction you can open on /proof |
 | 12 Wardens | House heroes levelled by real duels on mainnet, so the arena is never empty |
 | WizardConnect | Selene, Cashonize, Paytaca; wallets sign, the game broadcasts |
 | Hero art in wallets | BCMR registry served from this site, hash committed in genesis |

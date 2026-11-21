@@ -5,6 +5,7 @@ import { CLASS_NAMES, gameFromDeployment, lockToAddress, network, p2pkhLock } fr
 import type { Deployment, NetworkName } from '../../sdk/src/index.ts';
 
 type Wardens = { category: string; labels: Record<string, string>; wardens: { id: number; name: string; level: number }[]; txs: { kind: string; txid: string; note: string }[] };
+type Bazaar = { list?: string; buy?: string; sync?: string; cancel?: string };
 type Smoke = { network: string; raise?: string; challenge?: string; forge?: string; reclaim?: string; sync?: string; heroId?: number };
 
 const deployments = import.meta.glob('../../contracts/deployments/{chipnet,mainnet}.json', { eager: true, import: 'default' }) as Record<string, Deployment>;
@@ -21,6 +22,8 @@ const tx = (t: string) => cfg.explorerTx(t);
 const wardens = pick(wardenFiles, `wardens-${net}`);
 const W = wardens && wardens.category === dep.category ? wardens : null;
 const smoke = pick(smokeFiles, `smoke-${net}`);
+const bazaarFiles = import.meta.glob('../../contracts/deployments/bazaar-{chipnet,mainnet}.json', { eager: true, import: 'default' }) as Record<string, Bazaar>;
+const bazaar = pick(bazaarFiles, `bazaar-${net}`);
 
 const $ = (id: string) => document.getElementById(id)!;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -62,6 +65,16 @@ claims.push({
   links: [...(smoke?.sync ? [{ label: 'A sync tx', href: tx(smoke.sync) }] : []), code('Sync test', 'contracts/test/sync-reclaim.test.mjs')],
 });
 claims.push({
+  title: 'Heroes trade with no operator',
+  body: 'A seller lists a hero at a price. Anyone can buy it: the hero and the money swap in one transaction, and the seller can take it back any time before. Nobody takes a cut.',
+  links: [
+    ...(bazaar?.list ? [{ label: 'List', href: tx(bazaar.list) }] : []),
+    ...(bazaar?.buy ? [{ label: 'Buy', href: tx(bazaar.buy) }] : []),
+    ...(bazaar?.cancel ? [{ label: 'Cancel', href: tx(bazaar.cancel) }] : []),
+    code('Sale contract', 'contracts/src/Sale.cash'),
+  ],
+});
+claims.push({
   title: 'Gear supply is capped forever',
   body: `Gear drops when you beat an echo 3 or more levels above you. The counter contract refuses to mint past ${Number(dep.gearCap).toLocaleString()} pieces. Nobody can raise the cap.`,
   links: [code('Counter contract', 'contracts/src/Counter.cash'), code('Cap test', 'contracts/test/forge.test.mjs#L127')],
@@ -69,7 +82,7 @@ claims.push({
 claims.push({
   title: 'Nobody can take or delete a hero',
   body: 'There is no admin key and no freeze path in any contract. A hero is a CashToken in its holder’s wallet, and a sale is an atomic swap with no operator.',
-  links: [code('Sale contract', 'contracts/src/Sale.cash'), code('Threat model', 'contracts/THREATS.md')],
+  links: [code('Threat model', 'contracts/THREATS.md')],
 });
 claims.push({
   title: 'The browser and the chain agree, move for move',
