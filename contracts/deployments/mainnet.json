@@ -1,0 +1,115 @@
+{
+  "network": "mainnet",
+  "category": "8941559b1d6823277392ecf0b3d523829a976002b02eee51be64496423dbe480",
+  "treasuryPkh": "6198b69840da3c899b8c2989847fe85ca85b05ca",
+  "raisePrice": "119000",
+  "challengeFee": "9500",
+  "forgeFee": "4800",
+  "gearCap": "5000",
+  "authbaseTxid": "8941559b1d6823277392ecf0b3d523829a976002b02eee51be64496423dbe480",
+  "genesisTxid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+  "authhead": {
+    "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+    "vout": 0
+  },
+  "deployer": "bitcoincash:qpse3d5cgrdrezvm3s5cnprlapw2skc9egkcjpw3ye",
+  "addresses": {
+    "lane": "bitcoincash:p0stq4ey7nwrl7vsh3uj5qyeayeg2zvgfnudr0qmwukv3aeq05zcce5er6jy5",
+    "arena": "bitcoincash:pw24heknvs75g0yzrueh664dt6m20pn2rcednr2h200zk0mdg7pru8hachkrk",
+    "counter": "bitcoincash:p0vulgvd4necj3u2snvs0nw8ndvpgsvssh0a2pzs3l9q8wpa75d65j8fukue5",
+    "bazaar": "bitcoincash:qqwp6qu3xumk9q2nz4kps4racz7utqktnq4t3f6a7a",
+    "treasury": "bitcoincash:qpse3d5cgrdrezvm3s5cnprlapw2skc9egkcjpw3ye"
+  },
+  "lanes": [
+    {
+      "lane": 0,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 1
+    },
+    {
+      "lane": 1,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 2
+    },
+    {
+      "lane": 2,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 3
+    },
+    {
+      "lane": 3,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 4
+    },
+    {
+      "lane": 4,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 5
+    },
+    {
+      "lane": 5,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 6
+    },
+    {
+      "lane": 6,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 7
+    },
+    {
+      "lane": 7,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 8
+    },
+    {
+      "lane": 8,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 9
+    },
+    {
+      "lane": 9,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 10
+    },
+    {
+      "lane": 10,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 11
+    },
+    {
+      "lane": 11,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 12
+    },
+    {
+      "lane": 12,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 13
+    },
+    {
+      "lane": 13,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 14
+    },
+    {
+      "lane": 14,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 15
+    },
+    {
+      "lane": 15,
+      "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+      "vout": 16
+    }
+  ],
+  "counter": {
+    "txid": "1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd",
+    "vout": 17
+  },
+  "bcmr": {
+    "url": "https://evermore-alpha-nine.vercel.app/bcmr/evermore.json",
+    "sha256": "1d1c46a4c96505d167c7e1098254be5424a38d49756eb37f5c2c5cb1625a797c",
+    "file": "web/public/bcmr/evermore.json"
+  },
+  "createdAt": "2026-11-21T20:14:30.939Z"
+}

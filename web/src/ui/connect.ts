@@ -13,10 +13,10 @@ const deployments = import.meta.glob('../../../contracts/deployments/{chipnet,ma
 /** House heroes (scripts/wardens.mjs): id -> name, shown to every player. */
 const wardens = import.meta.glob('../../../contracts/deployments/wardens-{chipnet,mainnet}.json', { eager: true, import: 'default' }) as Record<string, { category: string; labels: Record<string, string> }>;
 
-/** Network from VITE_EVERMORE_NET, else ?net= / localStorage, else chipnet. */
+/** Network from VITE_EVERMORE_NET, else ?net= / localStorage, else mainnet. */
 export function realNet(): NetworkName {
   const q = new URLSearchParams(location.search).get('net');
-  const v = (import.meta.env.VITE_EVERMORE_NET as string | undefined) ?? q ?? store.getItem('evermore.net') ?? 'chipnet';
+  const v = (import.meta.env.VITE_EVERMORE_NET as string | undefined) ?? q ?? store.getItem('evermore.net') ?? 'mainnet';
   return v === 'mainnet' ? 'mainnet' : 'chipnet';
 }
 const store: KV = {
