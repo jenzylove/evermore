@@ -111,7 +111,7 @@ async function read() {
     const beaten = ghosts.reduce((a, g) => a + g.ghost.beaten, 0);
     set('s-heroes', raised.toLocaleString());
     set('s-duels', defences.toLocaleString());
-    $('s-paid').textContent = `${bch(BigInt(defences) * BigInt(dep.challengeFee))} BCH paid to keepers`;
+    $('s-paid').textContent = `${bch(BigInt(defences) * BigInt(dep.challengeFee))} BCH to keepers (${bch(BigInt(dep.challengeFee))} per defence)`;
     set('s-wins', beaten.toLocaleString());
     set('s-gear', counter ? counter.minted.toLocaleString() : '0');
     $('s-cap').textContent = `of ${Number(dep.gearCap).toLocaleString()}, ever`;

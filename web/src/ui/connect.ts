@@ -46,7 +46,11 @@ export function realChain(): RealChain {
   if (!dep) throw new Error(`Evermore is not deployed on ${net} yet.`);
   const sk = `evermore.satchel.${net}`;
   let wif = store.getItem(sk);
-  if (!wif) { wif = E.Satchel.generate().toWif(net); store.setItem(sk, wif); }
+  if (!wif) {
+    wif = E.Satchel.generate().toWif(net); store.setItem(sk, wif);
+    // a Satchel key that cannot be saved would be lost on reload with its coins: refuse to start
+    if (store.getItem(sk) !== wif) throw new Error('This browser is blocking storage (private mode or an in app browser), so your play Satchel could not be saved. Open Evermore in a normal browser tab to play for real. Practice works here.');
+  }
   const wallet = WizardWallet.remembered(net);
   if (wallet) resume(wallet);
   const w = Object.entries(wardens).find(([p]) => p.endsWith(`/wardens-${net}.json`))?.[1];
