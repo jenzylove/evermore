@@ -50,8 +50,20 @@ export class Chain {
 
   async request<T>(method: string, ...params: (string | number | boolean)[]): Promise<T> {
     if (!this.client) await this.connect();
-    const r = await this.client!.request(method, ...params);
-    if (r instanceof Error) throw r;
+    let r: unknown;
+    try {
+      r = await this.client!.request(method, ...params);
+      if (r instanceof Error) throw r;
+    } catch (e) {
+      // a dropped socket (servers close idle or long sessions): reconnect once and retry reads.
+      // Broadcasts are not retried here; submit() re-reads the chain and rebuilds instead.
+      if (method === 'blockchain.transaction.broadcast' || !/disconnect|not connected|closed|timed? ?out|ECONNRESET|socket/i.test(String((e as Error)?.message ?? e))) throw e;
+      try { await this.client?.disconnect(true); } catch { /* already gone */ }
+      this.client = null;
+      await this.connect();
+      r = await this.client!.request(method, ...params);
+      if (r instanceof Error) throw r;
+    }
     if (r && typeof r === 'object' && 'code' in (r as any) && 'message' in (r as any)) throw new Error((r as any).message);
     return r as T;
   }
