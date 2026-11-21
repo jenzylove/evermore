@@ -1,0 +1,14 @@
+{
+  "network": "mainnet",
+  "tries": [],
+  "challenge": "27e4bbe410b8a817be6cddd35ec4181738c9ae78fe6e6600e1ea1cda1e2a4338",
+  "forge": "92aebb193d8bb5948d758ff7ec27b039c3fd1b9cb3fd202447f7ffc2dc135cca",
+  "heroId": 14,
+  "ghostId": 7,
+  "ghostLevel": 7,
+  "gear": {
+    "id": 0,
+    "kind": 1,
+    "tier": 4
+  }
+}

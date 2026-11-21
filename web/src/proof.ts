@@ -24,6 +24,8 @@ const W = wardens && wardens.category === dep.category ? wardens : null;
 const smoke = pick(smokeFiles, `smoke-${net}`);
 const bazaarFiles = import.meta.glob('../../contracts/deployments/bazaar-{chipnet,mainnet}.json', { eager: true, import: 'default' }) as Record<string, Bazaar>;
 const bazaar = pick(bazaarFiles, `bazaar-${net}`);
+const gearFiles = import.meta.glob('../../contracts/deployments/gear-{chipnet,mainnet}.json', { eager: true, import: 'default' }) as Record<string, { forge?: string; ghostLevel?: number }>;
+const gearRec = pick(gearFiles, `gear-${net}`);
 
 const $ = (id: string) => document.getElementById(id)!;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -77,7 +79,7 @@ claims.push({
 claims.push({
   title: 'Gear supply is capped forever',
   body: `Gear drops when you beat an echo 3 or more levels above you. The counter contract refuses to mint past ${Number(dep.gearCap).toLocaleString()} pieces. Nobody can raise the cap.`,
-  links: [code('Counter contract', 'contracts/src/Counter.cash'), code('Cap test', 'contracts/test/forge.test.mjs#L127')],
+  links: [...(gearRec?.forge ? [{ label: 'First gear drop', href: tx(gearRec.forge) }] : []), code('Counter contract', 'contracts/src/Counter.cash'), code('Cap test', 'contracts/test/forge.test.mjs#L127')],
 });
 claims.push({
   title: 'Nobody can take or delete a hero',

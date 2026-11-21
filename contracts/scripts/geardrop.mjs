@@ -1,5 +1,5 @@
-// Gear drop on the live game: a fresh level 1 hero challenges Wardens 3+ levels above it until
-// a style it can beat comes up, then forges the win with the Counter, minting one capped gear piece.
+// Gear drop on the live game: our heroes preview every echo 3+ levels above them (free) and
+// challenge the first style they can beat, then forges the win with the Counter, minting one capped gear piece.
 //   node scripts/geardrop.mjs [--net chipnet|mainnet] [--dry]   (mainnet needs --broadcast-mainnet)
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,13 +11,12 @@ const { game, chain, laneTx } = setup(me);
 async function main() {
   console.log(`connected ${await chain.connect()}; ${NET}`);
   const rec = { network: NET, tries: [] };
-  for (const cls of [1, 2, 0]) {
-    const r = await laneTx('raise', (lane) => E.raiseDraft(game, lane, cls, me.lock).draft);
-    const hero = E.decodeHero(r.built.outputs[1].token.nft.commitment);
-    rec.raise = r.txid;
+  // attackers: our own heroes, strongest first (a level 1 hero rarely beats an echo 3 levels up)
+  const mine = (await chain.holdings(game, me.lock)).heroes.map((x) => x.hero).sort((a, b) => b.level - a.level);
+  for (const hero of mine) {
     const targets = (await chain.ghosts(game)).map((g) => g.ghost).filter((g) => g.level >= hero.level + 3 && g.id !== hero.id).sort((a, b) => a.level - b.level);
-    console.log(`hero #${hero.id} ${E.CLASS_NAMES[cls]} L1; targets ${targets.map((g) => `#${g.id} L${g.level}`).join(', ')}`);
-    for (const t of targets.slice(0, 4)) {
+    console.log(`hero #${hero.id} ${E.CLASS_NAMES[hero.cls]} L${hero.level}; targets ${targets.map((g) => `#${g.id} L${g.level}`).join(', ')}`);
+    for (const t of targets) {
       // preview first: the style seed is known before paying, so only pay for a winnable fight
       const g = (await chain.ghost(game, t.id)).ghost;
       const preview = E.ticketFor(hero.id, g);

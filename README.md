@@ -93,7 +93,7 @@ No seasons, no resets. One arena that never closes.
 | Live on mainnet | [Genesis tx](https://blockchair.com/bitcoin-cash/transaction/1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd), category `8941559b1d6823277392ecf0b3d523829a976002b02eee51be64496423dbe480` |
 | Levels are earned | Each echo on /proof links its latest fight on mainnet. A fake move list is rejected: [test](contracts/test/forge.test.mjs#L74) |
 | Keepers are paid | Every challenge tx has the keeper output; totals on /proof |
-| Gear is capped | [Counter.cash](contracts/src/Counter.cash), [cap test](contracts/test/forge.test.mjs#L127) |
+| Gear is capped | [First drop on mainnet](https://blockchair.com/bitcoin-cash/transaction/92aebb193d8bb5948d758ff7ec27b039c3fd1b9cb3fd202447f7ffc2dc135cca), [Counter.cash](contracts/src/Counter.cash), [cap test](contracts/test/forge.test.mjs#L127) |
 | Browser equals chain | [Parity test](contracts/test/parity.test.mjs): 100 recorded duels, move for move |
 | No admin key | [Lane.cash](contracts/src/Lane.cash), [Sale.cash](contracts/src/Sale.cash), [threat model](contracts/THREATS.md) |
 
