@@ -8,7 +8,7 @@ import { compileFile } from 'cashc';
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const sdkArt = path.join(root, '..', 'sdk', 'src', 'artifacts');
 const check = process.argv.includes('--check');
-const names = ['Lane', 'Arena', 'Counter', 'Sale'];
+const names = ['Lane', 'Arena', 'Counter', 'Sale', 'SaleToken'];
 let stale = 0;
 
 const writeIf = (file, text) => {

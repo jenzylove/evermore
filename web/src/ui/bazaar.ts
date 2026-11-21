@@ -52,7 +52,7 @@ register('bazaar', root => {
           }
           await load(); renderChrome();
         } catch (err) { toast((err as Error).message, true); b.removeAttribute('disabled'); }
-      } }, l.mine ? 'Cancel' : money(l.priceSats, f.usdPerBch));
+      } }, l.mine ? 'Cancel' : l.pusdCents != null ? `$${(l.pusdCents / 100).toFixed(2)} PUSD` : money(l.priceSats, f.usdPerBch));
       list.append(h('div', { class: `item${shownId === l.id ? ' on' : ''}`, onClick: () => preview(l) }, pic, h('div', { class: 't' }, h('b', {}, title), h('span', {}, sub)), b));
     }
   }

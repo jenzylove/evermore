@@ -9,6 +9,8 @@ export type NetworkConfig = {
   electrum: ElectrumServer[];
   /** Explorer link for a txid. */
   explorerTx: (txid: string) => string;
+  /** ParyonUSD category (display order), where it exists */
+  pusdCategory?: string;
   /** Default fee rate, sats per byte. */
   feeRate: number;
 };
@@ -34,6 +36,7 @@ export const NETWORKS: Record<NetworkName, NetworkConfig> = {
       { host: 'fulcrum.greyh.at', port: 50004 },
     ],
     explorerTx: (txid) => `https://blockchair.com/bitcoin-cash/transaction/${txid}`,
+    pusdCategory: '2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544',
     feeRate: 1,
   },
 };

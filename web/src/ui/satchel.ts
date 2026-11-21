@@ -15,6 +15,11 @@ export async function openSatchel() {
         h('button', { class: 'btn ghost', onClick: async () => { await app.chain.fund(Math.round(5 / f.usdPerBch * 1e8)); close(); renderChrome(); toast('Practice purse topped up.'); } }, 'Top up'),
         h('button', { class: 'btn ghost', onClick: () => { if (confirm('Start practice over? Your practice heroes will be gone.')) { practice.reset(); close(); try { localStorage.removeItem('evermore.hero'); } catch { /* */ } app.heroId = null; go('front'); } } }, 'Start over')));
   } else {
+    if (s.tokenAddress) {
+      // PUSD for dollar priced heroes in the Bazaar, with the address to send it to
+      const addr = h('span', { title: 'Tap to copy', style: 'word-break:break-all;color:var(--spirit);cursor:copy', onClick: () => { navigator.clipboard?.writeText(s.tokenAddress!).then(() => toast('Satchel token address copied.')); } }, s.tokenAddress);
+      body.append(h('div', { class: 'dim', style: 'margin:4px 0 10px;font-size:15px' }, `PUSD $${((s.pusdCents ?? 0) / 100).toFixed(2)} · for dollar priced heroes. Send PUSD from Selene to `, addr));
+    }
     body.append(h('p', {}, `The play key in this browser pays for duels so nothing pops up mid fight.${s.connected ? ` Home wallet: ${s.connected}.` : ''}`),
       h('div', { class: 'row' },
         h('button', { class: 'btn', onClick: async () => { try { const r = await app.chain.fund(Math.round(1 / f.usdPerBch * 1e8)); close(); renderChrome(); toast('Satchel funded.'); void r; } catch (e) { toast((e as Error).message, true); } } }, 'Add $1 from wallet'),

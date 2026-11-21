@@ -1,0 +1,30 @@
+pragma cashscript ^0.14.0;
+
+// =====================================================================================
+// Evermore SaleToken: one listing (a hero or a gear NFT) priced in a fungible CashToken,
+// used for ParyonUSD (PUSD) so a seller can ask a dollar price and be paid in dollars.
+// No operator, no game logic. The address is derived from (sellerPkh, price, payCategory);
+// the listing tx carries an OP_RETURN 'EVR2' sellerPkh price8 so clients find it and
+// rebuild this address (payCategory is the game's PUSD category).
+//
+// buy(): the output at THIS input's index pays the seller at least `price` units of the
+//   payCategory token (PUSD has 2 decimals: 150 = $1.50), and nothing else as a token.
+//   The NFT goes wherever the buyer puts it, in the same transaction (atomic swap).
+//   Stops: underpaying, paying someone else, paying in another token or in plain BCH,
+//   and settling two listings with one payment (each needs its own output at its index).
+// cancel(): the seller signs (pubkey must hash to sellerPkh).
+// =====================================================================================
+contract SaleToken(bytes20 sellerPkh, int price, bytes32 payCategory) {
+    function buy() {
+        int i = this.activeInputIndex;
+        require(tx.outputs[i].lockingBytecode == new LockingBytecodeP2PKH(sellerPkh));
+        // the category must match; the amount must cover the price
+        require(tx.outputs[i].tokenCategory == payCategory);
+        require(tx.outputs[i].tokenAmount >= price);
+    }
+
+    function cancel(pubkey pk, sig s) {
+        require(hash160(pk) == sellerPkh);
+        require(checkSig(s, pk));
+    }
+}

@@ -17,7 +17,7 @@ import {
 import { starterHero, ghostOf, forgeOutcome, packMoves, bump } from './rules.ts';
 import type { ForgeResult } from './rules.ts';
 import { TOKEN_SATS, DUST, p2pkhLock, isP2pkh, pkhOfLock } from './game.ts';
-import type { Game } from './game.ts';
+import type { Game, Currency } from './game.ts';
 
 // ------------------------------------------------------------------ types
 export type Capability = 'none' | 'mutable' | 'minting';
@@ -310,25 +310,29 @@ export function reclaimDraft(game: Game, tickets: Input[]): Draft {
 }
 
 // ------------------------------------------------------------------ SALE
-/** OP_RETURN 'EVR1' sellerPkh20 price8 that lets clients find a listing and rebuild its address. */
-export const encodeListingTag = (sellerPkh: Uint8Array, price: bigint) => {
+/**
+ * OP_RETURN 'EVR1' (price in sats) or 'EVR2' (price in PUSD cents) + sellerPkh20 + price8 that
+ * lets clients find a listing and rebuild its address.
+ */
+export const encodeListingTag = (sellerPkh: Uint8Array, price: bigint, currency: Currency = 'bch') => {
   const p = new Uint8Array(8);
   let v = price; for (let i = 0; i < 8; i++) { p[i] = Number(v & 0xffn); v >>= 8n; }
-  return Uint8Array.from([0x6a, 0x04, 0x45, 0x56, 0x52, 0x31, 0x14, ...sellerPkh, 0x08, ...p]);
+  return Uint8Array.from([0x6a, 0x04, 0x45, 0x56, 0x52, currency === 'pusd' ? 0x32 : 0x31, 0x14, ...sellerPkh, 0x08, ...p]);
 };
-export const decodeListingTag = (lock: Uint8Array): { sellerPkh: Uint8Array; price: bigint } | null => {
-  if (lock.length !== 36 || lock[0] !== 0x6a || lock[1] !== 0x04 || lock[2] !== 0x45 || lock[3] !== 0x56 || lock[4] !== 0x52 || lock[5] !== 0x31 || lock[6] !== 0x14 || lock[27] !== 0x08) return null;
+export const decodeListingTag = (lock: Uint8Array): { sellerPkh: Uint8Array; price: bigint; currency: Currency } | null => {
+  if (lock.length !== 36 || lock[0] !== 0x6a || lock[1] !== 0x04 || lock[2] !== 0x45 || lock[3] !== 0x56 || lock[4] !== 0x52 || (lock[5] !== 0x31 && lock[5] !== 0x32) || lock[6] !== 0x14 || lock[27] !== 0x08) return null;
   let price = 0n; for (let i = 7; i >= 0; i--) price = price * 256n + BigInt(lock[28 + i]);
-  return { sellerPkh: lock.slice(7, 27), price };
+  return { sellerPkh: lock.slice(7, 27), price, currency: lock[5] === 0x32 ? 'pusd' : 'bch' };
 };
 
 /** List a hero or gear: token to Sale(sellerPkh, price), dust to the bazaar beacon, discovery tag. */
-export function listDraft(game: Game, token: Input, sellerPkh: Uint8Array, price: bigint): { draft: Draft; saleLock: Uint8Array } {
+export function listDraft(game: Game, token: Input, sellerPkh: Uint8Array, price: bigint, currency: Currency = 'bch'): { draft: Draft; saleLock: Uint8Array } {
   if (!isGame(game, token.utxo)) throw new Error('only game tokens can be listed');
   const kind = commitmentOf(token.utxo)[0];
   if (kind !== 0x48 && kind !== 0x45) throw new Error('only heroes and gear can be listed');
-  if (price < DUST) throw new Error(`price must be at least ${DUST} sats`);
-  const saleLock = hexToBin(game.sale(sellerPkh, price).lockingBytecode);
+  if (currency === 'bch' && price < DUST) throw new Error(`price must be at least ${DUST} sats`);
+  if (currency === 'pusd' && price < 1n) throw new Error('price must be at least 0.01 PUSD');
+  const saleLock = hexToBin(game.saleFor(sellerPkh, price, currency).lockingBytecode);
   return {
     saleLock,
     draft: {
@@ -337,29 +341,49 @@ export function listDraft(game: Game, token: Input, sellerPkh: Uint8Array, price
       outputs: [
         { lockingBytecode: saleLock, valueSatoshis: token.utxo.satoshis, token: token.utxo.token },
         { lockingBytecode: game.bazaarLock, valueSatoshis: DUST },
-        { lockingBytecode: encodeListingTag(sellerPkh, price), valueSatoshis: 0n },
+        { lockingBytecode: encodeListingTag(sellerPkh, price, currency), valueSatoshis: 0n },
       ],
     },
   };
 }
 
-export type Listing = { utxo: Utxo; sellerPkh: Uint8Array; price: bigint };
-/** Buy one or more listings: listing i is input i and is paid at output i; tokens go to buyerLock. */
-export function buyDraft(game: Game, listings: Listing[], buyerLock: Uint8Array): Draft {
+export type Listing = { utxo: Utxo; sellerPkh: Uint8Array; price: bigint; currency?: Currency };
+/**
+ * Buy one or more listings: listing i is input i and is paid at output i; tokens go to buyerLock.
+ * BCH listings are paid in sats. PUSD listings are paid from `pusd` (the buyer's PUSD UTXOs,
+ * signed by the caller); PUSD left over comes back to buyerLock in its own output.
+ */
+export function buyDraft(game: Game, listings: Listing[], buyerLock: Uint8Array, pusd: Input[] = []): Draft {
   if (!listings.length) throw new Error('nothing to buy');
   const inputs: Input[] = listings.map((l) => {
-    const c = game.sale(l.sellerPkh, l.price);
-    if (!eq(hexToBin(c.lockingBytecode), l.utxo.lockingBytecode)) throw new Error('listing UTXO is not at Sale(sellerPkh, price)');
+    const c = game.saleFor(l.sellerPkh, l.price, l.currency ?? 'bch');
+    if (!eq(hexToBin(c.lockingBytecode), l.utxo.lockingBytecode)) throw new Error('listing UTXO is not at its Sale contract');
     return { utxo: l.utxo, unlock: { type: 'contract', contract: c, fn: 'buy', args: [] } };
   });
-  const outputs: Output[] = listings.map((l) => ({ lockingBytecode: p2pkhLock(l.sellerPkh), valueSatoshis: l.price }));
+  const outputs: Output[] = listings.map((l) => (l.currency === 'pusd'
+    ? { lockingBytecode: p2pkhLock(l.sellerPkh), valueSatoshis: TOKEN_SATS, token: { category: hexToBin(game.pusdCategory!), amount: l.price } }
+    : { lockingBytecode: p2pkhLock(l.sellerPkh), valueSatoshis: l.price }));
   listings.forEach((l) => outputs.push({ lockingBytecode: buyerLock, valueSatoshis: l.utxo.satoshis, token: l.utxo.token }));
+  const owed = listings.filter((l) => l.currency === 'pusd').reduce((x, l) => x + l.price, 0n);
+  if (owed > 0n) {
+    const cat = game.pusdCategory!;
+    const have = pusd.reduce((x, i) => {
+      const t = i.utxo.token;
+      if (!t || binToHex(t.category) !== cat || t.nft) throw new Error('only plain PUSD can pay for a PUSD listing');
+      return x + (t.amount ?? 0n);
+    }, 0n);
+    if (have < owed) throw new Error(`not enough PUSD: need ${fmtPusd(owed)}, have ${fmtPusd(have)}`);
+    inputs.push(...pusd);
+    if (have > owed) outputs.push({ lockingBytecode: buyerLock, valueSatoshis: TOKEN_SATS, token: { category: hexToBin(cat), amount: have - owed } });
+  }
   return { kind: 'buy', inputs, outputs };
 }
+/** 150n -> "$1.50" */
+export const fmtPusd = (cents: bigint) => `$${(Number(cents) / 100).toFixed(2)}`;
 
 /** Seller takes a listing back (signs with the Satchel key; a wallet seller would use a Satchel step). */
 export function cancelDraft(game: Game, l: Listing, sellerKey: Uint8Array, sellerPub: Uint8Array, toLock: Uint8Array): Draft {
-  const c = game.sale(l.sellerPkh, l.price);
+  const c = game.saleFor(l.sellerPkh, l.price, l.currency ?? 'bch');
   return {
     kind: 'cancel',
     inputs: [{ utxo: l.utxo, unlock: { type: 'contract', contract: c, fn: 'cancel', args: [sellerPub, new SignatureTemplate(sellerKey)] } }],

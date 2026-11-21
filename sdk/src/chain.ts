@@ -142,14 +142,15 @@ export class Chain {
       for (const o of t.outputs) {
         const tag = decodeListingTag(o.lockingBytecode);
         if (!tag) continue;
-        const lock = hexToBin(game.sale(tag.sellerPkh, tag.price).lockingBytecode);
+        if (tag.currency === 'pusd' && !game.pusdCategory) continue;
+        const lock = hexToBin(game.saleFor(tag.sellerPkh, tag.price, tag.currency).lockingBytecode);
         const key = binToHex(lock);
         if (seen.has(key)) continue;
         seen.add(key);
         for (const utxo of await this.utxos(lock)) {
           if (!utxo.token?.nft || binToHex(utxo.token.category) !== binToHex(game.categoryBin)) continue;
           const c = utxo.token.nft.commitment;
-          const item = { utxo, sellerPkh: tag.sellerPkh, price: tag.price } as Listing & { hero?: Hero; gear?: Gear };
+          const item = { utxo, sellerPkh: tag.sellerPkh, price: tag.price, currency: tag.currency } as Listing & { hero?: Hero; gear?: Gear };
           if (c[0] === TAG.hero) item.hero = decodeHero(c);
           else if (c[0] === TAG.gear) item.gear = decodeGear(c);
           else continue;

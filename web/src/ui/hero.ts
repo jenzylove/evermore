@@ -80,15 +80,21 @@ register('hero', root => {
   function sellSheet(hero: HeroView) {
     const f = app.chain.fees();
     const price = h('input', { class: 'name', inputmode: 'decimal', value: '1.00', 'aria-label': 'Price in dollars' }) as HTMLInputElement;
+    // get paid in dollars (PUSD, a Bitcoin Cash stablecoin) or in BCH at today's rate
+    const canPusd = !!app.chain.hasPusd?.();
+    let inPusd = canPusd;
+    const opt = (label: string, sub: string, v: boolean) => h('button', { class: `pay${inPusd === v ? ' on' : ''}`, onClick: (e: Event) => { inPusd = v; (e.currentTarget as HTMLElement).parentElement!.querySelectorAll('.pay').forEach((b, i) => b.classList.toggle('on', (i === 0) === v)); } }, h('b', {}, label), h('small', {}, sub));
+    const payIn = canPusd ? h('div', { class: 'payin' }, opt('Dollars', 'PUSD, stays $1', true), opt('BCH', 'at today\u2019s rate', false)) : null;
     const bg = h('div', { class: 'sheet-bg', onClick: () => { bg.remove(); sh.remove(); } });
     const sh = h('div', { class: 'sheet' }, h('div', { class: 'wrap' },
       h('div', { class: 'h2' }, `Sell ${hero.name}`),
       h('p', {}, 'Set a price. Anyone can buy it; hero and money swap in one transaction. You can cancel any time before.'),
       h('div', { class: 'namerow' }, h('span', { style: 'font:700 28px var(--display);color:var(--gold)' }, '$'), price),
+      payIn && h('div', { class: 'dim', style: 'margin:10px 0 6px;font-size:14px;letter-spacing:.14em;text-transform:uppercase' }, 'Get paid in'), payIn,
       h('div', { class: 'row' }, h('button', { class: 'btn ghost', onClick: () => { bg.remove(); sh.remove(); } }, 'Cancel'),
         h('button', { class: 'btn', onClick: async () => {
           const usd = Number(price.value); if (!(usd > 0)) { toast('Enter a price.', true); return; }
-          try { await app.chain.list('hero', hero.id, Math.round(usd / f.usdPerBch * 1e8)); bg.remove(); sh.remove(); toast(`${hero.name} is in the Bazaar.`); go('bazaar'); }
+          try { if (inPusd) await app.chain.list('hero', hero.id, 0, Math.round(usd * 100)); else await app.chain.list('hero', hero.id, Math.round(usd / f.usdPerBch * 1e8)); bg.remove(); sh.remove(); toast(`${hero.name} is in the Bazaar.`); go('bazaar'); }
           catch (e) { toast((e as Error).message, true); }
         } }, 'List it'))));
     document.body.append(bg, sh); price.focus(); price.select();

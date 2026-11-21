@@ -1,0 +1,75 @@
+{
+  "contractName": "SaleToken",
+  "constructorInputs": [
+    {
+      "name": "sellerPkh",
+      "type": "bytes20"
+    },
+    {
+      "name": "price",
+      "type": "int"
+    },
+    {
+      "name": "payCategory",
+      "type": "bytes32"
+    }
+  ],
+  "abi": [
+    {
+      "name": "buy",
+      "inputs": []
+    },
+    {
+      "name": "cancel",
+      "inputs": [
+        {
+          "name": "pk",
+          "type": "pubkey"
+        },
+        {
+          "name": "s",
+          "type": "sig"
+        }
+      ]
+    }
+  ],
+  "bytecode": "OP_3 OP_PICK OP_0 OP_NUMEQUAL OP_IF OP_INPUTINDEX OP_DUP OP_OUTPUTBYTECODE 76a914 OP_3 OP_ROLL OP_CAT 88ac OP_CAT OP_EQUALVERIFY OP_DUP OP_OUTPUTTOKENCATEGORY OP_3 OP_ROLL OP_EQUALVERIFY OP_OUTPUTTOKENAMOUNT OP_LESSTHANOREQUAL OP_NIP OP_ELSE OP_3 OP_ROLL OP_1 OP_NUMEQUALVERIFY OP_3 OP_PICK OP_HASH160 OP_EQUALVERIFY OP_2SWAP OP_CHECKSIG OP_NIP OP_NIP OP_ENDIF",
+  "source": "pragma cashscript ^0.14.0;\n\n// =====================================================================================\n// Evermore SaleToken: one listing (a hero or a gear NFT) priced in a fungible CashToken,\n// used for ParyonUSD (PUSD) so a seller can ask a dollar price and be paid in dollars.\n// No operator, no game logic. The address is derived from (sellerPkh, price, payCategory);\n// the listing tx carries an OP_RETURN 'EVR2' sellerPkh price8 so clients find it and\n// rebuild this address (payCategory is the game's PUSD category).\n//\n// buy(): the output at THIS input's index pays the seller at least `price` units of the\n//   payCategory token (PUSD has 2 decimals: 150 = $1.50), and nothing else as a token.\n//   The NFT goes wherever the buyer puts it, in the same transaction (atomic swap).\n//   Stops: underpaying, paying someone else, paying in another token or in plain BCH,\n//   and settling two listings with one payment (each needs its own output at its index).\n// cancel(): the seller signs (pubkey must hash to sellerPkh).\n// =====================================================================================\ncontract SaleToken(bytes20 sellerPkh, int price, bytes32 payCategory) {\n    function buy() {\n        int i = this.activeInputIndex;\n        require(tx.outputs[i].lockingBytecode == new LockingBytecodeP2PKH(sellerPkh));\n        // the category must match; the amount must cover the price\n        require(tx.outputs[i].tokenCategory == payCategory);\n        require(tx.outputs[i].tokenAmount >= price);\n    }\n\n    function cancel(pubkey pk, sig s) {\n        require(hash160(pk) == sellerPkh);\n        require(checkSig(s, pk));\n    }\n}\n",
+  "fingerprint": "19b580cf9745adcaafed1f482ac0d55752e5b9162377d7e087cb2b26a0b3bfd1",
+  "debug": {
+    "bytecode": "5379009c63c076cd0376a914537a7e0288ac7e8876d1537a88d3a17767537a519d5379a98872ac777768",
+    "sourceMap": "18:4:24:5;;;;;19:16:19:37;20:27:20:28;:16::45:1;:49::84:0;:74::83;;:49::84:1;;;:8::86;22:27:22:28:0;:16::43:1;:47::58:0;;:8::60:1;23:16:23:41;:8::52;18:19:24:5;:4;26::29::0;;;;27:24:27:26;;:16::27:1;:8::42;28:25:28:30:0;:8::33:1;26:38:29:5;;17:0:30:1",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 17,
+        "line": 20
+      },
+      {
+        "ip": 22,
+        "line": 22
+      },
+      {
+        "ip": 25,
+        "line": 23
+      },
+      {
+        "ip": 34,
+        "line": 27
+      },
+      {
+        "ip": 37,
+        "line": 28
+      }
+    ],
+    "sourceTags": "22:22:sc;34:35:sc"
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.14.0",
+    "options": {
+      "enforceFunctionParameterTypes": true,
+      "enforceLocktimeGuard": true
+    }
+  }
+}

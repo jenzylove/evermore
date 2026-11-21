@@ -40,7 +40,8 @@ test('finalize: picks largest coins first, throws InsufficientFunds when short',
 
 test('listing tag encodes and decodes; bazaar beacon is a P2PKH', () => {
   const t = E.encodeListingTag(sat.pkh, 123456n);
-  assert.deepEqual(E.decodeListingTag(t), { sellerPkh: sat.pkh, price: 123456n });
+  assert.deepEqual(E.decodeListingTag(t), { sellerPkh: sat.pkh, price: 123456n, currency: 'bch' });
+  assert.deepEqual(E.decodeListingTag(E.encodeListingTag(sat.pkh, 250n, 'pusd')), { sellerPkh: sat.pkh, price: 250n, currency: 'pusd' });
   assert.equal(E.decodeListingTag(Uint8Array.of(0x6a)), null);
   assert.equal(E.isP2pkh(game.bazaarLock), true);
 });

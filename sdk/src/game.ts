@@ -6,10 +6,13 @@ import LaneArtifact from './artifacts/Lane.ts';
 import ArenaArtifact from './artifacts/Arena.ts';
 import CounterArtifact from './artifacts/Counter.ts';
 import SaleArtifact from './artifacts/Sale.ts';
+import SaleTokenArtifact from './artifacts/SaleToken.ts';
 import { network } from './network.ts';
 import type { NetworkName } from './network.ts';
 
 export type GameParams = {
+  /** override the network's PUSD category (tests use a stand in on chipnet) */
+  pusdCategory?: string;
   /** Category id, display (txid) order hex, as wallets and explorers show it. */
   category: string;
   treasuryPkh: string; // hex
@@ -45,6 +48,8 @@ export const reverseHex = (hex: string) => binToHex(hexToBin(hex).reverse());
 
 export type Game = ReturnType<typeof makeGame>;
 
+export type Currency = 'bch' | 'pusd';
+
 export function makeGame(params: GameParams, net: NetworkName) {
   const cfg = network(net);
   const opt = { provider: stubProvider(net), addressType: 'p2sh32' as const };
@@ -62,8 +67,23 @@ export function makeGame(params: GameParams, net: NetworkName) {
     if (!c) { c = new Contract(SaleArtifact as any, [pkh, price], opt); saleCache.set(key, c); }
     return c;
   };
+  // ParyonUSD (PUSD), a fungible CashToken with 2 decimals (150 = $1.50); mainnet only
+  const pusdCategory = params.pusdCategory ?? cfg.pusdCategory ?? null;
+  const saleTokenCache = new Map<string, Contract>();
+  const saleToken = (sellerPkh: Uint8Array | string, price: bigint) => {
+    if (!pusdCategory) throw new Error(`PUSD is not available on ${net}`);
+    const pkh = typeof sellerPkh === 'string' ? sellerPkh : binToHex(sellerPkh);
+    const key = `${pkh}:${price}`;
+    let c = saleTokenCache.get(key);
+    if (!c) { c = new Contract(SaleTokenArtifact as any, [pkh, price, reverseHex(pusdCategory)], opt); saleTokenCache.set(key, c); }
+    return c;
+  };
+  /** the sale contract for a listing in either currency */
+  const saleFor = (sellerPkh: Uint8Array | string, price: bigint, currency: Currency = 'bch') => (currency === 'pusd' ? saleToken(sellerPkh, price) : sale(sellerPkh, price));
   return {
-    net, cfg, params,
+    net, cfg, params, saleToken, saleFor,
+    /** PUSD category in display order (wallet and explorer order), or null where PUSD does not exist */
+    pusdCategory,
     /** category bytes in display order, the way libauth token objects hold it */
     categoryBin: hexToBin(params.category),
     lane, arena, counter, sale,

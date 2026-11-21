@@ -53,7 +53,7 @@ register('front', root => {
   const raise = h('button', { class: 'btn prime', onClick: () => startPlaying() }, P ? 'Raise a hero ' : 'Enter the hall ', h('small', {}, P ? 'practice, free' : `on ${app.chain.mode}`));
   const real = h('button', { class: 'btn bch', onClick: () => playForReal() }, bchMark(), P ? 'Play for real' : 'Wallet and Satchel');
   root.append(h('section', { class: `screen front${still ? ' still' : ''}` },
-    h('div', { class: 'title' }, title, h('div', { class: 'line' }, "Games die. Heroes don't."), h('div', { class: 'chainline' }, bchMark(), 'Every hero lives on Bitcoin Cash'), h('div', { class: 'pitch' }, 'Raise a hero · Win duels the chain checks · Earn when others fight it')),
+    h('div', { class: 'title' }, title, h('div', { class: 'line' }, "Games die. Heroes don't."), h('div', { class: 'chainline' }, bchMark(), 'Every hero lives on Bitcoin Cash'), h('div', { class: 'pitch' }, 'Raise a hero. Win fights. Earn when others fight yours.')),
     h('div', { class: 'cta' }, raise, real, h('button', { class: 'howto', onClick: () => showGuide() }, 'How it works'))));
   return () => { alive = false; };
 });

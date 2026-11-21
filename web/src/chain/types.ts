@@ -62,6 +62,8 @@ export type Listing = {
   hero?: HeroView;
   gear?: GearView;
   priceSats: number;
+  /** set when the listing is priced in PUSD (dollar cents); priceSats is then 0 */
+  pusdCents?: number;
   seller: string;
   mine: boolean;
 };
@@ -70,6 +72,10 @@ export type SatchelView = {
   sats: number;            // spendable in the play key
   address: string | null;  // null in practice
   connected: string | null; // short label of the connected home wallet (Selene / Cashonize), if any
+  /** PUSD held in the play key, in cents (real chains with PUSD) */
+  pusdCents?: number;
+  /** token aware address to send PUSD to */
+  tokenAddress?: string | null;
 };
 
 export type Fees = { raiseSats: number; challengeSats: number; forgeSats: number; usdPerBch: number };
@@ -90,7 +96,10 @@ export interface GameChain {
   forge(ticket: Ticket, moves: number[]): Promise<ForgeResult>;
 
   listings(): Promise<Listing[]>;
-  list(kind: 'hero' | 'gear', id: number, priceSats: number): Promise<Receipt>;
+  /** price in sats, or with `pusdCents` a dollar price paid in PUSD */
+  list(kind: 'hero' | 'gear', id: number, priceSats: number, pusdCents?: number): Promise<Receipt>;
+  /** true when listings can be priced in PUSD on this chain */
+  hasPusd?(): boolean;
   buy(listingId: string): Promise<Receipt>;
   cancel(listingId: string): Promise<Receipt>;
   sendHome(heroId: number): Promise<Receipt>;

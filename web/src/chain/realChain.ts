@@ -363,7 +363,9 @@ export class RealChain implements GameChain {
     return ls.map((l) => {
       const mine = hex(l.sellerPkh) === me;
       const seller = mine ? 'you' : short(E.lockToAddress(E.p2pkhLock(l.sellerPkh), this.game.cfg.prefix));
-      const base = { id: this.listingId(l.utxo), priceSats: Number(l.price), seller, mine };
+      const base = l.currency === 'pusd'
+        ? { id: this.listingId(l.utxo), priceSats: 0, pusdCents: Number(l.price), seller, mine }
+        : { id: this.listingId(l.utxo), priceSats: Number(l.price), seller, mine };
       if (l.hero) return { ...base, kind: 'hero' as const, hero: this.heroView(l.hero, 'listed', gs.find((g) => g.ghost.id === l.hero!.id)?.ghost) };
       return { ...base, kind: 'gear' as const, gear: { id: l.gear!.id, kind: l.gear!.kind as 0 | 1 | 2, tier: l.gear!.tier, where: 'listed' as const } };
     });
@@ -375,12 +377,21 @@ export class RealChain implements GameChain {
     return l;
   }
 
-  list(kind: 'hero' | 'gear', id: number, priceSats: number): Promise<Receipt> {
+  hasPusd() { return !!this.game.pusdCategory; }
+  /** plain PUSD in the play key */
+  private async satchelPusd() {
+    const cat = this.game.pusdCategory;
+    if (!cat) return [];
+    return (await this.chain.utxos(this.satchelKey.lock)).filter((u) => u.token && !u.token.nft && hex(u.token.category) === cat);
+  }
+  list(kind: 'hero' | 'gear', id: number, priceSats: number, pusdCents?: number): Promise<Receipt> {
     return this.serial(async () => {
       const s = await this.chain.holdings(this.game, this.satchelKey.lock);
       const u = kind === 'hero' ? s.heroes.find((x) => x.hero.id === id)?.utxo : s.gear.find((x) => x.gear.id === id)?.utxo;
       if (!u) throw new Error(`That ${kind} is not in your Satchel.`);
-      const { draft } = E.listDraft(this.game, this.satchelKey.inputs([u])[0], this.satchelKey.pkh, BigInt(Math.round(priceSats)));
+      const { draft } = pusdCents
+        ? E.listDraft(this.game, this.satchelKey.inputs([u])[0], this.satchelKey.pkh, BigInt(Math.round(pusdCents)), 'pusd')
+        : E.listDraft(this.game, this.satchelKey.inputs([u])[0], this.satchelKey.pkh, BigInt(Math.round(priceSats)));
       const built = await this.fundAndFinalize(draft);
       const txid = await this.chain.broadcast(built.hex);
       this.done('list', txid);
@@ -391,7 +402,14 @@ export class RealChain implements GameChain {
     return this.serial(async () => {
       const l = await this.rawListing(listingId);
       if (hex(l.sellerPkh) === hex(this.satchelKey.pkh)) return this.cancelNow(l);
-      const built = await this.fundAndFinalize(E.buyDraft(this.game, [l], this.satchelKey.lock));
+      let pusd: E.Input[] = [];
+      if (l.currency === 'pusd') {
+        const have = await this.satchelPusd();
+        const sum = have.reduce((a, u) => a + (u.token!.amount ?? 0n), 0n);
+        if (sum < l.price) throw new Error(`This one costs ${E.fmtPusd(l.price)} in PUSD and your Satchel holds ${E.fmtPusd(sum)}. Send PUSD from Selene (stablecoin mode) to your Satchel: ${this.game.tokenAddress(this.satchelKey.lock)}`);
+        pusd = this.satchelKey.inputs(have);
+      }
+      const built = await this.fundAndFinalize(E.buyDraft(this.game, [l], this.satchelKey.lock, pusd));
       const txid = await this.chain.broadcast(built.hex);
       this.done('buy', txid);
       if (l.hero) await this.syncNow(l.hero.id, E.utxoOf({ txid, outputs: built.outputs }, 1));
@@ -470,7 +488,11 @@ export class RealChain implements GameChain {
 
   async satchel(): Promise<SatchelView> {
     const coins = await this.cached('sc', () => this.satchelCoins());
-    return { sats: Number(coins.reduce((a, c) => a + c.satoshis, 0n)), address: this.satchelKey.address(this.net), connected: this.wallet?.name ?? null };
+    const pusd = await this.cached('sp', () => this.satchelPusd());
+    return {
+      sats: Number(coins.reduce((a, c) => a + c.satoshis, 0n)), address: this.satchelKey.address(this.net), connected: this.wallet?.name ?? null,
+      pusdCents: Number(pusd.reduce((a, u) => a + (u.token!.amount ?? 0n), 0n)), tokenAddress: this.game.pusdCategory ? this.game.tokenAddress(this.satchelKey.lock) : null,
+    };
   }
 
   /** The connected wallet pays `sats` into the Satchel (one wallet signature). */

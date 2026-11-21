@@ -24,7 +24,7 @@ test('list: hero to Sale(sellerPkh, price), bazaar dust, EVR1 tag that decodes b
   assert.deepEqual(sl, saleLock);
   assert.deepEqual(r.built.outputs[1].lockingBytecode, game.bazaarLock);
   const tag = E.decodeListingTag(r.built.outputs[2].lockingBytecode);
-  assert.deepEqual(tag, { sellerPkh: seller.pkh, price: PRICE });
+  assert.deepEqual(tag, { sellerPkh: seller.pkh, price: PRICE, currency: 'bch' });
   assert.throws(() => E.listDraft(game, signed(U(seller.lock, 1000, nft('none', E.encodeTicket(E.ticketFor(1, E.ghostOf(hero7, X.pkh))))), seller), seller.pkh, PRICE), /heroes and gear/);
 });
 test('buy hero: seller paid at the same index, hero to buyer', () => valid(run(E.buyDraft(game, [L(listedHero)], buyer.lock), buyer)));

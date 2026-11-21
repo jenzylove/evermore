@@ -127,15 +127,16 @@ export class PracticeChain implements GameChain {
   }
 
   async listings() { return this.s.listings; }
-  async list(kind: 'hero' | 'gear', id: number, priceSats: number): Promise<Receipt> {
+  hasPusd() { return true; }
+  async list(kind: 'hero' | 'gear', id: number, priceSats: number, pusdCents?: number): Promise<Receipt> {
     if (kind === 'hero') {
       const h = this.s.heroes.find(x => x.id === id); if (!h) throw new Error('Hero not found.');
       h.where = 'listed';
-      this.s.listings.push({ id: 'm' + id, kind, hero: this.heroView(h), priceSats, seller: 'you', mine: true });
+      this.s.listings.push({ id: 'm' + id, kind, hero: this.heroView(h), priceSats, pusdCents, seller: 'you', mine: true });
     } else {
       const g = this.s.gear.find(x => x.id === id); if (!g) throw new Error('Gear not found.');
       g.where = 'listed';
-      this.s.listings.push({ id: 'g' + id, kind, gear: g, priceSats, seller: 'you', mine: true });
+      this.s.listings.push({ id: 'g' + id, kind, gear: g, priceSats, pusdCents, seller: 'you', mine: true });
     }
     this.save(); return NONE;
   }
