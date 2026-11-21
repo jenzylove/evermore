@@ -1,0 +1,9 @@
+{
+  "network": "mainnet",
+  "raise": "2d22df7960c9b0e646492d7cf78611e6d286a92d2675951f0a75e066e2453a03",
+  "challenge": "d67b11a6ea4eb3e38169dd54a75b335eac7de5fb40ff3a7409ec49bed3788727",
+  "forge": "b3528e0f52c38cc44a9f3b64e9bd788e914fd08bd5133bd282fef0bb0c813c74",
+  "heroId": 29,
+  "reclaim": "258c19058e23c07f236997a9ad757b7fad00af31e4dbe3f377cfe586c1f8138b",
+  "sync": "da7b3a6b7432de06a4ecf636d0cc70b974659d17b5825eb33b6d80c525a309b3"
+}

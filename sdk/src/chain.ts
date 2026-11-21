@@ -57,7 +57,7 @@ export class Chain {
     } catch (e) {
       // a dropped socket (servers close idle or long sessions): reconnect once and retry reads.
       // Broadcasts are not retried here; submit() re-reads the chain and rebuilds instead.
-      if (method === 'blockchain.transaction.broadcast' || !/disconnect|not connected|closed|timed? ?out|ECONNRESET|socket/i.test(String((e as Error)?.message ?? e))) throw e;
+      if (method === 'blockchain.transaction.broadcast' || !/disconnect|not connected|closed|lost|timed? ?out|ECONNRESET|socket/i.test(String((e as Error)?.message ?? e))) throw e;
       try { await this.client?.disconnect(true); } catch { /* already gone */ }
       this.client = null;
       await this.connect();
