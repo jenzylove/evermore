@@ -7,7 +7,9 @@
 //   node scripts/smoke.mjs [--net chipnet|mainnet] [--dry]
 //   (--dry: in memory chain, every tx VM verified, nothing broadcast; mainnet requires --dry
 //    or --broadcast-mainnet)
-import { E, NET, DRY, link, loadKey, setup } from './lib.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { E, NET, DRY, link, loadKey, setup, root } from './lib.mjs';
 
 const me = loadKey('deployer');
 const { game, chain, coins, send, laneTx, fabricated } = setup(me);
@@ -22,6 +24,7 @@ async function main() {
   const foe = E.decodeHero(r2.built.outputs[1].token.nft.commitment);
   console.log(`heroes    #${hero.id} Knight, #${foe.id} Mage`);
 
+  const rec = { network: NET, raise: r1.txid };
   let ticketUtxo = null, moves = null;
   for (let t = 0; t < 12 && !moves; t++) {
     const c = await laneTx('challenge', async (lane) => {
@@ -30,6 +33,7 @@ async function main() {
       d.inputs.push(...me.inputs((await chain.holdings(game, me.lock)).tickets.map((x) => x.utxo)));
       return d;
     });
+    rec.challenge = c.txid;
     const ticket = E.decodeTicket(c.built.outputs[3].token.nft.commitment);
     moves = E.solve(hero, ticket, E.seedOf(E.ticketSeedHash(ticket)));
     ticketUtxo = E.utxoOf({ txid: c.txid, outputs: c.built.outputs }, 3);
@@ -44,19 +48,23 @@ async function main() {
     return E.forgeDraft(game, { lane, hero: me.inputs([h.utxo])[0], ghost: g.utxo, ticket: me.inputs([ticketUtxo])[0], moves, ownGhost: own?.utxo, counter: counter?.utxo }).draft;
   });
   const after = E.decodeHero(f.built.outputs[1].token.nft.commitment);
+  rec.forge = f.txid; rec.heroId = hero.id;
   console.log(`hero #${hero.id}: L${hero.level} -> L${after.level}, xp ${after.xp}, wins ${after.wins}`);
 
   // reclaim on its own: Mage challenges the Knight, walks away, burns the ticket
   await laneTx('challenge', async (lane) => E.challengeDraft(game, lane, (await chain.ghost(game, hero.id)).utxo, foe.id, me.lock).draft);
   const stale = (await chain.holdings(game, me.lock)).tickets.map((x) => x.utxo);
   const rc = E.finalize(E.reclaimDraft(game, me.inputs(stale)), { funding: me.inputs(await coins()), changeLock: me.lock });
-  console.log(`reclaim    ${link(await send(rc))} (${stale.length} ticket(s) burned, sats back)`);
+  rec.reclaim = await send(rc);
+  console.log(`reclaim    ${link(rec.reclaim)} (${stale.length} ticket(s) burned, sats back)`);
 
   // sync: the Mage moves to another key and its ghost's fees follow it in the same tx
   const s = await laneTx('sync', async (lane) => {
     const h = (await chain.holdings(game, me.lock)).heroes.find((x) => x.hero.id === foe.id);
     return E.syncDraft(game, { lane, hero: me.inputs([h.utxo])[0], ownGhost: (await chain.ghost(game, foe.id)).utxo, toLock: other.lock }).draft;
   });
+  rec.sync = s.txid;
+  if (!DRY) fs.writeFileSync(path.join(root, 'deployments', `smoke-${NET}.json`), JSON.stringify(rec, null, 2) + '\n');
   const g = E.decodeGhost(s.built.outputs[2].token.nft.commitment);
   console.log(`ghost #${foe.id} now pays ${E.lockToAddress(E.p2pkhLock(g.ownerPkh), game.cfg.prefix)} (the hero's new holder)`);
   await chain.disconnect();
