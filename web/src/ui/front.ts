@@ -7,14 +7,17 @@ import { director, fitDistance, portrait, shot } from '../three/fx';
 import { FRONT_TRIO, world } from '../three/world';
 import { app, go, isPractice, register } from '../app';
 import { h } from './kit';
+import { guideSeen, showGuide } from './guide';
 
 /** into the game: the Arena if you have a hero, else raise one */
 export async function startPlaying() {
+  // the first time in, a short guide says what the game is before anything else happens
   const mine = await app.chain.myHeroes();
+  if (!guideSeen() && !mine.length) await showGuide();
   go(mine.length ? 'arena' : 'raise');
 }
 /** the Play for real sheet: wallet, Satchel, the switch (the wallet bundle loads only now) */
-export function playForReal() { return import('./connect').then(m => m.openConnect()); }
+export async function playForReal() { if (!guideSeen()) await showGuide(); return import('./connect').then(m => m.openConnect()); }
 
 const bchMark = () => h('i', { class: 'bchm' });
 
@@ -50,7 +53,7 @@ register('front', root => {
   const raise = h('button', { class: 'btn prime', onClick: () => startPlaying() }, P ? 'Raise a hero ' : 'Enter the hall ', h('small', {}, P ? 'practice, free' : `on ${app.chain.mode}`));
   const real = h('button', { class: 'btn bch', onClick: () => playForReal() }, bchMark(), P ? 'Play for real' : 'Wallet and Satchel');
   root.append(h('section', { class: `screen front${still ? ' still' : ''}` },
-    h('div', { class: 'title' }, title, h('div', { class: 'line' }, "Games die. Heroes don't."), h('div', { class: 'chainline' }, bchMark(), 'Every hero lives on Bitcoin Cash')),
-    h('div', { class: 'cta' }, raise, real)));
+    h('div', { class: 'title' }, title, h('div', { class: 'line' }, "Games die. Heroes don't."), h('div', { class: 'chainline' }, bchMark(), 'Every hero lives on Bitcoin Cash'), h('div', { class: 'pitch' }, 'Raise a hero · Win duels the chain checks · Earn when others fight it')),
+    h('div', { class: 'cta' }, raise, real, h('button', { class: 'howto', onClick: () => showGuide() }, 'How it works'))));
   return () => { alive = false; };
 });
