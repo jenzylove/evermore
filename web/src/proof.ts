@@ -76,6 +76,18 @@ claims.push({
     code('Sale contract', 'contracts/src/Sale.cash'),
   ],
 });
+const pusdFiles = import.meta.glob('../../contracts/deployments/pusd-{chipnet,mainnet}.json', { eager: true, import: 'default' }) as Record<string, { list?: string; buy?: string }>;
+const pusdRec = pick(pusdFiles, `pusd-${net}`);
+claims.push({
+  title: 'Prices in dollars, paid in PUSD',
+  body: 'A seller can ask a dollar price and be paid in ParyonUSD, the Bitcoin Cash stablecoin, so a $5 hero stays worth $5. The contract only releases the hero when the seller is paid the full PUSD amount.',
+  links: [
+    ...(pusdRec?.list ? [{ label: 'Listed for $1 PUSD', href: tx(pusdRec.list) }] : []),
+    ...(pusdRec?.buy ? [{ label: 'Bought with PUSD', href: tx(pusdRec.buy) }] : []),
+    code('PUSD sale contract', 'contracts/src/SaleToken.cash'),
+    code('Attack tests', 'contracts/test/sale-pusd.test.mjs'),
+  ],
+});
 claims.push({
   title: 'Gear supply is capped forever',
   body: `Gear drops when you beat an echo 3 or more levels above you. The counter contract refuses to mint past ${Number(dep.gearCap).toLocaleString()} pieces. Nobody can raise the cap.`,
