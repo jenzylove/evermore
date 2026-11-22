@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { ease } from '../three/engine';
 import { director, fitDistance, portrait, shot } from '../three/fx';
 import { world } from '../three/world';
-import type { Fighter } from '../three/fighter';
+import { ECHO, type Fighter } from '../three/fighter';
 import { haunt, type GhostFx } from '../three/ghost';
 import { CLASS_NAMES, ghostMoves, seedOf, solve, styleHash } from '../game/sim';
 import { activeHero, app, go, isPractice, register } from '../app';
@@ -100,7 +100,7 @@ register('arena', root => {
   async function raise(id: number) {
     const g = all.find(x => x.id === id); if (!g) return;
     making.add(id);
-    const f = await world.fighter(g.cls, { level: g.level }, 1);
+    const f = await world.fighter(g.cls, { level: g.level }, ECHO);
     making.delete(id);
     const i = list.findIndex(x => x.id === id);
     if (!alive || i < 0 || Math.abs(i - focus) > KEEP || slots.has(id)) { world.drop(f); return; }
@@ -193,7 +193,7 @@ register('arena', root => {
 
   function paintFilters() {
     const others = all.filter(g => !g.mine).length;
-    count.textContent = `${others} ghost${others === 1 ? '' : 's'} in the hall${list.length !== all.length ? ` · ${list.length} shown` : ''}`;
+    count.textContent = `${others} echo${others === 1 ? '' : 'es'} in the hall${list.length !== all.length ? ` · ${list.length} shown` : ''}`;
     filters.innerHTML = '';
     const chip = (label: string, on: boolean, fn: () => void, extra = '') => h('button', { class: `fchip${on ? ' on' : ''}${extra}`, 'aria-pressed': String(on), onClick: () => { sfx.soft(); fn(); } }, label);
     filters.append(chip('All', cls < 0, () => { cls = -1; applyFilters(); }));
@@ -229,7 +229,7 @@ register('arena', root => {
     const g = list[focus];
     info.innerHTML = '';
     if (!g) {
-      info.append(h('p', { class: 'dim', style: 'margin:12px 0' }, 'No ghost matches.'), h('button', { class: 'btn ghost', style: 'width:100%', onClick: () => { cls = -1; band = 'all'; applyFilters(); } }, 'Show all'));
+      info.append(h('p', { class: 'dim', style: 'margin:12px 0' }, 'No echo matches.'), h('button', { class: 'btn ghost', style: 'width:100%', onClick: () => { cls = -1; band = 'all'; applyFilters(); } }, 'Show all'));
       return;
     }
     if (anim) { sfx.soft(); info.classList.remove('card-in'); void info.offsetWidth; info.classList.add('card-in'); }
@@ -240,7 +240,7 @@ register('arena', root => {
       h('div', { class: 'rec' }, g.mine ? `Your hero · ${record.toLowerCase()}` : `${record} · kept by `, g.mine ? null : h('span', { class: 'keeper' }, g.owner)),
     );
     if (g.mine) {
-      info.append(h('p', { class: 'dim', style: 'font-size:16px;margin:12px 0 14px' }, `It stands here while you are away. Every challenge pays you ${shortCents(f.challengeSats, f.usdPerBch)}.`));
+      info.append(h('p', { class: 'dim', style: 'font-size:16px;margin:12px 0 14px' }, isPractice() ? 'It stands here and fights for you while you are away.' : `It stands here while you are away. Every challenge pays you ${shortCents(f.challengeSats, f.usdPerBch)}.`));
       return;
     }
     if (hero) {
@@ -262,7 +262,7 @@ register('arena', root => {
           app.ticket = await app.chain.challenge(hero!.id, g.id);
           go('duel');
         } catch (e) { toast((e as Error).message, true); btn.removeAttribute('disabled'); }
-      } }, `Fight ${g.name}`, h('small', {}, isPractice() ? `${fee} to its keeper · practice` : `${fee} goes to its keeper`));
+      } }, `Fight ${g.name}`, isPractice() ? null : h('small', {}, `${fee} goes to its keeper`));
       // a plain line on what to do and what this fight is
       const tip = b === true ? 'You can win this one. Tap Fight.' : b === false ? 'Hard fight. Pick one with a gold dot to win.' : 'Pick an echo to fight. A gold dot means you can win.';
       info.append(h('p', { class: 'tip' }, tip), btn);

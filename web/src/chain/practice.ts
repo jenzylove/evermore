@@ -58,10 +58,8 @@ export class PracticeChain implements GameChain {
   }
 
   private save() { try { localStorage.setItem(KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ } }
-  private spend(sats: number) {
-    if (this.s.purse < sats) throw new Error('Not enough in your practice purse.');
-    this.s.purse -= sats;
-  }
+  // practice is free: nothing is ever deducted, so it never runs out
+  private spend(_sats: number) { /* free */ }
 
   fees(): Fees { return { raiseSats: cents(25), challengeSats: cents(2), forgeSats: cents(1), usdPerBch: USD_PER_BCH }; }
 

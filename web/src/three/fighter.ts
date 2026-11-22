@@ -342,7 +342,7 @@ export class Fighter {
   /** the worn pieces of level and gear (shoulders, halo, crown, aura, carried gear), for the forge to bring in one by one */
   get pieces(): readonly THREE.Object3D[] { return this.lookGroup; }
   /** spectral opacity / glow for a ghost that is (1) or is not (0) the one in focus */
-  ghostGlow(k: number) { this.u.uRimK.value = 1.6 + k * 2.4; }
+  ghostGlow(k: number) { this.u.uRimK.value = this.spectral >= 0.99 ? 1.6 + k * 2.4 : 0.5 + k * 0.6; }
 
   dispose() {
     this.off(); this.root.removeFromParent(); this.mixer.stopAllAction();
@@ -360,6 +360,9 @@ function ringTex() {
   x.fillStyle = g; x.beginPath(); x.arc(0, 0, 128, 0, 7); x.fill();
   _ring = new THREE.CanvasTexture(c); return _ring;
 }
+
+/** echoes (other players' heroes) are solid fighters with a faint cold rim, not see through ghosts */
+export const ECHO = 0.45;
 
 export async function makeFighter(cls: number, look: Look = { level: 1 }, spectral = 0) {
   const f = new Fighter(cls, await loadKit(cls));

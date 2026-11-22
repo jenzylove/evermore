@@ -64,7 +64,7 @@ register('hero', root => {
       ...(['hp', 'atk', 'def', 'spd'] as const).map(k => h('span', {}, `${k.toUpperCase()} `, h('b', {}, String(hero[k])))));
     const next = [3, 5, 7, 10].find(l => l > hero.level);
     const earned = h('div', { class: 'earned', style: 'text-align:center' },
-      hero.defences ? h('span', {}, 'Your echo earned ', h('b', { class: isPractice() ? '' : 'bch-t' }, money(hero.earnedSats, f.usdPerBch)), ` from ${hero.defences} challenger${hero.defences === 1 ? '' : 's'}`)
+      isPractice() ? h('span', { class: 'dim' }, 'Its echo stands in the Arena and fights for you while you are away.') : hero.defences ? h('span', {}, 'Your echo earned ', h('b', { class: isPractice() ? '' : 'bch-t' }, money(hero.earnedSats, f.usdPerBch)), ` from ${hero.defences} challenger${hero.defences === 1 ? '' : 's'}`)
         : h('span', { class: 'dim' }, `Its echo stands in the Arena. Every challenge pays you ${money(f.challengeSats, f.usdPerBch)}${isPractice() ? ' (practice purse)' : ''}.`),
       h('div', { class: 'dim', style: 'font-size:14px;margin-top:4px' }, `${hero.wins} win${hero.wins === 1 ? '' : 's'} · ${hero.xp} of ${xpNeed(hero.level)} XP${next ? ` · new look at level ${next}` : ''}`));
     // a new hero is welcomed and told what to do next
@@ -82,7 +82,8 @@ register('hero', root => {
       catch (e) { toast((e as Error).message, true); }
     } }, hero.where === 'home' ? 'Bring back' : 'Send home');
     const sell = h('button', { class: 'btn small', onClick: () => sellSheet(hero) }, 'Sell');
-    info.append(h('div', { class: 'row', style: 'margin:10px 0 4px' }, home, sell));
+    // wallet things (send home, sell) belong to real play; free practice stays clean
+    if (!isPractice()) info.append(h('div', { class: 'row', style: 'margin:10px 0 4px' }, home, sell));
   }
 
   function sellSheet(hero: HeroView) {

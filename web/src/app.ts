@@ -24,6 +24,9 @@ export function useRealChain(c: GameChain) { realChain = c; app.chain = c; }
 export function usePractice() { app.chain = practice; }
 export const hasRealChain = () => realChain !== null;
 export const isPractice = () => app.chain.mode === 'practice';
+/** set after the first finished practice fight: only then is real play offered inside the game */
+export const practiceDone = () => { try { return localStorage.getItem('evermore.practice.done') === '1'; } catch { return false; } };
+export const markPracticeDone = () => { try { localStorage.setItem('evermore.practice.done', '1'); } catch { /* storage blocked */ } };
 
 try { const v = localStorage.getItem('evermore.hero'); if (v) app.heroId = Number(v); } catch { /* */ }
 export function setHero(id: number) { app.heroId = id; try { localStorage.setItem('evermore.hero', String(id)); } catch { /* */ } }
@@ -68,10 +71,10 @@ export async function renderChrome() {
   // the mode tag: practice offers the way to real play; real play names its network and the wallet, in Bitcoin Cash green
   const openConnect = () => import('./ui/connect').then(m => m.openConnect());
   if (app.route !== 'duel') c.append(h('div', { class: 'tag', 'data-mode': app.chain.mode },
-    ...(P ? [h('b', {}, 'Practice'), app.route === 'front' ? null : h('button', { class: 'go-real', onClick: openConnect }, h('i', { class: 'bchm' }), 'Play for real')]
+    ...(P ? [h('b', {}, 'Practice · free'), app.route === 'front' || !practiceDone() ? null : h('button', { class: 'go-real', onClick: openConnect }, h('i', { class: 'bchm' }), 'Play for real')]
       : [h('button', { class: 'chip', onClick: openConnect }, h('i', { class: 'bchm' }), h('b', {}, app.chain.mode === 'chipnet' ? 'Chipnet' : 'Bitcoin Cash'),
           h('span', {}, s?.connected ?? 'connect wallet'))])));
-  if (s && app.route !== 'front') {
+  if (s && app.route !== 'front' && !P) {
     const f = app.chain.fees();
     c.append(h('button', { class: `pouch${P ? ' dim' : ' real'}`, 'aria-label': 'Satchel', onClick: () => import('./ui/satchel').then(m => m.openSatchel()) },
       icon('pouch'), shortCents(s.sats, f.usdPerBch), P ? null : h('small', {}, `${(s.sats / 1e8).toFixed(s.sats >= 1e6 ? 4 : 5)} BCH`)));

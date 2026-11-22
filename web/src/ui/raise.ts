@@ -43,7 +43,7 @@ register('raise', root => {
   name.value = NAMES[Math.floor(Math.random() * NAMES.length)];
   const dice = h('button', { class: 'dice', 'aria-label': 'Random name', onClick: () => { name.value = NAMES[Math.floor(Math.random() * NAMES.length)]; } }, icon('dice'));
   const f = app.chain.fees();
-  const go1 = h('button', { class: 'btn prime', style: 'width:100%', onClick: raise }, 'Raise', h('small', {}, isPractice() ? 'practice' : money(f.raiseSats, f.usdPerBch)));
+  const go1 = h('button', { class: 'btn prime', style: 'width:100%', onClick: raise }, 'Raise', h('small', {}, isPractice() ? 'free' : money(f.raiseSats, f.usdPerBch)));
 
   const pickClass = (c: ClassId) => {
     if (c === cls) return;

@@ -6,12 +6,12 @@ import * as THREE from 'three';
 import { engine, ease } from '../three/engine';
 import { bolt, director, fitDistance, flash, pin, pop, portrait, screenFlash, shock, shot, sparks, ward } from '../three/fx';
 import { world } from '../three/world';
-import { CONTACT, TIER_NAME, tierOf, type Fighter } from '../three/fighter';
+import { CONTACT, ECHO, TIER_NAME, tierOf, type Fighter } from '../three/fighter';
 import { GHOST_LIGHT, haunt, type GhostFx } from '../three/ghost';
 import { beginRite } from '../three/forge';
 import { glyphSvg } from '../three/runes';
 import { GUARD, SPECIAL, STRIKE, ghostMoves, trace, xpNeed, type Ghost, type Hero, type Move, type RoundTrace } from '../game/sim';
-import { activeHero, app, go, isPractice, register, renderChrome } from '../app';
+import { activeHero, app, go, isPractice, markPracticeDone, register, renderChrome } from '../app';
 import { setIntensity, sfx } from '../audio/sfx';
 import { gearIcon, gearName, h, icon, money, toast } from './kit';
 import type { HeroView } from '../chain/types';
@@ -109,7 +109,7 @@ register('duel', root => {
     hero = await activeHero();
     if (!hero || hero.id !== ticket.heroId) { toast('That hero is not in your satchel.', true); go('arena'); return; }
     const gear = (await app.chain.myGear()).filter(x => x.where === 'satchel');
-    [A, B] = await Promise.all([world.fighter(hero.cls, { level: hero.level, gear }), world.fighter(G.cls, { level: G.level }, 1)]);
+    [A, B] = await Promise.all([world.fighter(hero.cls, { level: hero.level, gear }), world.fighter(G.cls, { level: G.level }, ECHO)]);
     A.root.position.set(-X(), 0, 0); B.root.position.set(X(), 0, 0);
     A.face(1, 0); B.face(-1, 0);
     ghost = haunt(B, { name: G.name, owner: G.owner });
@@ -309,7 +309,7 @@ register('duel', root => {
         h('p', { class: 'dim', style: 'margin:0' }, 'Its moves are shown before each round. Guard on its Strikes, Special when it Guards.'),
         h('div', { class: 'row' },
           h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Arena'),
-          h('button', { class: 'btn spirit', onClick: rematch }, 'Again', h('small', {}, isPractice() ? 'practice' : money(f.challengeSats, f.usdPerBch))))));
+          h('button', { class: 'btn spirit', onClick: rematch }, 'Again', isPractice() ? null : h('small', {}, money(f.challengeSats, f.usdPerBch))))));
       root.querySelector('.screen')!.append(panel);
       return;
     }
@@ -393,6 +393,7 @@ register('duel', root => {
     hero = res.hero; renderChrome();
     actions.append(h('button', { class: 'btn ghost', onClick: () => go('hero') }, 'Hero'), h('button', { class: 'btn spirit', onClick: () => go('arena') }, 'Next fight'));
     // a practice win is the moment to offer the real thing: the same hero, kept forever on Bitcoin Cash
+    if (isPractice()) markPracticeDone();
     if (isPractice()) actions.after(h('button', { class: 'btn bch keep', onClick: () => import('./front').then(m => m.playForReal()) }, 'Keep a hero forever', h('small', {}, 'play for real on Bitcoin Cash')));
   }
   const endShot = () => {
