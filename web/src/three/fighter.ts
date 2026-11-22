@@ -337,6 +337,8 @@ export class Fighter {
   }
 
   rimColor(c: string) { this.u.uRim.value.set(c); }
+  /** recolour the whole outfit (echoes wear their own colours, so one never looks like your hero) */
+  tint(hex: string, k = 0.62) { const t = new THREE.Color(hex).multiplyScalar(1.25); for (const m of this.mats) m.color.set('#ffffff').lerp(t, k); }
   /** 0 = whole, 1 = gone: the body breaks into light (ghosts on defeat) */
   dissolve(k: number) { this.u.uDis.value = k; for (const m of this.mats) if (!m.transparent && k > 0) { m.transparent = true; m.needsUpdate = true; } }
   /** the worn pieces of level and gear (shoulders, halo, crown, aura, carried gear), for the forge to bring in one by one */
@@ -360,6 +362,10 @@ function ringTex() {
   x.fillStyle = g; x.beginPath(); x.arc(0, 0, 128, 0, 7); x.fill();
   _ring = new THREE.CanvasTexture(c); return _ring;
 }
+
+/** an echo's own colours, fixed by its id: crimson, emerald, violet, gold, ice, ember, rose, jade */
+const ECHO_TINTS = ['#ff5a5a', '#45e09a', '#a97bff', '#ffcc4d', '#6fd2ff', '#ff8a3d', '#ff6fb5', '#3fd6c4'];
+export const echoTint = (id: number) => ECHO_TINTS[((id % ECHO_TINTS.length) + ECHO_TINTS.length) % ECHO_TINTS.length];
 
 /** echoes (other players' heroes) are solid fighters with a faint cold rim, not see through ghosts */
 export const ECHO = 0.45;

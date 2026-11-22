@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { engine, ease } from '../three/engine';
 import { bolt, director, fitDistance, flash, pin, pop, portrait, screenFlash, shock, shot, sparks, ward } from '../three/fx';
 import { world } from '../three/world';
-import { CONTACT, ECHO, TIER_NAME, tierOf, type Fighter } from '../three/fighter';
+import { CONTACT, ECHO, TIER_NAME, echoTint, tierOf, type Fighter } from '../three/fighter';
 import { GHOST_LIGHT, haunt, type GhostFx } from '../three/ghost';
 import { beginRite } from '../three/forge';
 import { glyphSvg } from '../three/runes';
@@ -119,6 +119,7 @@ register('duel', root => {
     if (!hero || hero.id !== ticket.heroId) { toast('That hero is not in your satchel.', true); go('arena'); return; }
     const gear = (await app.chain.myGear()).filter(x => x.where === 'satchel');
     [A, B] = await Promise.all([world.fighter(hero.cls, { level: hero.level, gear }), world.fighter(G.cls, { level: G.level }, ECHO)]);
+    B.tint(echoTint(G.id));
     A.root.position.set(-X(), 0, 0); B.root.position.set(X(), 0, 0);
     A.face(1, 0); B.face(-1, 0);
     ghost = haunt(B, { name: G.name, owner: G.owner });

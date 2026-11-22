@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { ease } from '../three/engine';
 import { director, fitDistance, portrait, shot } from '../three/fx';
 import { world } from '../three/world';
-import { ECHO, type Fighter } from '../three/fighter';
+import { ECHO, echoTint, type Fighter } from '../three/fighter';
 import { haunt, type GhostFx } from '../three/ghost';
 import { CLASS_NAMES, ghostMoves, seedOf, solve, styleHash } from '../game/sim';
 import { activeHero, app, go, isPractice, register } from '../app';
@@ -100,7 +100,7 @@ register('arena', root => {
   async function raise(id: number) {
     const g = all.find(x => x.id === id); if (!g) return;
     making.add(id);
-    const f = await world.fighter(g.cls, { level: g.level }, ECHO);
+    const f = await world.fighter(g.cls, { level: g.level }, ECHO); f.tint(echoTint(g.id));
     making.delete(id);
     const i = list.findIndex(x => x.id === id);
     if (!alive || i < 0 || Math.abs(i - focus) > KEEP || slots.has(id)) { world.drop(f); return; }
