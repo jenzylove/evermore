@@ -337,6 +337,8 @@ export class Fighter {
   }
 
   rimColor(c: string) { this.u.uRim.value.set(c); }
+  /** rim light strength (a fighter charged with power burns at its edges) */
+  rim(k: number) { this.u.uRimK.value = k; }
   /** recolour the whole outfit (echoes wear their own colours, so one never looks like your hero) */
   tint(hex: string, k = 0.62) { const t = new THREE.Color(hex).multiplyScalar(1.25); for (const m of this.mats) m.color.set('#ffffff').lerp(t, k); }
   /** 0 = whole, 1 = gone: the body breaks into light (ghosts on defeat) */

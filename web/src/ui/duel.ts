@@ -80,24 +80,26 @@ register('duel', root => {
   // the ghost's next move floats over its head: fixed by the seed, never hidden
   const intent = h('div', { class: 'intent' });
   let unpin: (() => void) | null = null;
-  // the two moments a player must never miss, shown as banners across the middle of the screen at the start of a turn
-  const banner = (title: string, sub: string, tone: 'gold' | 'red') => {
-    document.querySelector('.cue')?.remove();
-    const el = h('div', { class: `cue ${tone}` }, h('b', {}, title), h('span', {}, sub));
-    document.body.append(el);
-    setTimeout(() => el.classList.add('out'), 2200); setTimeout(() => el.remove(), 2700);
-  };
-  const turnCues = () => {
-    if (over) return;
-    const theirs = gMoves[moves.length] === SPECIAL && gCh >= 2;
-    if (theirs) { banner('Power incoming', `${G.name} hits double next. Guard to take half.`, 'red'); sfx.charge(); return; }
-    if (hCh >= 2 && !powerShown) { powerShown = true; L.pips.classList.add('burst'); setTimeout(() => L.pips.classList.remove('burst'), 900); banner('Power ready', 'Tap Power for a double hit.', 'gold'); sfx.charge(); }
-  };
+  // body language: an echo with a full power bar burns with it, so you can read the big hit coming
+  let charge = 0, burning = false;
+  world.tick((dt) => {
+    if (!B) return;
+    const hot = !over && gCh >= 2;
+    if (hot !== burning) { burning = hot; B.rimColor(hot ? '#ff6a2a' : '#7fdcff'); if (!hot) B.ghostGlow(1); }
+    if (!hot) return;
+    B.rim(2.6 + Math.sin(engine.t * 7) * 1.1); // the outline burns and pulses while its power is full
+    charge += dt;
+    if (charge > 0.18) {
+      charge = 0;
+      sparks(B.point('chest').add(new THREE.Vector3((Math.random() - 0.5) * 0.5, -0.4 + Math.random() * 0.6, 0)), 5, [GHOST_LIGHT, '#ffffff', '#ff9a6b'], 1.1, -2.2, 0.7);
+      if (Math.random() < 0.25) B.flash(0.22);
+    }
+  });
   const showIntent = () => {
     intent.innerHTML = '';
     if (over || moves.length >= 12 || !B) { intent.style.display = 'none'; return; }
     const m = gMoves[moves.length];
-    intent.style.display = ''; intent.className = `intent m${m}${m === SPECIAL && gCh >= 2 ? ' danger' : ''}`; void intent.offsetWidth; intent.classList.add('pop-in');
+    intent.style.display = ''; intent.className = `intent m${m}`; void intent.offsetWidth; intent.classList.add('pop-in');
     intent.append(icon(MOVE_ICON[m]));
   };
 
@@ -119,6 +121,7 @@ register('duel', root => {
     runes.forEach((x, i) => { x.className = `rp${i < r ? ' past' : ''}${i === r && !over ? ' now' : ''}`; });
     hint.textContent = '';
     bX.disabled = hCh < 2; bX.classList.toggle('ready', hCh >= 2);
+    bX.style.setProperty('--fill', `${Math.min(2, hCh) * 50}%`);
     if (hCh < 2) powerShown = false;
     (bX.querySelector('small') as HTMLElement).textContent = hCh >= 2 ? 'double hit · ready' : `guard to charge ${hCh}/2`;
   };
@@ -176,7 +179,6 @@ register('duel', root => {
     if (moves.length >= 12) return finish(false, true);
     showIntent(); hud();
     btns.classList.remove('wait');
-    turnCues();
   }
 
   const wards: { mesh: THREE.Mesh; mat: THREE.ShaderMaterial; f: Fighter }[] = [];

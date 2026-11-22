@@ -98,7 +98,6 @@ export async function openConnect() {
   const paintNow = async () => {
     body.innerHTML = '';
     const f = rc.fees();
-    const s = await rc.satchel().catch(() => null);
     const w = rc.wallet;
     body.append(h('div', { class: 'dim', style: 'font-size:15px' }, 'Play for real'), h('p', { style: 'margin:4px 0 12px' }, netLabel(rc.net)));
 
@@ -134,6 +133,7 @@ export async function openConnect() {
     }
     body.append(wl);
 
+    const s = await rc.satchel().catch(() => null);
     // 2. money in the play Satchel, in dollars only; shown once a wallet is connected
     const sats = s?.sats ?? 0;
     const usd = f.usdPerBch || 0;

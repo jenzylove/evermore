@@ -483,3 +483,9 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 .moves .btn.special.ready small, .moves .btn.special.ready .ic { color: #3a2200; opacity: 1; }
 
 .btn.busy { pointer-events: none; animation: yourmove 1s ease-in-out infinite; }
+
+/* the Power button is the power-up: it fills from the bottom, glows and says READY when full */
+.moves .btn.special { position: relative; overflow: hidden; }
+.moves .btn.special::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: var(--fill, 0%); background: linear-gradient(0deg, rgba(242,176,76,.55), rgba(255,226,166,.18)); transition: height .5s cubic-bezier(.16,1,.3,1); pointer-events: none; z-index: 0; }
+.moves .btn.special > * { position: relative; z-index: 1; }
+.moves .btn.special.ready::after { content: 'Ready'; position: absolute; top: 6px; right: 8px; z-index: 2; font: 700 10px var(--ui); letter-spacing: .2em; text-transform: uppercase; padding: 3px 6px; border-radius: 4px; background: #2a1700; color: var(--gold-hi); }
