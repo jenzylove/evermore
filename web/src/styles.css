@@ -443,3 +443,13 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 .gearfight.open { animation: yourmove 1.6s ease-in-out infinite; }
 .gearfight.locked { cursor: default; background: rgba(220,230,250,.04); box-shadow: inset 0 0 0 1px rgba(220,230,250,.14); }
 .gearfight.locked .gk { color: var(--dim); background: rgba(220,230,250,.06); }
+
+/* ---- play for real sheet (Nov 22) */
+[data-sheet=connect] .step { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; font: 700 15px var(--ui); letter-spacing: .14em; text-transform: uppercase; color: var(--bone); }
+[data-sheet=connect] .step b { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(10,193,142,.18); color: #7af7cf; font: 700 14px var(--ui); letter-spacing: 0; }
+[data-sheet=connect] .connected { margin: 0; display: flex; align-items: center; gap: 8px; color: #7af7cf; font: 600 16px var(--ui); }
+[data-sheet=connect] .satbal { display: flex; align-items: baseline; justify-content: space-between; margin: 2px 0 4px; }
+[data-sheet=connect] .satbal span { color: var(--dust); font: 600 15px var(--ui); }
+[data-sheet=connect] .satbal b { font: 700 32px var(--display); color: #2fe0ad; }
+[data-sheet=connect] .satdetails { margin-top: 16px; color: var(--dust); }
+[data-sheet=connect] .satdetails summary { cursor: pointer; font: 600 14px var(--ui); letter-spacing: .12em; text-transform: uppercase; }

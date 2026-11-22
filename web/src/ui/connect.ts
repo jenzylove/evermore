@@ -87,8 +87,12 @@ export async function openConnect() {
   const body = h('div', { class: 'wrap' });
   const sh = h('div', { class: 'sheet', 'data-sheet': 'connect' }, body);
   document.body.append(bg, sh);
+  if (!rc.fees().usdPerBch) rc.refreshPrice().then(() => paint()).catch(() => undefined);
 
-  const paint = async () => {
+  // redraws run one at a time (the BCH price can arrive while a redraw is in flight)
+  let painting: Promise<void> = Promise.resolve();
+  const paint = () => (painting = painting.then(paintNow, paintNow));
+  const paintNow = async () => {
     body.innerHTML = '';
     const f = rc.fees();
     const s = await rc.satchel().catch(() => null);
@@ -96,9 +100,10 @@ export async function openConnect() {
     body.append(h('div', { class: 'dim', style: 'font-size:15px' }, 'Play for real'), h('p', { style: 'margin:4px 0 12px' }, netLabel(rc.net)));
 
     // 1. wallet
+    body.append(h('div', { class: 'step' }, h('b', {}, '1'), h('span', {}, 'Connect your wallet')));
     const wl = h('div', { style: 'margin:0 0 14px' });
     if (w && (w as WizardWallet).live) {
-      wl.append(h('p', { style: 'margin:0' }, `Wallet: ${w.name} · ${short((w as WizardWallet).address)}`));
+      wl.append(h('p', { class: 'connected' }, h('i', { class: 'bchm' }), `${w.name} connected · ${short((w as WizardWallet).address)}`));
     } else {
       wl.append(h('p', { style: 'margin:0 0 8px' }, w ? `Wallet ${w.name} is remembered but not connected. Open it and connect again to sign.` :
         `Connect Selene, Cashonize or Paytaca${rc.net === 'chipnet' ? ' (switched to chipnet)' : ''}. It only signs what you approve.`));
@@ -121,39 +126,51 @@ export async function openConnect() {
           h('a', { class: 'btn ghost', href: pairing.cashonize, target: '_blank', rel: 'noopener' }, 'Open in Cashonize'),
           h('button', { class: 'btn ghost', onClick: () => navigator.clipboard?.writeText(pairing!.uri).then(() => toast('Link copied. Paste it in your wallet.')) }, 'Copy link'));
       } }, w ? 'Reconnect wallet' : 'Connect wallet');
+      btn.className = 'btn prime'; btn.style.width = '100%';
       wl.append(btn, qr, links);
     }
     body.append(wl);
 
-    // 2. satchel
+    // 2. money in the play Satchel, in dollars only; shown once a wallet is connected
     const sats = s?.sats ?? 0;
-    body.append(h('div', { class: 'dim', style: 'font-size:15px' }, 'Satchel'),
-      h('div', { class: 'bal' }, s ? money(sats, f.usdPerBch) : '…'),
-      h('p', { style: 'margin:0 0 8px;font-size:14px;word-break:break-all' }, `${sats.toLocaleString()} sats · `, h('a', { href: '#', onClick: (e: Event) => { e.preventDefault(); navigator.clipboard?.writeText(rc.satchelKey.address(rc.net)).then(() => toast('Satchel address copied.')); } }, rc.satchelKey.address(rc.net))),
-      h('p', { style: 'margin:0 0 10px;font-size:14px' }, 'A play key in this browser pays for duels so nothing pops up mid fight. Export it to keep a backup.'));
     const usd = f.usdPerBch || 0;
-    const satsFor = (dollars: number) => usd ? Math.round(dollars / usd * 1e8) : Number(f.raiseSats) * dollars;
-    const fund = (dollars: number) => h('button', { class: 'btn', disabled: !(w && (w as WizardWallet).live), onClick: async (e: Event) => {
+    const live = !!(w && (w as WizardWallet).live);
+    const dollars = (n: number) => usd ? `$${(n / 1e8 * usd).toFixed(2)}` : '…';
+    const satsFor = (d: number) => Math.round(d / usd * 1e8);
+    const fund = (d: number, prime: boolean) => h('button', { class: prime ? 'btn prime' : 'btn ghost', disabled: !usd, onClick: async (e: Event) => {
       const b = e.currentTarget as HTMLButtonElement; b.disabled = true;
-      try { const r = await rc.fund(satsFor(dollars)); toast('Satchel funded.'); link(r.explorer); await paint(); renderChrome(); }
+      try { const r = await rc.fund(satsFor(d)); toast(`Added $${d} to your Satchel.`); link(r.explorer); await paint(); renderChrome(); }
       catch (err) { toast((err as Error).message, true); b.disabled = false; }
-    } }, `Add ${usd ? `$${dollars}` : `${satsFor(dollars)} sats`}`);
-    body.append(h('div', { class: 'row' }, fund(1), fund(5),
-      h('button', { class: 'btn ghost', onClick: async () => { const k = await rc.exportKey(); await navigator.clipboard?.writeText(k); toast('Play key copied. Keep it secret.'); } }, 'Export key'),
-      w ? h('button', { class: 'btn ghost', disabled: !sats, onClick: async () => {
-        try { const r = await rc.withdrawAll(); toast('Satchel emptied to your wallet.'); link(r.explorer); await paint(); renderChrome(); } catch (err) { toast((err as Error).message, true); }
-      } }, 'Empty to wallet') : null));
+    } }, `Add $${d}`, prime ? h('small', {}, 'one approval in your wallet') : null);
+    if (live || sats > 0) {
+      body.append(h('div', { class: 'step' }, h('b', {}, '2'), h('span', {}, 'Add money to play')),
+        h('div', { class: 'satbal' }, h('span', {}, 'Satchel'), h('b', {}, dollars(sats))),
+        h('p', { class: 'dim', style: 'margin:0 0 10px;font-size:15px' }, usd ? `A hero costs about ${money(f.raiseSats, usd)}; each fight about ${money(f.challengeSats, usd)}. Fights use this Satchel, so nothing pops up mid fight.` : 'Reading the BCH price…'));
+      if (live) body.append(h('div', { class: 'row' }, fund(1, true), fund(5, false)));
+    }
 
-    // 3. switch
+    // 3. start
     const enough = sats >= f.raiseSats || (await rc.myHeroes().catch(() => [])).length > 0;
-    const sw = h('div', { class: 'row', style: 'margin-top:14px' });
+    const sw = h('div', { style: 'margin-top:14px' });
     if (isPractice()) {
-      sw.append(h('button', { class: 'btn prime', disabled: !enough, onClick: async () => { await enterReal(); close(); go(app.route === 'duel' ? 'arena' : app.route); toast(`Playing on ${rc.net}. Every action is a real transaction.`); } },
-        'Play for real', h('small', {}, enough ? rc.net : `needs ${money(f.raiseSats, f.usdPerBch)} to raise`)));
+      if (live || sats > 0) sw.append(h('div', { class: 'step' }, h('b', {}, '3'), h('span', {}, 'Play')),
+        h('button', { class: 'btn prime', style: 'width:100%', disabled: !enough, onClick: async () => { await enterReal(); close(); go(app.route === 'duel' ? 'arena' : app.route); toast('Playing on Bitcoin Cash. Every action is a real transaction.'); } },
+          'Start playing', h('small', {}, enough ? 'on Bitcoin Cash' : `add at least ${money(f.raiseSats, usd)} first`)));
     } else {
       sw.append(h('button', { class: 'btn ghost', onClick: () => { leaveReal(); close(); go(app.route === 'duel' ? 'arena' : app.route); toast('Back to practice. Nothing on chain.'); } }, 'Back to practice'));
     }
     body.append(sw);
+
+    // the details, folded: address, sats, backup, empty
+    const det = h('details', { class: 'satdetails' }, h('summary', {}, 'Satchel details'),
+      h('p', { style: 'margin:8px 0;font-size:14px;word-break:break-all' }, `${sats.toLocaleString()} sats · `, h('a', { href: '#', onClick: (e: Event) => { e.preventDefault(); navigator.clipboard?.writeText(rc.satchelKey.address(rc.net)).then(() => toast('Satchel address copied.')); } }, rc.satchelKey.address(rc.net))),
+      h('p', { class: 'dim', style: 'margin:0 0 10px;font-size:14px' }, 'The Satchel is a play key kept in this browser. Send heroes home to your wallet to keep them forever, and export the key as a backup.'),
+      h('div', { class: 'row' },
+        h('button', { class: 'btn ghost', onClick: async () => { const k = await rc.exportKey(); await navigator.clipboard?.writeText(k); toast('Play key copied. Keep it secret.'); } }, 'Export key'),
+        w ? h('button', { class: 'btn ghost', disabled: !sats, onClick: async () => {
+          try { const r = await rc.withdrawAll(); toast('Satchel emptied to your wallet.'); link(r.explorer); await paint(); renderChrome(); } catch (err) { toast((err as Error).message, true); }
+        } }, 'Empty to wallet') : null));
+    body.append(det);
   };
   await paint();
 }
