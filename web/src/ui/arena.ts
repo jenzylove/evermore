@@ -153,6 +153,16 @@ register('arena', root => {
     setTimeout(step, 400);
   }
 
+  // while the arena is read from the chain, say so; if it fails, say why and offer a retry (never a blank floor)
+  info.append(h('p', { class: 'dim', style: 'margin:12px 0' }, isPractice() ? 'Opening the arena…' : 'Reading the arena from Bitcoin Cash…'));
+  const failed = (e: unknown) => {
+    console.error('arena load failed', e);
+    info.innerHTML = '';
+    info.append(h('p', { class: 'tip', style: 'margin:12px 0 4px' }, 'The arena could not be read.'),
+      h('p', { class: 'dim', style: 'margin:0 0 12px;font-size:14px' }, (e as Error)?.message ?? String(e)),
+      h('button', { class: 'btn spirit', style: 'width:100%', onClick: () => { (app.chain as { forget?: () => void }).forget?.(); go('arena', false); } }, 'Try again'));
+  };
+  const slow = setTimeout(() => { if (!ready) failed(new Error('Bitcoin Cash servers are slow to answer right now.')); }, 25000);
   (async () => {
     [all, hero] = await Promise.all([app.chain.listGhosts(), activeHero()]);
     const gear = hero ? await app.chain.myGear() : [];
@@ -189,7 +199,8 @@ register('arena', root => {
     director.cut(shot(director.cur.pos.x * 1.4, 3, director.cur.pos.z * 1.4, director.cur.look.x, 1, director.cur.look.z, director.cur.fov));
     director.move(framing(focus).s, 1200, ease.outCubic);
     startBeat();
-  })();
+    clearTimeout(slow);
+  })().catch(failed);
 
   function paintFilters() {
     const others = all.filter(g => !g.mine).length;
