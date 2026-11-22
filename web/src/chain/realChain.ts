@@ -116,6 +116,8 @@ export class RealChain implements GameChain {
     return v;
   }
   private invalidate() { this.cache.clear(); }
+  /** drop remembered reads so the next one asks the chain (balances after a payment) */
+  forget() { this.cache.clear(); }
   private ghostsRaw() { return this.cached('ghosts', () => this.chain.ghosts(this.game)); }
   private holdings(lock: Uint8Array) { return this.cached(`h:${hex(lock)}`, () => this.chain.holdings(this.game, lock)); }
   private listingsRaw() { return this.cached('listings', () => this.chain.listings(this.game), 15000); }

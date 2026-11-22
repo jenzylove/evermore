@@ -82,7 +82,8 @@ export async function openConnect() {
   let rc: RealChain;
   try { rc = realChain(); } catch (e) { toast((e as Error).message, true); return; }
   let pairing: Pairing | null = null;
-  const close = () => { pairing?.cancel(); bg.remove(); sh.remove(); };
+  let tick = 0;
+  const close = () => { pairing?.cancel(); clearInterval(tick); bg.remove(); sh.remove(); };
   const bg = h('div', { class: 'sheet-bg', onClick: close });
   const body = h('div', { class: 'wrap' });
   const sh = h('div', { class: 'sheet', 'data-sheet': 'connect' }, body);
@@ -137,16 +138,26 @@ export async function openConnect() {
     const live = !!(w && (w as WizardWallet).live);
     const dollars = (n: number) => usd ? `$${(n / 1e8 * usd).toFixed(2)}` : '…';
     const satsFor = (d: number) => Math.round(d / usd * 1e8);
-    const fund = (d: number, prime: boolean) => h('button', { class: prime ? 'btn prime' : 'btn ghost', disabled: !usd, onClick: async (e: Event) => {
-      const b = e.currentTarget as HTMLButtonElement; b.disabled = true;
-      try { const r = await rc.fund(satsFor(d)); toast(`Added $${d} to your Satchel.`); link(r.explorer); await paint(); renderChrome(); }
-      catch (err) { toast((err as Error).message, true); b.disabled = false; }
-    } }, `Add $${d}`, prime ? h('small', {}, 'one approval in your wallet') : null);
+    // add any amount in dollars; then keep reading the chain until the new balance shows
+    const amt = h('input', { class: 'name amt', inputmode: 'decimal', value: '1', 'aria-label': 'Amount in dollars' }) as HTMLInputElement;
+    const addBtn: HTMLButtonElement = h('button', { class: 'btn prime', disabled: !usd, onClick: async () => {
+      const d = Number(amt.value);
+      if (!(d >= 0.1)) { toast('Enter at least $0.10.', true); return; }
+      addBtn.disabled = true; addBtn.textContent = 'Approve in your wallet…';
+      try {
+        const before = (await rc.satchel()).sats;
+        const r = await rc.fund(satsFor(d));
+        addBtn.textContent = 'Adding…';
+        for (let i = 0; i < 20; i++) { await new Promise(res => setTimeout(res, 1000)); rc.forget(); if ((await rc.satchel()).sats > before) break; }
+        toastLink(`Added $${d.toFixed(2)} to your Satchel`, r.explorer);
+        await paint(); renderChrome();
+      } catch (err) { toast((err as Error).message, true); await paint(); }
+    } }, 'Add');
     if (live || sats > 0) {
       body.append(h('div', { class: 'step' }, h('b', {}, '2'), h('span', {}, 'Add money to play')),
         h('div', { class: 'satbal' }, h('span', {}, 'Satchel'), h('b', {}, dollars(sats))),
         h('p', { class: 'dim', style: 'margin:0 0 10px;font-size:15px' }, usd ? `A hero costs about ${money(f.raiseSats, usd)}; each fight about ${money(f.challengeSats, usd)}. Fights use this Satchel, so nothing pops up mid fight.` : 'Reading the BCH price…'));
-      if (live) body.append(h('div', { class: 'row' }, fund(1, true), fund(5, false)));
+      if (live) body.append(h('div', { class: 'addrow' }, h('span', { class: 'cur' }, '$'), amt, addBtn), h('p', { class: 'dim', style: 'margin:6px 0 0;font-size:13px' }, 'One approval in your wallet. You can add any amount, and empty it back to your wallet any time.'));
     }
 
     // 3. start
@@ -173,10 +184,22 @@ export async function openConnect() {
     body.append(det);
   };
   await paint();
+  // the balance refreshes on its own while the sheet is open (a payment can land a moment later)
+  let lastSats = (await rc.satchel().catch(() => null))?.sats ?? 0;
+  tick = window.setInterval(async () => {
+    if (document.activeElement?.classList.contains('amt')) return;
+    rc.forget(); const n = (await rc.satchel().catch(() => null))?.sats ?? lastSats;
+    if (n !== lastSats) { lastSats = n; await paint(); renderChrome(); }
+  }, 5000);
 }
 
 const short = (a: string) => { const s = a.replace(/^[a-z]+:/, ''); return `${s.slice(0, 5)}…${s.slice(-4)}`; };
 function link(url: string | null) { if (url) console.info('tx', url); }
+/** a toast with a link to the transaction */
+function toastLink(text: string, url: string | null) {
+  const a = h('a', { class: 'toast tx-receipt', href: url ?? '#', target: '_blank', rel: 'noopener', style: 'pointer-events:auto;text-decoration:none;top:calc(108px + var(--safe-t))' }, `${text}${url ? ' · view ↗' : ''}`);
+  document.body.append(a); setTimeout(() => a.remove(), 7000);
+}
 
 const VERB: Record<string, string> = {
   raise: 'Hero raised', challenge: 'Challenge paid', forge: 'Forge sealed', list: 'Listed', buy: 'Bought', cancel: 'Listing cancelled',

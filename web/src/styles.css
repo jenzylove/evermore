@@ -453,3 +453,8 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 [data-sheet=connect] .satbal b { font: 700 32px var(--display); color: #2fe0ad; }
 [data-sheet=connect] .satdetails { margin-top: 16px; color: var(--dust); }
 [data-sheet=connect] .satdetails summary { cursor: pointer; font: 600 14px var(--ui); letter-spacing: .12em; text-transform: uppercase; }
+
+[data-sheet=connect] .addrow { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
+[data-sheet=connect] .addrow .cur { font: 700 28px var(--display); color: var(--gold); }
+[data-sheet=connect] .addrow .amt { width: 100%; margin: 0; }
+[data-sheet=connect] .addrow .btn { min-width: 120px; }
