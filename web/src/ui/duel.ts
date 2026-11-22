@@ -71,7 +71,7 @@ register('duel', root => {
   btns.append(bS, bG, bX);
   const center = h('div', { class: 'pass', style: 'position:absolute;inset:0' });
   const hint = h('div', { class: 'duel-hint' });
-  root.append(h('section', { class: 'screen duel' }, h('div', { class: 'hud scrim-t' }, L.el, round, Rr.el), hint, center, h('div', { style: 'margin-top:auto' }, btns)));
+  root.append(h('section', { class: 'screen duel' }, h('div', { class: 'hud scrim-t' }, L.el, round, Rr.el), center, h('div', { style: 'margin-top:auto' }, hint, btns)));
   const key = (e: KeyboardEvent) => { const m = { '1': STRIKE, '2': GUARD, '3': SPECIAL, s: STRIKE, g: GUARD, x: SPECIAL }[e.key]; if (m !== undefined) play(m as Move); };
   addEventListener('keydown', key);
 
@@ -84,6 +84,23 @@ register('duel', root => {
     const m = gMoves[moves.length];
     intent.style.display = ''; intent.className = `intent m${m}`; void intent.offsetWidth; intent.classList.add('pop-in');
     intent.append(icon(MOVE_ICON[m]));
+  };
+
+  // a plain line every round: what the echo does next and the answer to it
+  const coach = () => {
+    if (moves.length >= 12) return '';
+    const m = gMoves[moves.length], nm = G.name;
+    const mine = hCh >= 2 ? ' Your Special is ready: double hit.' : '';
+    if (m === GUARD) return `${nm} will GUARD next. Strike now${hCh >= 2 ? ', or break it with your Special' : ''}.`;
+    if (m === SPECIAL && gCh >= 2) return `${nm} will use SPECIAL, a double hit. Guard!`;
+    return `${nm} will STRIKE next. Guard takes half and charges your Special.${mine}`;
+  };
+  let queued: Move | null = null;
+  const runQueued = () => {
+    if (queued === null || over) return;
+    const q = queued; queued = null;
+    [bS, bG, bX].forEach(b => b.classList.remove('queued'));
+    setTimeout(() => play(q), 60);
   };
 
   const hud = () => {
@@ -101,7 +118,7 @@ register('duel', root => {
     const r = moves.length;
     (round.firstChild as HTMLElement).textContent = over ? '' : `Round ${r + 1}`;
     runes.forEach((x, i) => { x.className = `rp${i < r ? ' past' : ''}${i === r && !over ? ' now' : ''}`; });
-    hint.textContent = !over && moves.length === 0 ? 'Its next move shows above its head' : '';
+    hint.textContent = over ? '' : coach();
     bX.disabled = hCh < 2; bX.classList.toggle('ready', hCh >= 2);
     (bX.querySelector('small') as HTMLElement).textContent = hCh >= 2 ? 'double hit' : `${hCh} of 2 charges`;
   };
@@ -127,7 +144,7 @@ register('duel', root => {
     director.move(two(), 1100, ease.inOut);
     await meet(hero.name, G.name, G.owner, isPractice() ? 'Practice duel' : 'The chain checks every move', 1700);
     director.drift = 0.6;
-    busy = false; btns.classList.remove('wait'); showIntent();
+    busy = false; btns.classList.remove('wait'); showIntent(); hud(); runQueued();
   })();
 
   // the meeting: a quiet line of words, not a splash. Your hero, the echo it meets, and who keeps that echo.
@@ -142,7 +159,12 @@ register('duel', root => {
   }
 
   async function play(m: Move) {
-    if (busy || over || !hero || !A || !B) return;
+    if (over || !hero || !A || !B) return;
+    if (busy) {
+      queued = m;
+      [bS, bG, bX].forEach((b, i) => b.classList.toggle('queued', i === m));
+      return;
+    }
     if (m === SPECIAL && hCh < 2) { toast('Special needs 2 charges. Guard to charge.'); return; }
     busy = true; btns.classList.add('wait'); intent.style.display = 'none';
     moves.push(m);
@@ -155,8 +177,9 @@ register('duel', root => {
     if (gHp <= 0) return finish(true);
     if (hHp <= 0) return finish(false);
     if (moves.length >= 12) return finish(false, true);
-    showIntent();
+    showIntent(); hud();
     btns.classList.remove('wait');
+    runQueued();
   }
 
   const wards: { mesh: THREE.Mesh; mat: THREE.ShaderMaterial; f: Fighter }[] = [];
@@ -180,7 +203,7 @@ register('duel', root => {
     const g: Promise<void>[] = [];
     if (r.heroMove === GUARD) g.push(raiseWard(a, true).then(() => { hCh = r.hCharge; hud(); }));
     if (r.ghostMove === GUARD) g.push(raiseWard(b, false).then(() => { gCh = r.gCharge; hud(); }));
-    if (g.length) { sfx.ward(); sfx.charge(); director.move(two(), 400); await Promise.all(g); await engine.wait(250); }
+    if (g.length) { sfx.ward(); sfx.charge(); director.move(two(), 400); await Promise.all(g); await engine.wait(110); }
     for (const beat of r.beats) {
       const mine = beat.who === 'hero';
       const atk = mine ? a : b, tgt = mine ? b : a;
@@ -188,9 +211,9 @@ register('duel', root => {
       if (mine) { gHp = beat.targetHp; if (beat.special) hCh = 0; } else { hHp = beat.targetHp; if (beat.special) gCh = 0; }
       hud();
       if (beat.targetHp <= 0) break;
-      await engine.wait(140);
+      await engine.wait(60);
     }
-    if (!r.beats.length) await engine.wait(400); // both guarded: a held breath
+    if (!r.beats.length) await engine.wait(300); // both guarded: a held breath
     await dropWards();
     if (r.hHp > 0 && r.gHp > 0) director.move(two(), 520);
     // a full charge shows on the body
@@ -238,12 +261,12 @@ register('duel', root => {
     const kb = (special ? 0.45 : 0.25) * (blocked ? 0.35 : 1) * dir;
     if (!blocked && !kill) b.once('hit', { fade: 0.06, speed: 1.4 });
     if (kill) { await ko(b, a, mine); return; }
-    await engine.tween(160, p => { b.root.position.x = bHome + kb * Math.sin(p * Math.PI * 0.5); });
+    await engine.tween(130, p => { b.root.position.x = bHome + kb * Math.sin(p * Math.PI * 0.5); });
     if (special) world.arena.dim(0);
-    await engine.wait(160);
+    await engine.wait(70);
     // recover: both settle back onto their marks
     const ax = a.root.position.x, bx = b.root.position.x;
-    await engine.tween(320, p => { const k = ease.inOut(p); a.root.position.x = ax + (home.x - ax) * k; b.root.position.x = bx + (bHome - bx) * k; });
+    await engine.tween(220, p => { const k = ease.inOut(p); a.root.position.x = ax + (home.x - ax) * k; b.root.position.x = bx + (bHome - bx) * k; });
   }
 
   function impact(a: Fighter, b: Fighter, special: boolean, dmg: number, blocked: boolean, kill: boolean, mine: boolean) {
