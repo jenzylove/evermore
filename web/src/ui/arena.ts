@@ -185,7 +185,10 @@ register('arena', root => {
     const fi = all.findIndex(g => g.id === app.focusGhost);
     // first time in, stand the player in front of an echo they can actually beat, nearest their level
     let firstWin = -1;
-    if (fi < 0 && hero) {
+    // a hero's very first fight in practice is the training echo
+    const tr = hero && hero.wins === 0 ? all.findIndex(g => g.trainee) : -1;
+    if (fi < 0 && tr >= 0) { firstWin = tr; beat.set(all[tr].id, true); }
+    else if (fi < 0 && hero) {
       const near = all.map((g, k) => ({ g, k })).filter(x => !x.g.mine && x.g.level <= hero!.level + 1)
         .sort((a, b) => (Number(a.g.cls === hero!.cls) - Number(b.g.cls === hero!.cls)) || (Math.abs(a.g.level - hero!.level) - Math.abs(b.g.level - hero!.level))).slice(0, 10); // a different class first: no mirror matches
       for (const { g, k } of near) {

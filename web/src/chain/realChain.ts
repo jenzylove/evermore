@@ -265,6 +265,8 @@ export class RealChain implements GameChain {
       const r = await this.laneTx('challenge', async (lane) => {
         const g = await this.chain.ghost(this.game, ghostId);
         if (!g) throw new Error('That ghost has left the Arena.');
+        // the covenant only stops a hero fighting its own ghost; this client also refuses your other heroes (no farming XP off yourself)
+        if (this.myPkhs().has(hex(g.ghost.ownerPkh)) || (await this.myHeroIds()).has(ghostId)) throw new Error("That echo is one of your own heroes. Pick another player's echo.");
         const d = E.challengeDraft(this.game, lane, g.utxo, heroId, this.satchelKey.lock).draft;
         // auto sweep: a new challenge means every older ticket is from a lost or abandoned duel
         // (the client plays one duel at a time); burn them here and get their sats back

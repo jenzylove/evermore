@@ -25,6 +25,8 @@ export type HeroView = Stats & {
 
 /** A hero standing in the Arena (decoded from its 43 byte ghost commitment). */
 export type GhostView = Stats & {
+  /** practice only: the training echo a new player meets first */
+  trainee?: boolean;
   id: number;
   cls: ClassId;
   level: number;

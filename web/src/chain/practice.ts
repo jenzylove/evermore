@@ -69,7 +69,9 @@ export class PracticeChain implements GameChain {
   }
 
   async listGhosts(): Promise<GhostView[]> {
-    const w: GhostView[] = this.s.wardens.map(x => ({ ...x, ...grown(x.cls, x.level), mine: false }));
+    // the training echo: weaker than any hall echo, so a new player's first duel ends in a few rounds and they see the forge
+    const trainee: GhostView = { id: 99, cls: 2, level: 1, hp: 24, atk: 8, def: 2, spd: 3, beaten: 0, defences: 0, name: 'Wisp', owner: 'the Hall', mine: false, trainee: true };
+    const w: GhostView[] = [trainee, ...this.s.wardens.map(x => ({ ...x, ...grown(x.cls, x.level), mine: false }))];
     const mine: GhostView[] = this.s.heroes.map(h => ({ id: h.id, cls: h.cls as ClassId, level: h.level, hp: h.hp, atk: h.atk, def: h.def, spd: h.spd,
       beaten: h.beaten, defences: h.defences, name: h.name, owner: 'you', mine: true }));
     return [...w, ...mine].sort((a, b) => a.level - b.level);

@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import * as E from '../../../sdk/src/index.ts';
 import type { Deployment, NetworkName } from '../../../sdk/src/index.ts';
 import { RealChain, type KV } from '../chain/realChain';
+import { isSealed, sealInPlace, unseal } from '../chain/keyvault';
 import { WizardWallet, pair, resume, type Pairing } from '../chain/wallet';
 import { app, go, isPractice, renderChrome, usePractice, useRealChain } from '../app';
 import { h, money, toast } from './kit';
@@ -38,19 +39,29 @@ async function bchUsd(): Promise<number | null> {
 }
 
 let real: RealChain | null = null;
+const unlocked: Partial<Record<NetworkName, string>> = {};
+/** Open (or create) this browser's play key. It is kept sealed at rest (chain/keyvault.ts); a plain key is sealed on first open. */
+async function unlockSatchel(net: NetworkName) {
+  if (unlocked[net]) return;
+  const sk = `evermore.satchel.${net}`;
+  let v = store.getItem(sk);
+  if (isSealed(v)) { unlocked[net] = await unseal(v!); return; }
+  if (!v) {
+    v = E.Satchel.generate().toWif(net); store.setItem(sk, v);
+    // a Satchel key that cannot be saved would be lost on reload with its coins: refuse to start
+    if (store.getItem(sk) !== v) throw new Error('This browser is blocking storage (private mode or an in app browser), so your play Satchel could not be saved. Open Evermore in a normal browser tab to play for real. Practice works here.');
+  }
+  unlocked[net] = v;
+  await sealInPlace(store, sk, v);
+}
 /** The RealChain for the configured network (one per page), with its Satchel and remembered wallet. */
 export function realChain(): RealChain {
   if (real) return real;
   const net = realNet();
   const dep = Object.entries(deployments).find(([p]) => p.endsWith(`/${net}.json`))?.[1];
   if (!dep) throw new Error(`Evermore is not deployed on ${net} yet.`);
-  const sk = `evermore.satchel.${net}`;
-  let wif = store.getItem(sk);
-  if (!wif) {
-    wif = E.Satchel.generate().toWif(net); store.setItem(sk, wif);
-    // a Satchel key that cannot be saved would be lost on reload with its coins: refuse to start
-    if (store.getItem(sk) !== wif) throw new Error('This browser is blocking storage (private mode or an in app browser), so your play Satchel could not be saved. Open Evermore in a normal browser tab to play for real. Practice works here.');
-  }
+  const wif = unlocked[net];
+  if (!wif) throw new Error('The play key is still opening. Try again in a moment.');
   const wallet = WizardWallet.remembered(net);
   if (wallet) resume(wallet);
   const w = Object.entries(wardens).find(([p]) => p.endsWith(`/wardens-${net}.json`))?.[1];
@@ -62,6 +73,7 @@ export function realChain(): RealChain {
 
 /** Switch every screen to the real chain (remembered across reloads). */
 export async function enterReal() {
+  await unlockSatchel(realNet());
   const rc = realChain();
   if (!rc.fees().usdPerBch) await rc.refreshPrice();
   useRealChain(rc);
@@ -82,7 +94,7 @@ const netLabel = (n: NetworkName) => (n === 'chipnet' ? 'Chipnet · test coins, 
 /** The sheet: wallet, Satchel, and the switch between Practice and real play. */
 export async function openConnect() {
   let rc: RealChain;
-  try { rc = realChain(); } catch (e) { toast((e as Error).message, true); return; }
+  try { await unlockSatchel(realNet()); rc = realChain(); } catch (e) { toast((e as Error).message, true); return; }
   let pairing: Pairing | null = null;
   let tick = 0;
   const close = () => { pairing?.cancel(); clearInterval(tick); bg.remove(); sh.remove(); };

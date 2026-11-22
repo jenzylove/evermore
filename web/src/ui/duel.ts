@@ -42,8 +42,9 @@ register('duel', root => {
   const two = () => { const fov = fovW(), d = Math.max(4.4, fitDistance(X() * 2 + (portrait() ? 1.1 : 2.6), fov)); return shot(0, 1.2, d, 0, portrait() ? 1.25 : 1.05, 0, fov); };
   const ots = (a: Fighter, b: Fighter) => {
     const pa = a.root.position, pb = b.root.position, dir = pb.clone().sub(pa).setY(0).normalize();
-    const back = portrait() ? 2.6 : 2.0, side = portrait() ? 1.0 : 1.35;
-    const cam = pa.clone().addScaledVector(dir, -back).add(new THREE.Vector3(0, 0, side)).setY(1.55);
+    // on a phone the attacker stays off the lens, so it never covers its target or the move buttons
+    const back = portrait() ? 3.3 : 2.0, side = portrait() ? 1.2 : 1.35;
+    const cam = pa.clone().addScaledVector(dir, -back).add(new THREE.Vector3(0, 0, side)).setY(portrait() ? 1.8 : 1.55);
     const look = pa.clone().lerp(pb, 0.62).setY(1.05);
     return shot(cam.x, cam.y, cam.z, look.x, look.y, look.z, portrait() ? 44 : 34);
   };

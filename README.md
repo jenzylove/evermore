@@ -50,7 +50,9 @@ No seasons, no resets. One arena that never closes. Free practice in the browser
 2. Raise a hero, **Enter the arena**, fight the echo it suggests (marked Beatable), win, watch the forge and the XP.
 3. Press **Play for real**, connect Selene, Cashonize or Paytaca (WizardConnect), add about $1 to your play Satchel (one approval).
 4. Raise and fight a Warden on mainnet. Each step links its transaction; a win pays the Warden's bounty to your Satchel within a minute.
-5. On the hero screen, **Keep it safe** sends the hero (an NFT) and the Satchel's coins to your wallet.
+5. On the hero screen, **Keep it safe** sends the hero (an NFT) and the Satchel's coins to your wallet. The Satchel key is stored encrypted in the browser (AES GCM under a WebCrypto key that page scripts cannot export).
+
+New to the game? Your first practice fight is against Wisp, a training echo you win in a few rounds, so you see the forge within a minute.
 6. Open **/proof**. Every number there is read live from Bitcoin Cash by your browser.
 
 ## How Bitcoin Cash does the work
