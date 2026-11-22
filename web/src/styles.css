@@ -499,3 +499,8 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 .round .rr { display: none; }
 .round .rl { font: 700 16px var(--ui); letter-spacing: .2em; color: var(--bone); }
 .round .rl.late { color: #ff6b6b; text-shadow: 0 0 12px rgba(255,80,80,.6); }
+
+/* Warden bounty */
+.arena .who .bounty { margin-left: 10px; padding: 3px 8px; border-radius: 6px; font: 700 13px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: #022a1d; background: linear-gradient(180deg, #43f0bd, #0ac18e); vertical-align: middle; }
+.bountywin { margin-top: 10px; font: 700 clamp(24px, 6.5vw, 32px)/1.1 var(--display); color: #43f0bd; text-shadow: 0 0 18px rgba(10,193,142,.6); }
+.bountywin small { display: block; margin-top: 4px; font: 600 14px var(--ui); color: var(--dust); text-shadow: none; }

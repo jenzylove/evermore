@@ -47,6 +47,8 @@ export type RealChainOptions = {
 };
 
 const CACHE_MS = 15000;
+/** Warden bounty in US cents by level, paid by the house for a hero's first win against each Warden (scripts/bounty-keeper.mjs) */
+export const bountyCents = (level: number) => (level <= 2 ? 5 : level <= 4 ? 7 : level <= 6 ? 10 : 15);
 const short = (a: string) => { const s = a.replace(/^[a-z]+:/, ''); return `${s.slice(0, 4)}…${s.slice(-3)}`; };
 const hex = (b: Uint8Array) => binToHex(b);
 const CLASS = ['Knight', 'Rogue', 'Mage'];
@@ -158,6 +160,8 @@ export class RealChain implements GameChain {
     return {
       id: g.id, cls: g.cls as ClassId, level: g.level, hp: g.hp, atk: g.atk, def: g.def, spd: g.spd,
       beaten: g.beaten, defences: g.defences, name: this.nameOf(g.id, g.cls), owner: mine ? 'you' : short(ownerAddr), mine,
+      // a Warden (house hero, labelled and owned by the treasury) carries a bounty; same table as scripts/bounty-keeper.mjs
+      ...(this.net === 'mainnet' && this.labels[String(g.id)] && hex(g.ownerPkh) === this.game.params.treasuryPkh ? { bounty: bountyCents(g.level) } : {}),
     };
   }
   private heroView(h: E.Hero, where: HeroView['where'], ghost: E.Ghost | undefined): HeroView {

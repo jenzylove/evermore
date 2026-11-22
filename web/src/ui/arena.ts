@@ -10,7 +10,7 @@ import { director, fitDistance, portrait, shot } from '../three/fx';
 import { world } from '../three/world';
 import { ECHO, echoTint, echoVariant, type Fighter } from '../three/fighter';
 import { haunt, type GhostFx } from '../three/ghost';
-import { CLASS_NAMES, ghostMoves, seedOf, solve, styleHash } from '../game/sim';
+import { CLASS_NAMES, ghostMoves, humanWins, seedOf, styleHash } from '../game/sim';
 import { activeHero, app, go, isPractice, register } from '../app';
 import { sfx } from '../audio/sfx';
 import { h, icon, shortCents, toast } from './kit';
@@ -144,7 +144,7 @@ register('arena', root => {
       const fi = list[focus]?.id;
       beatQueue.sort((a, b) => (a.id === fi ? -1 : b.id === fi ? 1 : Math.abs(a.level - hero!.level) - Math.abs(b.level - hero!.level)));
       const g = beatQueue.shift(); if (!g) { paintFilters(); return; }
-      beat.set(g.id, !!solve(hero, { ...g, ownerPkh: new Uint8Array(20) }, seedFor(g), 8));
+      beat.set(g.id, humanWins(hero, { ...g, ownerPkh: new Uint8Array(20) }, seedFor(g)));
       paintRoster(true);
       if (g.id === fi) paint(false);
       if (band === 'beatable' && beat.get(g.id)) applyFilters();
@@ -189,7 +189,7 @@ register('arena', root => {
       const near = all.map((g, k) => ({ g, k })).filter(x => !x.g.mine && x.g.level <= hero!.level + 1)
         .sort((a, b) => (Number(a.g.cls === hero!.cls) - Number(b.g.cls === hero!.cls)) || (Math.abs(a.g.level - hero!.level) - Math.abs(b.g.level - hero!.level))).slice(0, 10); // a different class first: no mirror matches
       for (const { g, k } of near) {
-        const ok = !!solve(hero, { ...g, ownerPkh: new Uint8Array(20) }, seedFor(g), 8);
+        const ok = humanWins(hero, { ...g, ownerPkh: new Uint8Array(20) }, seedFor(g));
         beat.set(g.id, ok);
         if (ok) { firstWin = k; break; }
       }
@@ -248,7 +248,7 @@ register('arena', root => {
     const f = app.chain.fees();
     const record = g.defences || g.beaten ? `Defended ${g.defences} · beaten ${g.beaten}` : 'Not challenged yet';
     info.append(
-      h('div', { class: 'who' }, h('span', { class: `nm${g.mine ? ' mine' : ''}` }, g.name), h('span', { class: 'lv' }, `Level ${g.level} ${CLASS_NAMES[g.cls]}`)),
+      h('div', { class: 'who' }, h('span', { class: `nm${g.mine ? ' mine' : ''}` }, g.name), h('span', { class: 'lv' }, `Level ${g.level} ${CLASS_NAMES[g.cls]}`), g.bounty ? h('span', { class: 'bounty' }, `Bounty ${g.bounty}\u00a2`) : null),
       h('div', { class: 'rec' }, g.mine ? `Your hero · ${record.toLowerCase()}` : `${record} · kept by `, g.mine ? null : h('span', { class: 'keeper' }, g.owner)),
     );
     if (g.mine) {

@@ -10,7 +10,7 @@ import { CONTACT, ECHO, TIER_NAME, echoTint, echoVariant, tierOf, type Fighter }
 import { GHOST_LIGHT, haunt, type GhostFx } from '../three/ghost';
 import { beginRite } from '../three/forge';
 import { glyphSvg } from '../three/runes';
-import { GUARD, SPECIAL, STRIKE, ghostMoves, seedOf, solve, styleHash, trace, xpNeed, type Ghost, type Hero, type Move, type RoundTrace } from '../game/sim';
+import { GUARD, SPECIAL, STRIKE, ghostMoves, humanWins, seedOf, solve, styleHash, trace, xpNeed, type Ghost, type Hero, type Move, type RoundTrace } from '../game/sim';
 import type { GhostView } from '../chain/types';
 import { activeHero, app, go, isPractice, markPracticeDone, register, renderChrome } from '../app';
 import { setIntensity, sfx } from '../audio/sfx';
@@ -98,7 +98,8 @@ register('duel', root => {
   const showIntent = () => {
     intent.innerHTML = '';
     if (over || moves.length >= 12 || !B) { intent.style.display = 'none'; return; }
-    const m = gMoves[moves.length];
+    // an uncharged Special is just a Strike: show what will actually happen
+    const m = gMoves[moves.length] === SPECIAL && gCh < 2 ? STRIKE : gMoves[moves.length];
     intent.style.display = ''; intent.className = `intent m${m}`; void intent.offsetWidth; intent.classList.add('pop-in');
     intent.append(icon(MOVE_ICON[m]));
   };
@@ -330,6 +331,7 @@ register('duel', root => {
         h('p', {}, outOfRounds ? `${G.name} held out for 12 rounds` : `${G.name} holds the hall`)));
       const panel = h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' },
         h('p', { class: 'dim', style: 'margin:0 0 4px;text-align:center' }, 'Your hero keeps its level.'),
+        // every paid fight is one try: a rematch is a new challenge (new moves). Practice is where you learn for free.
         h('div', { class: 'row' },
           h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Choose another'),
           h('button', { class: 'btn spirit', onClick: rematch }, 'Rematch', isPractice() ? null : h('small', {}, money(f.challengeSats, f.usdPerBch))))));
@@ -421,6 +423,7 @@ register('duel', root => {
     await engine.wait(600);
     rite.settle(endShot());
     hero = res.hero; renderChrome();
+    if (!isPractice() && G.bounty) extra.append(h('div', { class: 'bountywin' }, `+${G.bounty}\u00a2 bounty`, h('small', {}, `from the house for your first win over ${G.name}, paid to your Satchel in a minute`)));
     actions.append(h('button', { class: 'btn ghost', onClick: () => go('hero') }, 'Hero'), h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Choose another'));
     const next = h('div', { class: 'whatsnext' });
     actions.before(next);
@@ -447,12 +450,17 @@ register('duel', root => {
     return portrait() ? shot(x + 0.3, 1.5, 5.0, x, 0.2, 0, 46) : shot(x - 1.0, 1.25, 5.2, x - 1.1, 0.95, 0, 34);
   };
 
+  async function rematch() {
+    try { app.ticket = await app.chain.challenge(ticket.heroId, G.id); go('duel'); }
+    catch (e) { toast((e as Error).message, true); }
+  }
+
   /** the next echo to fight after a win: not mine, not the one just beaten, at or above my level, one I can beat, lowest level first */
   async function nextFight(me: HeroView): Promise<GhostView | null> {
     const all = (await app.chain.listGhosts()).filter(g => !g.mine && g.id !== G.id && g.level >= me.level && g.level <= me.level + 2).sort((a, b) => (Number(a.cls === me.cls) - Number(b.cls === me.cls)) || (a.level - b.level)).slice(0, 12);
     for (const g of all) {
       const seed = app.chain.styleSeed?.(me.id, g) ?? seedOf(styleHash(me.id, g));
-      if (solve(me as unknown as Hero, { ...g, ownerPkh: new Uint8Array(20) } as Ghost, seed, 8)) return g;
+      if (humanWins(me as unknown as Hero, { ...g, ownerPkh: new Uint8Array(20) } as Ghost, seed)) return g;
     }
     return null;
   }
@@ -467,10 +475,6 @@ register('duel', root => {
     return null;
   }
 
-  async function rematch() {
-    try { app.ticket = await app.chain.challenge(ticket.heroId, G.id); go('duel'); }
-    catch (e) { toast((e as Error).message, true); }
-  }
 
   return () => { removeEventListener('keydown', key); setIntensity(0); unpin?.(); };
 });

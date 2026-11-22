@@ -33,6 +33,8 @@ export type GhostView = Stats & {
   name: string;
   owner: string;           // short owner label, e.g. "qz8f…3ka"
   mine: boolean;
+  /** house heroes (Wardens) on a real chain: the bounty the house pays for your first win against it, in US cents */
+  bounty?: number;
 };
 
 export type GearView = { id: number; kind: 0 | 1 | 2; tier: number; where: 'satchel' | 'home' | 'listed' };

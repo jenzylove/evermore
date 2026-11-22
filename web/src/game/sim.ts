@@ -148,3 +148,28 @@ export function solve(h: Hero, g: Ghost, seed: number, maxRounds = 12): number[]
   }
   return null;
 }
+
+/**
+ * Can a sensible player win this fight? Plays two plain styles a person would use, reading the echo's NEXT move:
+ * "careful" (guard its strikes and charged Powers, strike its guards, Power when full) and "bold" (strike, Power when
+ * full). Used to mark an echo Beatable and to pick opponents: an honest promise, unlike "some perfect line exists".
+ */
+export function humanWins(h: Hero, g: Ghost, seed: number): boolean {
+  for (const careful of [true, false]) {
+    const moves: number[] = [];
+    let hCh = 0, gCh = 0, s = seed;
+    for (let r = 0; r < 12; r++) {
+      let gm = s % 4; s = Math.floor(s / 4); if (gm === 3) gm = STRIKE;
+      const theirPower = gm === SPECIAL && gCh >= 2;
+      let m: number;
+      if (hCh >= 2 && !(careful && theirPower)) m = SPECIAL;
+      else if (careful && (gm === STRIKE || gm === SPECIAL)) m = GUARD;
+      else m = STRIKE;
+      moves.push(m);
+      if (m === GUARD) hCh++; if (m === SPECIAL && hCh >= 2) hCh = 0;
+      if (gm === GUARD) gCh++; if (gm === SPECIAL && gCh >= 2) gCh = 0;
+    }
+    if (duel(h, g, seed, moves).won) return true;
+  }
+  return false;
+}
