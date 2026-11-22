@@ -59,7 +59,7 @@
       ]
     },
     {
-      "source": "/(|play)",
+      "source": "/(|play|proof|deck)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -73,6 +73,15 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=604800"
+        }
+      ]
+    },
+    {
+      "source": "/version.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
         }
       ]
     }
