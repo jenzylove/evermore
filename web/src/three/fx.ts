@@ -99,7 +99,7 @@ const layer = () => document.getElementById('fx')!;
 const proj = new THREE.Vector3();
 export function toScreen(p: THREE.Vector3) { proj.copy(p).project(engine.camera); return { x: (proj.x + 1) / 2 * innerWidth, y: (1 - proj.y) / 2 * innerHeight, behind: proj.z > 1 }; }
 
-export function pop(at: THREE.Vector3, text: string, kind: 'dmg' | 'big' | 'block' | 'word' | 'spirit' = 'dmg') {
+export function pop(at: THREE.Vector3, text: string, kind: string = 'dmg') {
   const s = toScreen(at); if (s.behind) return;
   const el = document.createElement('div'); el.className = `pop ${kind}`; el.textContent = text;
   el.style.left = `${s.x}px`; el.style.top = `${s.y}px`;

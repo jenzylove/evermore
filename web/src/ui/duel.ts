@@ -53,7 +53,7 @@ register('duel', root => {
   // ---- HUD ----
   const plate = (side: 'l' | 'r', sub: string) => {
     const nm = h('div', { class: 'nm' }), hp = h('div', { class: 'hp' }, h('i', {}), h('b', {})), n = h('span', { class: 'n' });
-    const pips = h('span', { class: 'pips', title: 'Charge' }, h('i', {}), h('i', {}));
+    const pips = h('span', { class: 'pips', title: 'Power: each Guard fills half; full = a Power hit (double damage)' }, h('b', {}, 'Power'), h('i', {}), h('i', {}));
     return { el: h('div', { class: `plate ${side}` }, h('div', { class: 'sub' }, sub), nm, hp, h('div', { class: 'hpn' }, n, pips)), nm, hp, n, pips };
   };
   const L = plate('l', 'Hero'), Rr = plate('r', 'Echo');
@@ -67,7 +67,7 @@ register('duel', root => {
     b.addEventListener('pointerdown', () => sfx.tap());
     return b;
   };
-  const bS = mk(STRIKE, 'Strike', 'full hit', 'strike'), bG = mk(GUARD, 'Guard', 'half, +1 charge', 'guard'), bX = mk(SPECIAL, 'Special', '2 charges', 'special');
+  const bS = mk(STRIKE, 'Strike', 'full hit', 'strike'), bG = mk(GUARD, 'Guard', 'half · +1 power', 'guard'), bX = mk(SPECIAL, 'Power', 'guard to charge', 'special');
   btns.append(bS, bG, bX);
   const center = h('div', { class: 'pass', style: 'position:absolute;inset:0' });
   const hint = h('div', { class: 'duel-hint' });
@@ -86,14 +86,6 @@ register('duel', root => {
     intent.append(icon(MOVE_ICON[m]));
   };
 
-  let queued: Move | null = null;
-  const runQueued = () => {
-    if (queued === null || over) return;
-    const q = queued; queued = null;
-    [bS, bG, bX].forEach(b => b.classList.remove('queued'));
-    setTimeout(() => play(q), 60);
-  };
-
   const hud = () => {
     if (!hero) return;
     const set = (p: typeof L, cur: number, max: number, ch: number, name: string) => {
@@ -102,16 +94,17 @@ register('duel', root => {
       (p.hp.children[1] as HTMLElement).style.width = w; (p.hp.children[0] as HTMLElement).style.width = w;
       p.hp.classList.toggle('low', cur / max < 0.3);
       p.n.textContent = `${Math.max(0, cur)}`;
-      [...p.pips.children].forEach((x, i) => x.classList.toggle('on', ch > i));
+      [...p.pips.querySelectorAll('i')].forEach((x, i) => x.classList.toggle('on', ch > i));
+      p.pips.classList.toggle('full', ch >= 2);
     };
     set(L, hHp, hero.hp, hCh, hero.name);
     set(Rr, gHp, G.hp, gCh, G.name);
     const r = moves.length;
     (round.firstChild as HTMLElement).textContent = over ? '' : `Round ${r + 1}`;
     runes.forEach((x, i) => { x.className = `rp${i < r ? ' past' : ''}${i === r && !over ? ' now' : ''}`; });
-    hint.textContent = !over && moves.length === 0 ? 'Its next move shows above its head' : '';
+    hint.textContent = '';
     bX.disabled = hCh < 2; bX.classList.toggle('ready', hCh >= 2);
-    (bX.querySelector('small') as HTMLElement).textContent = hCh >= 2 ? 'double hit' : `${hCh} of 2 charges`;
+    (bX.querySelector('small') as HTMLElement).textContent = hCh >= 2 ? 'double hit · ready' : `guard to charge ${hCh}/2`;
   };
 
   (async () => {
@@ -136,7 +129,7 @@ register('duel', root => {
     director.move(two(), 1100, ease.inOut);
     await meet(hero.name, G.name, G.owner, isPractice() ? 'Practice duel' : 'The chain checks every move', 1700);
     director.drift = 0.6;
-    busy = false; btns.classList.remove('wait'); showIntent(); hud(); runQueued();
+    busy = false; btns.classList.remove('wait'); showIntent(); hud();
   })();
 
   // the meeting: a quiet line of words, not a splash. Your hero, the echo it meets, and who keeps that echo.
@@ -152,12 +145,8 @@ register('duel', root => {
 
   async function play(m: Move) {
     if (over || !hero || !A || !B) return;
-    if (busy) {
-      queued = m;
-      [bS, bG, bX].forEach((b, i) => b.classList.toggle('queued', i === m));
-      return;
-    }
-    if (m === SPECIAL && hCh < 2) { toast('Special needs 2 charges. Guard to charge.'); return; }
+    if (busy) return; // a round is playing: nothing is ever played for you
+    if (m === SPECIAL && hCh < 2) { toast('Power needs a full power bar. Each Guard fills half.'); return; }
     busy = true; btns.classList.add('wait'); intent.style.display = 'none';
     moves.push(m);
     const tr = trace(hero as Hero, ghostSim, ticket.seed, moves);
@@ -171,7 +160,6 @@ register('duel', root => {
     if (moves.length >= 12) return finish(false, true);
     showIntent(); hud();
     btns.classList.remove('wait');
-    runQueued();
   }
 
   const wards: { mesh: THREE.Mesh; mat: THREE.ShaderMaterial; f: Fighter }[] = [];
@@ -181,11 +169,11 @@ register('duel', root => {
     w.mesh.position.set(0, 1.0, 0.45); f.root.add(w.mesh);
     wards.push({ ...w, f });
     sparks(f.point('chest').add(new THREE.Vector3(Math.sign(-f.root.position.x) * 0.5, 0, 0)), 14, mine ? ['#ffe9bf', '#ffffff'] : ['#d8efff', '#a9d8ff'], 2.2, 0, 0.5);
-    await engine.tween(220, p => { w.mat.uniforms.uA.value = ease.outBack(p); w.mat.uniforms.uT.value = engine.t; });
+    await engine.tween(150, p => { w.mat.uniforms.uA.value = ease.outBack(p); w.mat.uniforms.uT.value = engine.t; });
   }
   async function dropWards() {
     const ws = wards.splice(0);
-    await engine.tween(200, p => ws.forEach(w => { w.mat.uniforms.uA.value = 1 - p; }));
+    await engine.tween(130, p => ws.forEach(w => { w.mat.uniforms.uA.value = 1 - p; }));
     ws.forEach(w => { w.mesh.removeFromParent(); if (w.f.clipName === 'guard') w.f.play('idle', 0.3); });
   }
 
@@ -221,24 +209,24 @@ register('duel', root => {
     if (special) {
       // the build up: the world drops away, the attacker burns, time slows, the camera moves in on them
       sfx.specialUp(); world.arena.dim(1);
-      director.cut(close(a)); director.move(close(a, true), 700, ease.outCubic);
+      director.cut(close(a)); director.move(close(a, true), 420, ease.outCubic);
       a.flash(0.9);
       sparks(a.root.position.clone().setY(0.2), 40, [fxc[0], '#ffffff'], 2.5, -2, 0.9);
       shock(a.root.position.clone().setY(0.06), fxc[0], 2.2, 0.5);
-      pop(a.point('head').add(new THREE.Vector3(0, 0.35, 0)), 'Special', 'word');
-      engine.slow = 0.55;
-      await engine.wait(420);
+      pop(a.point('head').add(new THREE.Vector3(0, 0.35, 0)), 'Power', 'word');
+      engine.slow = 0.6;
+      await engine.wait(260);
       engine.slow = 1;
     }
     // cut to over the attacker's shoulder for the exchange
     director.cut(ots(a, b));
     sfx.whoosh(special);
-    const anim = a.once(special ? 'special' : 'strike', { fade: 0.08, speed: special ? c.sspeed : c.speed, at: special ? c.special : c.strike });
+    const anim = a.once(special ? 'special' : 'strike', { fade: 0.08, speed: (special ? c.sspeed : c.speed) * 1.3, at: special ? c.special : c.strike });
     const contactMs = anim.ms * (special ? c.special : c.strike);
     if (a.cls !== 2) {
       // close the distance during the wind up
       const stop = b.root.position.x - dir * (special ? 0.95 : 1.05);
-      const dash = Math.min(contactMs * 0.8, 420);
+      const dash = Math.min(contactMs * 0.8, 300);
       engine.tween(dash, p => { a.root.position.x = home.x + (stop - home.x) * ease.inOut(p); });
       director.move(ots(a, b), dash);
       await anim.hit;
@@ -272,15 +260,15 @@ register('duel', root => {
       sparks(at, 26, ['#ffffff', '#bcd4ff', '#ffd27a'], 5, 7, 0.45, away);
       flash(at, '#bcd4ff', 0.9, 0.16);
       b.flash(0.35);
-      pop(b.point('head').add(new THREE.Vector3(0, 0.15, 0)), String(dmg), 'block');
-      pop(b.point('head').add(new THREE.Vector3(0, -0.15, 0)), 'Blocked', 'word');
+      pop(b.point('head').add(new THREE.Vector3(0, 0.15, 0)), `\u2212${dmg}`, mine ? 'them' : 'you');
+      pop(b.point('head').add(new THREE.Vector3(0, -0.2, 0)), 'Guarded \u00b7 half', 'word');
     } else {
       sfx.hit(special || kill);
       sparks(at, special ? 70 : 34, fxc, special ? 7 : 5, 8, 0.6, away);
       flash(at, fxc[0], special ? 2.4 : 1.4, special ? 0.3 : 0.2);
       shock(at, fxc[0], special ? 1.8 : 0.9, 0.3);
       b.flash(1);
-      pop(b.point('head').add(new THREE.Vector3(0, 0.2, 0)), String(dmg), special || dmg >= 12 ? 'big' : mine ? 'dmg' : 'spirit');
+      pop(b.point('head').add(new THREE.Vector3(0, 0.2, 0)), `\u2212${dmg}`, `${mine ? 'them' : 'you'}${special || dmg >= 12 ? ' big' : ''}`);
     }
     if (special || kill) screenFlash(special ? '#fff3d6' : '#eef5ff', special ? 0.5 : 0.45);
   }
@@ -323,7 +311,7 @@ register('duel', root => {
         h('p', {}, outOfRounds ? `${G.name} held out for 12 rounds` : `${G.name} holds the hall`)));
       const panel = h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' },
         h('p', { class: 'dim', style: 'margin:0 0 4px' }, isPractice() ? 'Practice. Nothing was lost.' : `Your ${money(f.challengeSats, f.usdPerBch)} went to its keeper, ${G.owner}. Your hero keeps everything else.`),
-        h('p', { class: 'dim', style: 'margin:0' }, 'Its next move shows above its head. Guard on its Strikes, use Special when it Guards. Its moves change every fight.'),
+        h('p', { class: 'dim', style: 'margin:0' }, 'Its next move shows above its head. Guard on its Strikes to fill your power bar, then hit with Power. Its moves change every fight.'),
         h('div', { class: 'row' },
           h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Choose another'),
           h('button', { class: 'btn spirit', onClick: rematch }, 'Rematch', isPractice() ? null : h('small', {}, money(f.challengeSats, f.usdPerBch))))));

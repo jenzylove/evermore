@@ -213,7 +213,7 @@ input { font: inherit; }
 .rp.past .rune path { stroke: rgba(246,230,191,0.6); }
 .rp.now .rune path { stroke: #fff6df; filter: drop-shadow(0 0 3px rgba(255,226,166,0.95)); }
 .moves { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 60px 12px calc(14px + var(--safe-b)); max-width: 560px; margin: 0 auto; width: 100%; transition: opacity 200ms, transform 200ms; }
-.moves.wait { opacity: 0.55; }
+.moves.wait { opacity: 0.3; pointer-events: none; }
 .moves .btn.queued { box-shadow: 0 0 0 2px var(--gold) inset, 0 0 18px rgba(242,196,108,.45); opacity: 1; }
 .moves .btn { flex-direction: column; gap: 4px; min-height: 76px; padding: 0 6px; font: 700 16px/1 var(--ui); letter-spacing: 0.22em; color: var(--bone);
   clip-path: none; background: linear-gradient(180deg, rgba(14,20,34,0.72), rgba(8,11,19,0.86)); box-shadow: inset 0 0 0 1px var(--line); backdrop-filter: blur(6px); border-radius: 2px; }
@@ -415,3 +415,17 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 .forge .btn.keep { width: 100%; margin-top: 10px; min-height: 48px; }
 .style .stylename { display: block; margin-top: 6px; font: 600 17px var(--ui); letter-spacing: .04em; color: var(--bone); }
 .forge .btn.nextup { width: 100%; margin-bottom: 10px; }
+
+/* ---- fight pass (Nov 22): your turn, readable damage, power bar */
+.moves { position: relative; }
+.moves:not(.wait)::before { content: 'Your move'; position: absolute; left: 50%; top: -30px; transform: translateX(-50%); font: 700 14px var(--ui); letter-spacing: .34em; text-transform: uppercase; color: var(--gold-hi); text-shadow: 0 0 12px rgba(242,196,108,.7); animation: yourmove 1.2s ease-in-out infinite; white-space: nowrap; }
+@keyframes yourmove { 50% { opacity: .45; } }
+.moves:not(.wait) .btn { box-shadow: inset 0 0 0 1px rgba(242,196,108,.35); }
+.moves .btn.special.ready { box-shadow: inset 0 0 0 2px var(--gold), 0 0 22px rgba(242,196,108,.55); animation: yourmove 1.2s ease-in-out infinite; }
+.pop.you { color: #ff6b6b; text-shadow: 0 0 18px rgba(255,80,80,.85), 0 2px 8px rgba(0,0,0,.6); }
+.pop.them { color: #ffd77a; text-shadow: 0 0 18px rgba(255,200,90,.85), 0 2px 8px rgba(0,0,0,.6); }
+.pop.big.you, .pop.big.them { font-size: 50px; }
+.pips { gap: 4px; align-items: center; }
+.pips b { font: 600 10px var(--ui); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); margin: 0 4px; }
+.pips i { width: 20px; height: 7px; border-radius: 2px; }
+.pips.full i { animation: yourmove 1s ease-in-out infinite; }
