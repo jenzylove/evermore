@@ -86,15 +86,6 @@ register('duel', root => {
     intent.append(icon(MOVE_ICON[m]));
   };
 
-  // a plain line every round: what the echo does next and the answer to it
-  const coach = () => {
-    if (moves.length >= 12) return '';
-    const m = gMoves[moves.length], nm = G.name;
-    const mine = hCh >= 2 ? ' Your Special is ready: double hit.' : '';
-    if (m === GUARD) return `${nm} will GUARD next. Strike now${hCh >= 2 ? ', or break it with your Special' : ''}.`;
-    if (m === SPECIAL && gCh >= 2) return `${nm} will use SPECIAL, a double hit. Guard!`;
-    return `${nm} will STRIKE next. Guard takes half and charges your Special.${mine}`;
-  };
   let queued: Move | null = null;
   const runQueued = () => {
     if (queued === null || over) return;
@@ -118,7 +109,7 @@ register('duel', root => {
     const r = moves.length;
     (round.firstChild as HTMLElement).textContent = over ? '' : `Round ${r + 1}`;
     runes.forEach((x, i) => { x.className = `rp${i < r ? ' past' : ''}${i === r && !over ? ' now' : ''}`; });
-    hint.textContent = over ? '' : coach();
+    hint.textContent = !over && moves.length === 0 ? 'Its next move shows above its head' : '';
     bX.disabled = hCh < 2; bX.classList.toggle('ready', hCh >= 2);
     (bX.querySelector('small') as HTMLElement).textContent = hCh >= 2 ? 'double hit' : `${hCh} of 2 charges`;
   };
