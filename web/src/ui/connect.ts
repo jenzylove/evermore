@@ -95,6 +95,17 @@ export async function openConnect() {
   // redraws run one at a time (the BCH price can arrive while a redraw is in flight)
   let painting: Promise<void> = Promise.resolve();
   const paint = () => (painting = painting.then(paintNow, paintNow));
+  // move a Satchel between browsers: paste the key exported from the other one
+  const importRow = () => {
+    const k = h('input', { class: 'name', placeholder: 'Paste a play key to import', 'aria-label': 'Play key', autocomplete: 'off', spellcheck: 'false', style: 'font-size:14px' }) as HTMLInputElement;
+    return h('div', { style: 'margin:10px 0' }, h('p', { class: 'dim', style: 'margin:0 0 6px;font-size:14px' }, 'Playing in another browser? Export the key there, then import it here.'), k,
+      h('button', { class: 'btn ghost', style: 'margin-top:8px', onClick: () => {
+        const v = k.value.trim();
+        try { E.Satchel.fromWif(v); } catch { toast('That is not a valid play key.', true); return; }
+        if (!confirm('Use this play key in this browser? The current Satchel key here is replaced, so export it first if it holds anything.')) return;
+        store.setItem(`evermore.satchel.${rc.net}`, v); toast('Play key imported. Reloading…'); setTimeout(() => location.reload(), 600);
+      } }, 'Import key'));
+  };
   const paintNow = async () => {
     body.innerHTML = '';
     const f = rc.fees();
@@ -178,6 +189,7 @@ export async function openConnect() {
     const det = h('details', { class: 'satdetails' }, h('summary', {}, 'Satchel details'),
       h('p', { style: 'margin:8px 0;font-size:14px;word-break:break-all' }, `${sats.toLocaleString()} sats · `, h('a', { href: '#', onClick: (e: Event) => { e.preventDefault(); navigator.clipboard?.writeText(rc.satchelKey.address(rc.net)).then(() => toast('Satchel address copied.')); } }, rc.satchelKey.address(rc.net))),
       h('p', { class: 'dim', style: 'margin:0 0 10px;font-size:14px' }, 'The Satchel is a play key kept in this browser. Send heroes home to your wallet to keep them forever, and export the key as a backup.'),
+      importRow(),
       h('div', { class: 'row' },
         h('button', { class: 'btn ghost', onClick: async () => { const k = await rc.exportKey(); await navigator.clipboard?.writeText(k); toast('Play key copied. Keep it secret.'); } }, 'Export key'),
         w ? h('button', { class: 'btn ghost', disabled: !sats, onClick: async () => {
