@@ -411,3 +411,5 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 .arena .tip, .screen .tip { margin: 8px 0 8px; font: 600 15px/1.35 var(--ui); letter-spacing: .03em; color: var(--gold-hi); }
 .vslbl { margin-top: 8px; font: 600 12px var(--ui); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
 .forge .btn.keep { width: 100%; margin-top: 10px; min-height: 48px; }
+.style .stylename { display: block; margin-top: 6px; font: 600 17px var(--ui); letter-spacing: .04em; color: var(--bone); }
+.forge .btn.nextup { width: 100%; margin-bottom: 10px; }

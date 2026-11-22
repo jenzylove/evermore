@@ -245,8 +245,9 @@ register('arena', root => {
     }
     if (hero) {
       const mv = ghostMoves(seedFor(g));
-      const st = h('div', { class: 'style' }, h('span', { class: 'lbl' }, `${g.name}'s moves against you, in order`));
-      mv.forEach(m => { const s = h('span', { class: `mv m${m}`, title: MOVE_NAME[m] }, icon(MOVE_ICON[m])); st.append(s); });
+      const nS = mv.filter(m => m === 0).length, nG = mv.filter(m => m === 1).length;
+      const style = nS >= 7 ? 'Aggressive: strikes often' : nG >= 5 ? 'Defensive: guards often' : 'Balanced: strikes, guards and specials';
+      const st = h('div', { class: 'style' }, h('span', { class: 'lbl' }, `${g.name}'s style`), h('span', { class: 'stylename' }, style));
       const b = beat.get(g.id);
       if (b !== undefined) st.append(h('span', { class: `hint${b ? ' yes' : ''}` }, b ? 'Beatable' : 'No quick win'));
       info.append(st);

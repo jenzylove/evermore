@@ -10,7 +10,8 @@ import { CONTACT, ECHO, TIER_NAME, tierOf, type Fighter } from '../three/fighter
 import { GHOST_LIGHT, haunt, type GhostFx } from '../three/ghost';
 import { beginRite } from '../three/forge';
 import { glyphSvg } from '../three/runes';
-import { GUARD, SPECIAL, STRIKE, ghostMoves, trace, xpNeed, type Ghost, type Hero, type Move, type RoundTrace } from '../game/sim';
+import { GUARD, SPECIAL, STRIKE, ghostMoves, seedOf, solve, styleHash, trace, xpNeed, type Ghost, type Hero, type Move, type RoundTrace } from '../game/sim';
+import type { GhostView } from '../chain/types';
 import { activeHero, app, go, isPractice, markPracticeDone, register, renderChrome } from '../app';
 import { setIntensity, sfx } from '../audio/sfx';
 import { gearIcon, gearName, h, icon, money, toast } from './kit';
@@ -306,10 +307,10 @@ register('duel', root => {
         h('p', {}, outOfRounds ? `${G.name} held out for 12 rounds` : `${G.name} holds the hall`)));
       const panel = h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' },
         h('p', { class: 'dim', style: 'margin:0 0 4px' }, isPractice() ? 'Practice. Nothing was lost.' : `Your ${money(f.challengeSats, f.usdPerBch)} went to its keeper, ${G.owner}. Your hero keeps everything else.`),
-        h('p', { class: 'dim', style: 'margin:0' }, 'Its moves are shown before each round. Guard on its Strikes, Special when it Guards.'),
+        h('p', { class: 'dim', style: 'margin:0' }, 'Its next move shows above its head. Guard on its Strikes, use Special when it Guards. Its moves change every fight.'),
         h('div', { class: 'row' },
-          h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Arena'),
-          h('button', { class: 'btn spirit', onClick: rematch }, 'Again', isPractice() ? null : h('small', {}, money(f.challengeSats, f.usdPerBch))))));
+          h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Choose another'),
+          h('button', { class: 'btn spirit', onClick: rematch }, 'Rematch', isPractice() ? null : h('small', {}, money(f.challengeSats, f.usdPerBch))))));
       root.querySelector('.screen')!.append(panel);
       return;
     }
@@ -391,7 +392,17 @@ register('duel', root => {
     await engine.wait(600);
     rite.settle(endShot());
     hero = res.hero; renderChrome();
-    actions.append(h('button', { class: 'btn ghost', onClick: () => go('hero') }, 'Hero'), h('button', { class: 'btn spirit', onClick: () => go('arena') }, 'Next fight'));
+    actions.append(h('button', { class: 'btn ghost', onClick: () => go('hero') }, 'Hero'), h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Choose another'));
+    nextFight(res.hero).then(n => {
+      if (!n) return;
+      const fee = app.chain.fees();
+      const b = h('button', { class: 'btn spirit nextup', onClick: async () => {
+        b.setAttribute('disabled', '');
+        try { app.focusGhost = n.id; app.ticket = await app.chain.challenge(res.hero.id, n.id); go('duel'); }
+        catch (e) { toast((e as Error).message, true); b.removeAttribute('disabled'); }
+      } }, `Next: fight ${n.name}`, h('small', {}, `level ${n.level}${isPractice() ? '' : ` · ${money(fee.challengeSats, fee.usdPerBch)}`}`));
+      actions.before(b);
+    });
     // a practice win is the moment to offer the real thing: the same hero, kept forever on Bitcoin Cash
     if (isPractice()) markPracticeDone();
     if (isPractice()) actions.after(h('button', { class: 'btn bch keep', onClick: () => import('./front').then(m => m.playForReal()) }, 'Keep a hero forever', h('small', {}, 'play for real on Bitcoin Cash')));
@@ -400,6 +411,16 @@ register('duel', root => {
     const x = A!.root.position.x;
     return portrait() ? shot(x + 0.3, 1.5, 5.0, x, 0.2, 0, 46) : shot(x - 1.0, 1.25, 5.2, x - 1.1, 0.95, 0, 34);
   };
+
+  /** the next echo to fight after a win: not mine, not the one just beaten, at or above my level, one I can beat, lowest level first */
+  async function nextFight(me: HeroView): Promise<GhostView | null> {
+    const all = (await app.chain.listGhosts()).filter(g => !g.mine && g.id !== G.id && g.level >= me.level).sort((a, b) => a.level - b.level).slice(0, 12);
+    for (const g of all) {
+      const seed = app.chain.styleSeed?.(me.id, g) ?? seedOf(styleHash(me.id, g));
+      if (solve(me as unknown as Hero, { ...g, ownerPkh: new Uint8Array(20) } as Ghost, seed, 8)) return g;
+    }
+    return null;
+  }
 
   async function rematch() {
     try { app.ticket = await app.chain.challenge(ticket.heroId, G.id); go('duel'); }
