@@ -333,8 +333,9 @@ register('duel', root => {
         h('p', { class: 'dim', style: 'margin:0 0 4px;text-align:center' }, 'Your hero keeps its level.'),
         // every paid fight is one try: a rematch is a new challenge (new moves). Practice is where you learn for free.
         h('div', { class: 'row' },
-          h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Choose another'),
-          h('button', { class: 'btn spirit', onClick: rematch }, 'Rematch', isPractice() ? null : h('small', {}, money(f.challengeSats, f.usdPerBch))))));
+          h('button', { class: 'btn ghost', onClick: () => { app.replay = false; go('arena'); } }, 'Choose another'),
+          h('button', { class: 'btn spirit', onClick: rematch }, 'Rematch', isPractice() ? null : h('small', {}, money(f.challengeSats, f.usdPerBch)))),
+        isPractice() ? null : h('button', { class: 'btn ghost', style: 'width:100%;margin-top:10px', onClick: () => { app.replay = true; go('duel', false); } }, 'Practice this fight', h('small', {}, 'free · does not count'))));
       root.querySelector('.screen')!.append(panel);
       return;
     }
@@ -345,6 +346,15 @@ register('duel', root => {
     const card = h('div', { class: 'titlecard won', style: 'top:12%' }, h('h2', { class: 'gold' }, 'Victory'), h('p', {}, `in ${moves.length} round${moves.length > 1 ? 's' : ''}, ${hHp} HP left`));
     center.append(card);
     await engine.wait(700);
+    if (app.replay && !isPractice()) {
+      const f = app.chain.fees();
+      root.querySelector('.screen')!.append(h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' },
+        h('p', { class: 'dim', style: 'margin:0 0 8px;text-align:center' }, 'You would have won that one. Practice wins do not count.'),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn ghost', onClick: () => { app.replay = false; go('arena'); } }, 'Choose another'),
+          h('button', { class: 'btn spirit', onClick: rematch }, 'Rematch for real', h('small', {}, money(f.challengeSats, f.usdPerBch)))))));
+      return;
+    }
     await forge(card);
   }
 
@@ -431,7 +441,7 @@ register('duel', root => {
     const feeTxt = isPractice() ? '' : ` · ${money(fee.challengeSats, fee.usdPerBch)}`;
     const go2 = (g: GhostView, b: HTMLButtonElement) => async () => {
       b.setAttribute('disabled', '');
-      try { app.focusGhost = g.id; app.ticket = await app.chain.challenge(res.hero.id, g.id); go('duel'); }
+      try { app.replay = false; app.focusGhost = g.id; app.ticket = await app.chain.challenge(res.hero.id, g.id); go('duel'); }
       catch (e) { toast((e as Error).message, true); b.removeAttribute('disabled'); }
     };
     Promise.all([nextFight(res.hero), gearFight(res.hero)]).then(([n, gf]) => {
@@ -451,7 +461,7 @@ register('duel', root => {
   };
 
   async function rematch() {
-    try { app.ticket = await app.chain.challenge(ticket.heroId, G.id); go('duel'); }
+    try { app.replay = false; app.ticket = await app.chain.challenge(ticket.heroId, G.id); go('duel'); }
     catch (e) { toast((e as Error).message, true); }
   }
 

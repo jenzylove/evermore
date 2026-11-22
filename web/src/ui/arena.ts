@@ -278,7 +278,7 @@ register('arena', root => {
       const btn = h('button', { class: 'btn spirit', style: 'width:100%', onClick: async () => {
         btn.setAttribute('disabled', '');
         try {
-          app.ticket = await app.chain.challenge(hero!.id, g.id);
+          app.replay = false; app.ticket = await app.chain.challenge(hero!.id, g.id);
           go('duel');
         } catch (e) { toast((e as Error).message, true); btn.removeAttribute('disabled'); }
       } }, `Fight ${g.name}`, isPractice() ? null : h('small', {}, `${fee} goes to its keeper`));

@@ -14,6 +14,8 @@ export const app = {
   chain: practice as GameChain,
   heroId: null as number | null,
   ticket: null as Ticket | null,
+  /** replaying a lost paid fight for free: it teaches, it does not count (no forge, no XP, no bounty) */
+  replay: false,
   focusGhost: null as number | null,
   /** set right after a raise, so the hero screen can welcome the new hero */
   justRaised: false,
