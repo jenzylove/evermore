@@ -329,8 +329,7 @@ register('duel', root => {
       center.append(h('div', { class: 'titlecard' }, h('h2', { class: 'fallen' }, 'Fallen'),
         h('p', {}, outOfRounds ? `${G.name} held out for 12 rounds` : `${G.name} holds the hall`)));
       const panel = h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' },
-        h('p', { class: 'dim', style: 'margin:0 0 4px' }, isPractice() ? 'Practice. Nothing was lost.' : 'Your hero keeps its level and XP. Read its next move and go again.'),
-        h('p', { class: 'dim', style: 'margin:0' }, 'Its next move shows above its head. Guard on its Strikes to fill your power bar, then hit with Power. Its moves change every fight.'),
+        h('p', { class: 'dim', style: 'margin:0 0 4px;text-align:center' }, 'Your hero keeps its level.'),
         h('div', { class: 'row' },
           h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Choose another'),
           h('button', { class: 'btn spirit', onClick: rematch }, 'Rematch', isPractice() ? null : h('small', {}, money(f.challengeSats, f.usdPerBch))))));
