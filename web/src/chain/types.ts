@@ -83,6 +83,8 @@ export type Fees = { raiseSats: number; challengeSats: number; forgeSats: number
 export interface GameChain {
   readonly mode: Mode;
   fees(): Fees;
+  /** names live in this browser, not on chain: renaming is free */
+  rename(heroId: number, name: string): void;
 
   listGhosts(): Promise<GhostView[]>;
   myHeroes(): Promise<HeroView[]>;

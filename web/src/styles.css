@@ -458,3 +458,12 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 [data-sheet=connect] .addrow .cur { font: 700 28px var(--display); color: var(--gold); }
 [data-sheet=connect] .addrow .amt { width: 100%; margin: 0; }
 [data-sheet=connect] .addrow .btn { min-width: 120px; }
+
+/* ---- owner notes pass (Nov 22) */
+.hero .rename { background: none; border: 0; color: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.hero .rename .pen { font: 600 18px var(--ui); color: var(--gold); opacity: .8; }
+.pop.word.ready { font: 700 18px var(--ui); letter-spacing: .3em; color: var(--gold-hi); text-shadow: 0 0 16px rgba(255,214,130,.9), 0 1px 6px #000; }
+.pips.burst i { animation: none; box-shadow: 0 0 16px rgba(255,226,166,1); transform: scaleY(1.6); transition: transform .2s; }
+.intent.danger .ic { color: #ff5a5a; width: 36px; height: 36px; }
+.intent.danger { animation: yourmove .7s ease-in-out infinite; }
+.intent.danger::after { content: 'power · guard'; color: #ff8a8a; font-weight: 700; white-space: nowrap; }

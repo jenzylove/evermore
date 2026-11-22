@@ -152,6 +152,7 @@ export class PracticeChain implements GameChain {
     if (l.gear) { const g = this.s.gear.find(x => x.id === l.gear!.id); if (g) g.where = 'satchel'; }
     this.s.listings = this.s.listings.filter(x => x !== l); this.save(); return NONE;
   }
+  rename(heroId: number, name: string) { const h = this.s.heroes.find(x => x.id === heroId); if (h) { h.name = name.trim().slice(0, 14); this.save(); } }
   async sendHome(heroId: number): Promise<Receipt> {
     const h = this.s.heroes.find(x => x.id === heroId); if (!h) throw new Error('Hero not found.');
     h.where = h.where === 'home' ? 'satchel' : 'home'; this.save(); return NONE;

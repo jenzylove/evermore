@@ -33,7 +33,7 @@ register('duel', root => {
   const ghostSim: Ghost = { ...G, ownerPkh: new Uint8Array(20) };
   const gMoves = ghostMoves(ticket.seed);
   const moves: Move[] = [];
-  let hHp = 0, gHp = G.hp, hCh = 0, gCh = 0, busy = true, over = false;
+  let hHp = 0, gHp = G.hp, hCh = 0, gCh = 0, busy = true, over = false, powerShown = false;
   let A: Fighter | null = null, B: Fighter | null = null, ghost: GhostFx | null = null;
   const X = () => (portrait() ? 0.85 : 1.3);
 
@@ -84,7 +84,7 @@ register('duel', root => {
     intent.innerHTML = '';
     if (over || moves.length >= 12 || !B) { intent.style.display = 'none'; return; }
     const m = gMoves[moves.length];
-    intent.style.display = ''; intent.className = `intent m${m}`; void intent.offsetWidth; intent.classList.add('pop-in');
+    intent.style.display = ''; intent.className = `intent m${m}${m === SPECIAL && gCh >= 2 ? ' danger' : ''}`; void intent.offsetWidth; intent.classList.add('pop-in');
     intent.append(icon(MOVE_ICON[m]));
   };
 
@@ -106,6 +106,8 @@ register('duel', root => {
     runes.forEach((x, i) => { x.className = `rp${i < r ? ' past' : ''}${i === r && !over ? ' now' : ''}`; });
     hint.textContent = '';
     bX.disabled = hCh < 2; bX.classList.toggle('ready', hCh >= 2);
+    if (hCh >= 2 && !powerShown && !over && A) { powerShown = true; L.pips.classList.add('burst'); setTimeout(() => L.pips.classList.remove('burst'), 900); pop(A.point('head').add(new THREE.Vector3(0, 0.35, 0)), 'Power ready', 'word ready'); sfx.charge(); }
+    if (hCh < 2) powerShown = false;
     (bX.querySelector('small') as HTMLElement).textContent = hCh >= 2 ? 'double hit · ready' : `guard to charge ${hCh}/2`;
   };
 
@@ -312,7 +314,7 @@ register('duel', root => {
       center.append(h('div', { class: 'titlecard' }, h('h2', { class: 'fallen' }, 'Fallen'),
         h('p', {}, outOfRounds ? `${G.name} held out for 12 rounds` : `${G.name} holds the hall`)));
       const panel = h('div', { class: 'forge scrim-b' }, h('div', { class: 'wrap' },
-        h('p', { class: 'dim', style: 'margin:0 0 4px' }, isPractice() ? 'Practice. Nothing was lost.' : `Your ${money(f.challengeSats, f.usdPerBch)} went to its keeper, ${G.owner}. Your hero keeps everything else.`),
+        h('p', { class: 'dim', style: 'margin:0 0 4px' }, isPractice() ? 'Practice. Nothing was lost.' : 'Your hero keeps its level and XP. Read its next move and go again.'),
         h('p', { class: 'dim', style: 'margin:0' }, 'Its next move shows above its head. Guard on its Strikes to fill your power bar, then hit with Power. Its moves change every fight.'),
         h('div', { class: 'row' },
           h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Choose another'),

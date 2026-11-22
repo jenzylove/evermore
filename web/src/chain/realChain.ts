@@ -104,6 +104,7 @@ export class RealChain implements GameChain {
     n[id] = name; this.kv.setItem(`evermore.names.${this.net}`, JSON.stringify(n));
   }
   /** Names are a local label only (the commitment has no room for one); others see the class and id. */
+  rename(id: number, name: string) { this.setName(id, name.trim().slice(0, 14)); this.invalidate(); }
   nameOf(id: number, cls: number) { return this.names()[id] ?? `${CLASS[cls] ?? 'Hero'} #${id}`; }
 
   // ------------------------------------------------------------------ reads (short cache)

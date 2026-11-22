@@ -56,7 +56,7 @@ register('hero', root => {
     const t = tierOf(hero.level);
     const pick = h('div', { class: 'pick' },
       heroes.length > 1 ? h('button', { class: 'arrow', 'aria-label': 'Previous hero', onClick: () => { i = (i + heroes.length - 1) % heroes.length; paint(); } }, icon('left')) : h('span', {}),
-      h('div', { style: 'text-align:center' }, h('div', { class: 'h2' }, hero.name),
+      h('div', { style: 'text-align:center' }, h('button', { class: 'h2 rename', 'aria-label': 'Rename hero', onClick: () => renameSheet(hero) }, hero.name, h('span', { class: 'pen' }, '\u270e')),
         h('div', { class: 'rank' }, `Level ${hero.level} ${CLASS_NAMES[hero.cls]}`, t ? h('span', {}, ' · ', h('b', {}, TIER_NAME[t])) : null, hero.where === 'home' ? ' · at home' : '')),
       heroes.length > 1 ? h('button', { class: 'arrow', 'aria-label': 'Next hero', onClick: () => { i = (i + 1) % heroes.length; paint(); } }, icon('right')) : h('span', {}));
     const xp = h('div', { class: 'xpbar' }, h('i', { style: `width:${hero.xp / xpNeed(hero.level) * 100}%` }));
@@ -75,13 +75,38 @@ register('hero', root => {
     info.append(pick, xp, stats, earned);
     if (gear.length) info.append(h('div', { class: 'gearline' }, 'Wearing', ...gear.slice(0, 6).map(g => { const c = gearIcon(g.kind, g.tier); c.setAttribute('aria-label', gearName(g.kind, g.tier)); const s = h('span', { title: gearName(g.kind, g.tier) }); s.append(c); return s; })));
     if (hero.where === 'satchel') info.append(h('button', { class: 'btn prime', style: 'width:100%;margin:12px 0 2px', onClick: () => go('arena') }, 'Enter the arena'));
-    const home = h('button', { class: 'btn ghost small', onClick: async () => {
+    const home = h('button', { class: 'btn ghost small', onClick: () => confirmSheet(
+      hero.where === 'home' ? `Bring ${hero.name} back to play` : `Send ${hero.name} home`,
+      hero.where === 'home'
+        ? [`${hero.name} moves from your wallet back into this browser's Satchel, so it can fight again.`, 'One approval in your wallet. It stays yours.']
+        : [`${hero.name} moves into your own wallet, where it is safe even if this browser is cleared.`, 'Its echo keeps fighting in the Arena, and every challenge pays your wallet.', 'To fight with it again, tap Bring back (one approval in your wallet). Network fee: under a cent.'],
+      hero.where === 'home' ? 'Bring back' : 'Send home', async () => {
       try { await app.chain.sendHome(hero.id); toast(hero.where === 'home' ? `${hero.name} is back in your satchel.` : isPractice() ? `${hero.name} is resting (practice).` : `${hero.name} is in your wallet.`); await load(); renderChrome(); }
       catch (e) { toast((e as Error).message, true); }
-    } }, hero.where === 'home' ? 'Bring back' : 'Send home');
+    }) }, hero.where === 'home' ? 'Bring back' : 'Send home');
     const sell = h('button', { class: 'btn small', onClick: () => sellSheet(hero) }, 'Sell');
     // wallet things (send home, sell) belong to real play; free practice stays clean
     if (!isPractice()) info.append(h('div', { class: 'row', style: 'margin:10px 0 4px' }, home, sell));
+  }
+
+  function confirmSheet(title: string, lines: string[], ok: string, act: () => Promise<void>) {
+    const close = () => { bg.remove(); sh.remove(); };
+    const bg = h('div', { class: 'sheet-bg', onClick: close });
+    const yes = h('button', { class: 'btn', onClick: async () => { yes.setAttribute('disabled', ''); await act(); close(); } }, ok);
+    const sh = h('div', { class: 'sheet' }, h('div', { class: 'wrap' }, h('div', { class: 'h2' }, title), ...lines.map(l => h('p', {}, l)),
+      h('div', { class: 'row' }, h('button', { class: 'btn ghost', onClick: close }, 'Not now'), yes)));
+    document.body.append(bg, sh);
+  }
+  function renameSheet(hero: HeroView) {
+    const close = () => { bg.remove(); sh.remove(); };
+    const bg = h('div', { class: 'sheet-bg', onClick: close });
+    const nm = h('input', { class: 'name', maxlength: 14, value: hero.name, 'aria-label': 'Hero name', spellcheck: 'false', autocomplete: 'off' }) as HTMLInputElement;
+    const save = () => { const v = nm.value.trim(); if (!v) { toast('Enter a name.', true); return; } app.chain.rename(hero.id, v); close(); toast(`Renamed to ${v}.`); load(); };
+    nm.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
+    const sh = h('div', { class: 'sheet' }, h('div', { class: 'wrap' }, h('div', { class: 'h2' }, 'Rename your hero'),
+      h('p', { class: 'dim' }, 'Free. The name is kept by the game, not on chain.'), nm,
+      h('div', { class: 'row' }, h('button', { class: 'btn ghost', onClick: close }, 'Cancel'), h('button', { class: 'btn', onClick: save }, 'Save'))));
+    document.body.append(bg, sh); nm.focus(); nm.select();
   }
 
   function sellSheet(hero: HeroView) {
@@ -95,7 +120,7 @@ register('hero', root => {
     const bg = h('div', { class: 'sheet-bg', onClick: () => { bg.remove(); sh.remove(); } });
     const sh = h('div', { class: 'sheet' }, h('div', { class: 'wrap' },
       h('div', { class: 'h2' }, `Sell ${hero.name}`),
-      h('p', {}, 'Set a price. Anyone can buy it; hero and money swap in one transaction. You can cancel any time before.'),
+      h('p', {}, 'Set a price. Anyone can buy it: the hero and the money swap in one transaction. While it is listed it cannot fight, and you can cancel any time before it sells.'),
       h('div', { class: 'namerow' }, h('span', { style: 'font:700 28px var(--display);color:var(--gold)' }, '$'), price),
       payIn && h('div', { class: 'dim', style: 'margin:10px 0 6px;font-size:14px;letter-spacing:.14em;text-transform:uppercase' }, 'Get paid in'), payIn,
       h('div', { class: 'row' }, h('button', { class: 'btn ghost', onClick: () => { bg.remove(); sh.remove(); } }, 'Cancel'),
