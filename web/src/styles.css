@@ -495,3 +495,7 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 .intent { margin: -78px 0 0 -34px; width: 68px; height: 68px; border-radius: 50%; background: radial-gradient(circle, rgba(3,8,24,.85) 55%, rgba(3,8,24,0) 72%); }
 .intent .ic { width: 42px; height: 42px; stroke-width: 1.8; }
 .intent::after { font-size: 12px; font-weight: 700; color: var(--bone); top: 96%; }
+/* the round counter reads plainly; the runes give way to it, and it turns red for the last three rounds */
+.round .rr { display: none; }
+.round .rl { font: 700 16px var(--ui); letter-spacing: .2em; color: var(--bone); }
+.round .rl.late { color: #ff6b6b; text-shadow: 0 0 12px rgba(255,80,80,.6); }

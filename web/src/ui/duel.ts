@@ -117,7 +117,7 @@ register('duel', root => {
     set(L, hHp, hero.hp, hCh, hero.name);
     set(Rr, gHp, G.hp, gCh, G.name);
     const r = moves.length;
-    (round.firstChild as HTMLElement).textContent = over ? '' : `Round ${r + 1}`;
+    const rl = round.firstChild as HTMLElement; rl.textContent = over ? '' : `Round ${r + 1} / 12`; rl.classList.toggle('late', !over && r >= 9); // the fight must end by round 12
     runes.forEach((x, i) => { x.className = `rp${i < r ? ' past' : ''}${i === r && !over ? ' now' : ''}`; });
     hint.textContent = '';
     bX.disabled = hCh < 2; bX.classList.toggle('ready', hCh >= 2);
