@@ -87,6 +87,16 @@ register('hero', root => {
     const sell = h('button', { class: 'btn small', onClick: () => sellSheet(hero) }, 'Sell');
     // wallet things (send home, sell) belong to real play; free practice stays clean
     if (!isPractice()) info.append(h('div', { class: 'row', style: 'margin:10px 0 4px' }, home, sell));
+    if (!isPractice() && hero.where === 'satchel') info.append(h('button', { class: 'btn ghost small keepsafe', style: 'width:100%;margin-top:6px', onClick: () => confirmSheet(
+      'Keep it safe',
+      [`${hero.name} goes home to your wallet and the Satchel's money goes back to your wallet too.`, 'Nothing is lost if this browser is cleared. Bring it back any time to fight (one approval in your wallet).'],
+      'Keep it safe', async () => {
+        try {
+          await app.chain.sendHome(hero.id);
+          if (app.chain.withdrawAll) { try { await app.chain.withdrawAll(); } catch (e) { if (!/nothing|empty|no coins|short/i.test((e as Error).message)) throw e; } }
+          toast(`${hero.name} and your Satchel money are in your wallet.`); await load(); renderChrome();
+        } catch (e) { toast((e as Error).message, true); }
+      }) }, '\u{1F6E1} Keep it safe'));
   }
 
   function confirmSheet(title: string, lines: string[], ok: string, act: () => Promise<void>) {

@@ -85,6 +85,8 @@ export interface GameChain {
   fees(): Fees;
   /** names live in this browser, not on chain: renaming is free */
   rename(heroId: number, name: string): void;
+  /** real chains: send the Satchel's coins to the connected wallet */
+  withdrawAll?(): Promise<Receipt>;
 
   listGhosts(): Promise<GhostView[]>;
   myHeroes(): Promise<HeroView[]>;

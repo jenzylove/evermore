@@ -163,6 +163,7 @@ export async function openConnect() {
         addBtn.textContent = 'Adding…';
         for (let i = 0; i < 20; i++) { await new Promise(res => setTimeout(res, 1000)); rc.forget(); if ((await rc.satchel()).sats > before) break; }
         toastLink(`Added $${d.toFixed(2)} to your Satchel`, r.explorer);
+        if (store.getItem('evermore.backup.done') !== '1') backupSheet(rc);
         await paint(); renderChrome();
       } catch (err) { toast((err as Error).message, true); await paint(); }
     } }, 'Add');
@@ -205,6 +206,22 @@ export async function openConnect() {
     rc.forget(); const n = (await rc.satchel().catch(() => null))?.sats ?? lastSats;
     if (n !== lastSats) { lastSats = n; await paint(); renderChrome(); }
   }, 5000);
+}
+
+/** once, after the first money goes in: the Satchel key lives only in this browser, so save a copy */
+function backupSheet(rc: RealChain) {
+  const close = () => { bg.remove(); sh.remove(); };
+  const bg = h('div', { class: 'sheet-bg' });
+  const copy = h('button', { class: 'btn prime', onClick: async () => {
+    const k = await rc.exportKey(); await navigator.clipboard?.writeText(k);
+    store.setItem('evermore.backup.done', '1'); toast('Play key copied. Paste it somewhere safe, like your notes.'); close();
+  } }, 'Copy my play key');
+  const sh = h('div', { class: 'sheet' }, h('div', { class: 'wrap' },
+    h('div', { class: 'h2' }, 'Back up your Satchel'),
+    h('p', {}, 'Your Satchel is a small play wallet that lives in this browser. If this browser is cleared, its money and any hero inside it go with it.'),
+    h('p', {}, 'Copy its key and keep it somewhere safe. To play on another browser, import it there. Heroes you send home to your wallet are always safe.'),
+    copy, h('button', { class: 'btn ghost', style: 'width:100%;margin-top:8px', onClick: () => { close(); } }, 'Later')));
+  document.body.append(bg, sh);
 }
 
 const short = (a: string) => { const s = a.replace(/^[a-z]+:/, ''); return `${s.slice(0, 5)}…${s.slice(-4)}`; };
