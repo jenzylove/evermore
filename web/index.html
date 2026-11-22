@@ -92,6 +92,7 @@ footer a{text-decoration:none;color:var(--text)}footer a:hover{color:var(--gold)
 .banner .track{display:flex;width:max-content}
 .banner .set{display:flex;gap:6px 22px;align-items:center;padding:8px 22px;white-space:nowrap}
 .banner .set+.set{display:none}
+.banner .set>*+*::before{content:"·";margin-right:22px;color:rgba(159,176,214,.5)}
 .chain{display:inline-block;padding:7px 16px;border-radius:30px;background:rgba(3,10,28,.72);box-shadow:inset 0 0 0 1px rgba(10,193,142,.45)}
 .pitch{margin-top:14px;font-family:Barlow,system-ui,sans-serif;font-weight:500;font-size:clamp(16px,2.4vw,20px);color:#fff2d6;text-shadow:0 2px 14px rgba(0,0,0,.85);text-wrap:balance;max-width:30em}
 .steps i{font-size:30px;color:rgba(255,207,122,.55)}
@@ -116,8 +117,8 @@ footer a{text-decoration:none;color:var(--text)}footer a:hover{color:var(--gold)
 </head>
 <body>
 <div class="banner"><div class="track">
-  <div class="set"><span>BCH BLAZE 2026</span><a href="/deck" id="deckLink">Slide deck</a><a href="https://github.com/jenzylove/evermore" rel="noopener">Source code</a><a href="/proof">Proof on chain</a><span>CashTokens address <span class="addr" title="Tap to copy">bitcoincash:zr8mczprtn20l62z0d286as0x2euxryysyt6ptjql6</span></span></div>
-  <div class="set" aria-hidden="true"><span>BCH BLAZE 2026</span><a href="/deck" tabindex="-1">Slide deck</a><a href="https://github.com/jenzylove/evermore" rel="noopener" tabindex="-1">Source code</a><a href="/proof" tabindex="-1">Proof on chain</a><span>CashTokens address <span class="addr" title="Tap to copy">bitcoincash:zr8mczprtn20l62z0d286as0x2euxryysyt6ptjql6</span></span></div>
+  <div class="set"><span>BCH BLAZE 2026</span><a href="/deck" id="deckLink">Slide deck</a><a href="https://github.com/jenzylove/evermore" rel="noopener">Source code</a><a href="/proof">Proof on chain</a><span>Prize address <span class="addr" title="Tap to copy the full address">zr8mcz…ptjql6</span></span></div>
+  <div class="set" aria-hidden="true"><span>BCH BLAZE 2026</span><a href="/deck" tabindex="-1">Slide deck</a><a href="https://github.com/jenzylove/evermore" rel="noopener" tabindex="-1">Source code</a><a href="/proof" tabindex="-1">Proof on chain</a><span>Prize address <span class="addr" title="Tap to copy the full address">zr8mcz…ptjql6</span></span></div>
 </div></div>
 
 <header class="hero">
