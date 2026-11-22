@@ -4,7 +4,7 @@ BCH BLAZE 2026, Mainnet track. Deadline Sun Nov 22 2026 14:00 UTC (15:00 Lagos).
 
 ## One line
 
-A pixel art hero duel game where your hero lives on Bitcoin Cash: every level is earned in a fight the chain checks, your hero earns while you sleep, and nobody can ever shut it down or take it from you.
+A 3D hero duel game where your hero lives on Bitcoin Cash: every level is earned in a fight the chain checks, your hero earns while you sleep, and nobody can ever shut it down or take it from you.
 
 ## The problem
 
@@ -20,11 +20,11 @@ And what you build in a game is worth nothing outside it: selling a levelled cha
 
 Players who like quick, replayable duels (Pokemon style turns, roguelike runs), plus BCH holders who want something fun to do with BCH.
 
-First ten seconds: a full screen pixel art arena, heroes idling, one line ("Games die. Heroes don't."), one button: **Raise a hero**. The chain is nearly invisible: no hex, no wallet jargon in play. It shows up only where it matters (a small "sealed on Bitcoin Cash" mark and a link).
+First ten seconds: a full screen 3D arena, heroes idling, one line ("Games die. Heroes don't."), one button: **Raise a hero**. The chain is nearly invisible: no hex, no wallet jargon in play. It shows up only where it matters (a small "sealed on Bitcoin Cash" mark and a link).
 
 ## The loop (locked Nov 17)
 
-1. **Raise.** Mint a hero (about $0.25). A pixel character with a class (Knight, Rogue, Mage), level 1, HP, ATK, DEF, SPD. Stats grow automatically by class each level.
+1. **Raise.** Mint a hero (about $0.25). A 3D fighter with a class (Knight, Rogue, Mage), level 1, HP, ATK, DEF, SPD. Stats grow automatically by class each level.
 2. **Challenge.** The Arena shows other players' heroes as ghosts. Pick one. A 2 cent challenge fee goes straight to that ghost's owner. Losing costs that fee; nothing else.
 3. **Duel.** Turn based, 30 to 60 seconds. Each round pick Strike, Guard or Special (Special charges up). The ghost fights with a style fixed when you challenge (so you can't solve it in advance). Hits, sound, screen shake.
 4. **Forge.** Win and your hero gains XP based on HP left, turns used and the ghost's power. A ghost beaten often gives less XP. Level up is written into the hero by the chain, which replays your moves first. Beat a hero 3 or more levels above you and you also win a gear piece (capped total supply, no seasons).
@@ -56,7 +56,7 @@ No seasons, no tournaments, no resets. One persistent arena.
 ## Judging criteria
 
 - **Is it cool:** a real game where the chain is the referee and your hero earns while you sleep; first game in BLAZE 2026.
-- **Is it slick:** premium pixel art, sound, motion, one button front door, no popups mid play, works on a phone.
+- **Is it slick:** premium 3D fighters, sound, motion, one button front door, no popups mid play, works on a phone.
 - **Does it work:** commented CashScript, threat model, tests that the browser duel sim and the covenant replay agree move for move, real mainnet transactions for every verb.
 - **Will it make money:** players pay mint, challenge and forge fees and trade heroes; the treasury earns on every one; no prize pot to drain.
 

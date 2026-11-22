@@ -89,6 +89,11 @@ claims.push({
   ],
 });
 claims.push({
+  title: 'Winning a Warden pays a bounty',
+  body: 'Beat a house Warden in a paid fight and the house pays your Satchel 5 to 15 cents, once per hero per Warden. Every payout is a mainnet transaction tagged EVB1 with the hero and the Warden.',
+  links: [{ label: 'A bounty paid', href: 'https://blockchair.com/bitcoin-cash/transaction/701a9b8ba7c9609b79714b1c643257e41fe9d0b705fcc36d106ce687921f7aee' }, code('Bounty keeper', 'contracts/scripts/bounty-keeper.mjs')],
+});
+claims.push({
   title: 'Gear supply is capped forever',
   body: `Gear drops when you beat an echo 3 or more levels above you. The counter contract refuses to mint past ${Number(dep.gearCap).toLocaleString()} pieces. Nobody can raise the cap.`,
   links: [...(gearRec?.forge ? [{ label: 'First gear drop', href: tx(gearRec.forge) }] : []), code('Counter contract', 'contracts/src/Counter.cash'), code('Cap test', 'contracts/test/forge.test.mjs#L127')],
@@ -104,8 +109,8 @@ claims.push({
   links: [code('Parity test', 'contracts/test/parity.test.mjs'), code('Rules spec', 'docs/SPEC.md')],
 });
 claims.push({
-  title: 'No server of ours',
-  body: 'This page and the game are static files. They read the chain straight from public Bitcoin Cash servers. Anyone can host a copy and the arena keeps working.',
+  title: 'The game needs no server of ours',
+  body: 'This page and the game are static files. They read the chain straight from public Bitcoin Cash servers. Anyone can host a copy and the arena keeps working. The one service we run pays Warden bounties from a capped house wallet.',
   links: [code('Source', 'README.md')],
 });
 
