@@ -6,15 +6,26 @@ import { engine } from '../three/engine';
 import { director, fitDistance, portrait, shot } from '../three/fx';
 import { FRONT_TRIO, world } from '../three/world';
 import { app, go, isPractice, register } from '../app';
-import { h } from './kit';
+import { h, toast } from './kit';
 import { guideSeen, showGuide } from './guide';
 
 /** into the game: the Arena if you have a hero, else raise one */
-export async function startPlaying() {
-  // the first time in, a short guide says what the game is before anything else happens
-  const mine = await app.chain.myHeroes();
-  if (!guideSeen() && !mine.length) await showGuide();
-  go(mine.length ? 'arena' : 'raise');
+let opening = false;
+export async function startPlaying(btn?: HTMLButtonElement) {
+  if (opening) return; // one tap is enough; repeat taps while it opens do nothing
+  opening = true;
+  // say at once that the tap was heard: real play reads the chain first
+  const label = btn?.innerHTML;
+  if (btn) { btn.classList.add('busy'); btn.textContent = isPractice() ? 'Opening…' : 'Opening the hall…'; }
+  try {
+    // the first time in, a short guide says what the game is before anything else happens
+    const mine = await app.chain.myHeroes();
+    if (!guideSeen() && !mine.length) await showGuide();
+    go(mine.length ? 'arena' : 'raise');
+  } catch (e) {
+    if (btn && label) { btn.innerHTML = label; btn.classList.remove('busy'); }
+    toast(`Could not reach Bitcoin Cash: ${(e as Error).message}. Tap again.`, true);
+  } finally { opening = false; }
 }
 /** the Play for real sheet: wallet, Satchel, the switch (the wallet bundle loads only now) */
 export async function playForReal() { if (!guideSeen()) await showGuide(); return import('./connect').then(m => m.openConnect()); }
@@ -50,7 +61,7 @@ register('front', root => {
 
   const title = h('h1', {}, ...[...'Evermore'].map((ch, i) => { const s = h('span', {}, ch); s.style.animationDelay = `${500 + i * 70}ms`; return s; }));
   const P = isPractice();
-  const raise = h('button', { class: 'btn prime', onClick: () => startPlaying() }, P ? 'Raise a hero ' : 'Enter the hall ', h('small', {}, P ? 'practice, free' : `on ${app.chain.mode}`));
+  const raise: HTMLButtonElement = h('button', { class: 'btn prime', onClick: () => startPlaying(raise) }, P ? 'Raise a hero ' : 'Enter the hall ', h('small', {}, P ? 'practice, free' : `on ${app.chain.mode}`));
   const real = h('button', { class: 'btn bch', onClick: () => playForReal() }, bchMark(), P ? 'Play for real' : 'Wallet and Satchel');
   root.append(h('section', { class: `screen front${still ? ' still' : ''}` },
     h('div', { class: 'title' }, title, h('div', { class: 'line' }, "Games die. Heroes don't."), h('div', { class: 'chainline' }, bchMark(), 'Every hero lives on Bitcoin Cash'), h('div', { class: 'pitch' }, 'Raise a hero. Win fights. Earn when others fight yours.')),

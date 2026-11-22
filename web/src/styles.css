@@ -481,3 +481,5 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 @keyframes cuein { from { opacity: 0; transform: translate(-50%, -50%) scale(.8); } }
 .moves .btn.special.ready { opacity: 1; color: #2a1700; background: linear-gradient(180deg, #ffe2a6, #f2b04c); box-shadow: 0 0 0 2px var(--gold-hi), 0 0 26px rgba(255,200,90,.75); animation: yourmove 1s ease-in-out infinite; }
 .moves .btn.special.ready small, .moves .btn.special.ready .ic { color: #3a2200; opacity: 1; }
+
+.btn.busy { pointer-events: none; animation: yourmove 1s ease-in-out infinite; }

@@ -72,7 +72,9 @@ export function leaveReal() { usePractice(); store.setItem(MODE_KEY, 'practice')
 /** On boot: come back in the mode the player left in. */
 export async function restoreMode() {
   if (store.getItem(MODE_KEY) !== 'real') return;
-  try { await enterReal(); } catch (e) { console.warn('real mode unavailable:', e); leaveReal(); }
+  try { await enterReal(); } catch (e) { console.warn('real mode unavailable:', e); leaveReal(); return; }
+  const rc = realChain();
+  void rc.myHeroes().catch(() => undefined); void rc.listGhosts().catch(() => undefined);
 }
 
 const netLabel = (n: NetworkName) => (n === 'chipnet' ? 'Chipnet · test coins, not real money' : 'Bitcoin Cash mainnet');

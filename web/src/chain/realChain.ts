@@ -46,7 +46,7 @@ export type RealChainOptions = {
   onBroadcast?: (kind: string, txid: string, link: string) => void;
 };
 
-const CACHE_MS = 4000;
+const CACHE_MS = 15000;
 const short = (a: string) => { const s = a.replace(/^[a-z]+:/, ''); return `${s.slice(0, 4)}…${s.slice(-3)}`; };
 const hex = (b: Uint8Array) => binToHex(b);
 const CLASS = ['Knight', 'Rogue', 'Mage'];
