@@ -240,7 +240,13 @@ register('arena', root => {
       h('div', { class: 'rec' }, g.mine ? `Your hero · ${record.toLowerCase()}` : `${record} · kept by `, g.mine ? null : h('span', { class: 'keeper' }, g.owner)),
     );
     if (g.mine) {
-      info.append(h('p', { class: 'dim', style: 'font-size:16px;margin:12px 0 14px' }, isPractice() ? 'It stands here and fights for you while you are away.' : `It stands here while you are away. Every challenge pays you ${shortCents(f.challengeSats, f.usdPerBch)}.`));
+      info.append(h('p', { class: 'tip', style: 'margin:12px 0 4px' }, 'This is you.'),
+        h('p', { class: 'dim', style: 'font-size:16px;margin:0 0 14px' }, isPractice()
+          ? 'Your echo stands here for other players to fight. In the real game, every challenge pays you.'
+          : `Your echo stands here for other players to fight. Every challenge pays you ${shortCents(f.challengeSats, f.usdPerBch)}.`));
+      // jump to the nearest echo this hero can beat (or the next one along)
+      const target = () => { const k = list.findIndex(x => !x.mine && beat.get(x.id) === true); return k >= 0 ? k : list.findIndex(x => !x.mine); };
+      info.append(h('button', { class: 'btn spirit', style: 'width:100%', onClick: () => { const k = target(); if (k >= 0) setFocus(k); } }, 'Find a fight'));
       return;
     }
     if (hero) {
