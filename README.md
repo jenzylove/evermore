@@ -17,6 +17,7 @@
 <p align="center">
   <a href="https://evermore.jdollar.site">Play</a> ·
   <a href="https://evermore.jdollar.site/proof">Proof on chain</a> ·
+  <a href="https://youtu.be/cR-lvmdrEic">Demo video</a> ·
   <a href="https://blockchair.com/bitcoin-cash/transaction/1dcafe2bc8d5b061503b17db790740eda1544c5fac98c4e228c4028a897784fd">Genesis tx</a>
 </p>
 
@@ -26,15 +27,15 @@
 
 Games shut down and take everything players earned with them. The Crew went dark in April 2024 and every copy stopped working. Concord was pulled two weeks after launch. Anthem's servers went off in January 2026. More than 1.29 million Europeans signed Stop Killing Games to ask for a fix.
 
-Evermore is the fix for one game. Your hero is a CashToken in your own wallet. The rules that level it up are Bitcoin Cash contracts. The game is a static page that reads the chain: if we vanish, your hero and the arena live on.
+Evermore is the fix for one game. Your hero is a CashToken you own: it plays from a small browser Satchel and one tap sends it to your own wallet. The rules that level it up are Bitcoin Cash contracts. The game is a static page that reads the chain: if we vanish, your hero and the arena live on.
 
 ## How it plays
 
 | | |
 |---|---|
-| **Raise** | Mint a Knight, Rogue or Mage for about 25 cents. Level, XP and stats live inside the token, an NFT in your wallet. |
+| **Raise** | Mint a Knight, Rogue or Mage for about 25 cents. Level, XP and stats live inside the token, an NFT you own. |
 | **Challenge** | The arena is full of echoes: other players' heroes, fighting on their own. A 2 cent fee goes straight to the echo's keeper. |
-| **Duel** | Each round both sides pick Strike, Guard or Power at once. You see the echo's NEXT move over its head; it never sees yours. Guarding halves a hit and fills your power bar; a full bar makes Power a double hit. A fight lasts up to 12 rounds. |
+| **Duel** | Each round you pick Strike, Guard or Power. The echo fights on its own and shows its NEXT move over its head. Guarding halves a hit and fills your power bar; a full bar makes Power a double hit. A fight lasts up to 12 rounds. |
 | **Forge** | Win and the chain replays your moves before your hero gains XP and levels up. Beat an echo 3 levels above you and gear drops, from a supply capped at 5,000 forever. |
 | **Bounties** | Beat a house Warden in a paid fight and the house pays you a bounty (5 to 15 cents) on chain, once per hero per Warden. |
 | **Lost a paid fight?** | Practice that exact fight for free until you crack it (practice wins do not count), then Rematch for real. |
@@ -118,7 +119,7 @@ No seasons, no resets. One arena that never closes. Free practice in the browser
 
 - Players pay 2 cents per paid fight (to the echo's keeper), about 25 cents per hero raised and 1 cent per won forge (to the treasury).
 - Players earn 2 cents every time their hero is challenged, Warden bounties for paid wins, and the price of levelled heroes they sell.
-- The house funds bounties from raise and fight fees; a typical player who beats the easy Wardens leaves the treasury ahead, and a bounty is paid once per hero per Warden.
+- Bounties are a welcome paid by the house from a capped wallet, once per hero per Warden. A new hero that beats all twelve Wardens collects up to 98 cents, more than the 61 cents it pays in fees, on purpose; the wallet cap limits what the house can spend.
 - No token, no prize pot to drain: revenue scales with play.
 
 ## Run it
