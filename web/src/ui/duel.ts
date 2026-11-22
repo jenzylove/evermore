@@ -301,6 +301,7 @@ register('duel', root => {
     const f = app.chain.fees();
     if (!won) {
       sfx.lose();
+      if (isPractice()) markPracticeDone(); // a finished practice fight, won or lost, unlocks real play
       if (outOfRounds) { B!.once('taunt', { fade: 0.2 }); director.move(close(B!), 900); }
       else { B!.once('victory', { fade: 0.25, hold: true }); director.move(close(B!, true), 1400); }
       center.append(h('div', { class: 'titlecard' }, h('h2', { class: 'fallen' }, 'Fallen'),
