@@ -18,6 +18,8 @@ import { gearIcon, gearName, h, icon, money, toast } from './kit';
 import type { HeroView } from '../chain/types';
 import { MOVE_ICON } from './arena';
 
+/** what one level adds, by class (the same growth the forge contract writes) */
+const GROW_TEXT = ['+3 HP, +1 ATK, +2 DEF', '+2 HP, +2 ATK, +2 SPD', '+1 HP, +3 ATK, +1 DEF, +1 SPD'];
 const CLS = ['knight', 'rogue', 'mage'];
 const HERO_FX = ['#ffd27a', '#ff7a3c', '#ffffff'];
 const GHOST_FX = ['#cfeaff', '#8fc8ff', '#ffffff'];
@@ -362,8 +364,11 @@ register('duel', root => {
     const need0 = xpNeed(hero0.level);
     const total = hero0.xp + res.xpGain;
     const steps = Math.min(30, res.xpGain);
+    const big = h('div', { class: 'xpgain' }, '+0 XP');
+    extra.append(big);
     for (let i = 1; i <= steps; i++) {
       const x = Math.round(hero0.xp + (res.xpGain * i) / steps);
+      big.textContent = `+${Math.round(res.xpGain * i / steps)} XP`;
       xpI.style.width = `${Math.min(1, x / need0) * 100}%`;
       xpR.textContent = `${Math.min(x, need0)} / ${need0} XP  +${Math.round(res.xpGain * i / steps)}`;
       sfx.xtick(); if (i % 3 === 0) rite.glyph();
@@ -385,7 +390,11 @@ register('duel', root => {
           h('div', { class: 'gain' }, d('hp', 'HP'), d('atk', 'ATK'), d('def', 'DEF'), d('spd', 'SPD')));
       }
       await rite.materialise(a);
-    } else { xpR.textContent = `${total} / ${need0} XP  +${res.xpGain}`; await engine.wait(900); }
+    } else {
+      xpR.textContent = `${total} / ${need0} XP`;
+      extra.append(h('div', { class: 'tonext' }, `${need0 - total} more XP to level ${hero0.level + 1}: `, h('b', {}, GROW_TEXT[hero0.cls])));
+      await engine.wait(900);
+    }
     if (res.gear) {
       sfx.reveal();
       const g = res.gear;
@@ -397,15 +406,21 @@ register('duel', root => {
     rite.settle(endShot());
     hero = res.hero; renderChrome();
     actions.append(h('button', { class: 'btn ghost', onClick: () => go('hero') }, 'Hero'), h('button', { class: 'btn ghost', onClick: () => go('arena') }, 'Choose another'));
-    nextFight(res.hero).then(n => {
-      if (!n) return;
-      const fee = app.chain.fees();
-      const b = h('button', { class: 'btn spirit nextup', onClick: async () => {
-        b.setAttribute('disabled', '');
-        try { app.focusGhost = n.id; app.ticket = await app.chain.challenge(res.hero.id, n.id); go('duel'); }
-        catch (e) { toast((e as Error).message, true); b.removeAttribute('disabled'); }
-      } }, `Next: fight ${n.name}`, h('small', {}, `level ${n.level}${isPractice() ? '' : ` · ${money(fee.challengeSats, fee.usdPerBch)}`}`));
-      actions.before(b);
+    const next = h('div', { class: 'whatsnext' });
+    actions.before(next);
+    const fee = app.chain.fees();
+    const feeTxt = isPractice() ? '' : ` · ${money(fee.challengeSats, fee.usdPerBch)}`;
+    const go2 = (g: GhostView, b: HTMLButtonElement) => async () => {
+      b.setAttribute('disabled', '');
+      try { app.focusGhost = g.id; app.ticket = await app.chain.challenge(res.hero.id, g.id); go('duel'); }
+      catch (e) { toast((e as Error).message, true); b.removeAttribute('disabled'); }
+    };
+    Promise.all([nextFight(res.hero), gearFight(res.hero)]).then(([n, gf]) => {
+      if (n) { const b: HTMLButtonElement = h('button', { class: 'btn spirit nextup' }, `Next: fight ${n.name}`, h('small', {}, `level ${n.level}${feeTxt}`)); b.onclick = go2(n, b); next.append(b); }
+      if (gf) {
+        const b: HTMLButtonElement = h('button', { class: 'gearfight open' }, h('span', { class: 'gk' }, 'Gear fight'), h('b', {}, `${gf.name} · level ${gf.level}`), h('small', {}, `win a rare piece of gear${feeTxt}`));
+        b.onclick = go2(gf, b); next.append(b);
+      } else next.append(h('div', { class: 'gearfight locked' }, h('span', { class: 'gk' }, 'Gear fight · locked'), h('small', {}, 'Gear fights open as you level up. Keep climbing.')));
     });
     // a practice win is the moment to offer the real thing: the same hero, kept forever on Bitcoin Cash
     if (isPractice()) markPracticeDone();
@@ -422,6 +437,16 @@ register('duel', root => {
     for (const g of all) {
       const seed = app.chain.styleSeed?.(me.id, g) ?? seedOf(styleHash(me.id, g));
       if (solve(me as unknown as Hero, { ...g, ownerPkh: new Uint8Array(20) } as Ghost, seed, 8)) return g;
+    }
+    return null;
+  }
+
+  /** a gear fight: an echo 3+ levels above this hero that it can actually beat, lowest first */
+  async function gearFight(me: HeroView): Promise<GhostView | null> {
+    const all = (await app.chain.listGhosts()).filter(g => !g.mine && g.level >= me.level + 3).sort((a, b) => a.level - b.level).slice(0, 5);
+    for (const g of all) {
+      const seed = app.chain.styleSeed?.(me.id, g) ?? seedOf(styleHash(me.id, g));
+      if (solve(me as unknown as Hero, { ...g, ownerPkh: new Uint8Array(20) } as Ghost, seed, 10)) return g;
     }
     return null;
   }

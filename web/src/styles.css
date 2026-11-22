@@ -429,3 +429,17 @@ body[data-route=duel] .mute { top: calc(70px + var(--safe-t)); right: 50%; trans
 .pips b { font: 600 10px var(--ui); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); margin: 0 4px; }
 .pips i { width: 20px; height: 7px; border-radius: 2px; }
 .pips.full i { animation: yourmove 1s ease-in-out infinite; }
+
+/* ---- reward + what's next (Nov 22) */
+.xpgain { margin-top: 8px; font: 700 clamp(34px, 9vw, 48px)/1 var(--display); color: var(--gold-hi); text-shadow: 0 0 24px rgba(255,214,130,.55); animation: arrive 700ms cubic-bezier(.16,1,.3,1) both; }
+.tonext { margin-top: 6px; font: 600 15px var(--ui); color: var(--dust); letter-spacing: .03em; }
+.tonext b { color: var(--gold-hi); font-weight: 700; }
+.whatsnext { display: grid; gap: 10px; margin: 12px 0 10px; }
+.whatsnext .btn.nextup { width: 100%; margin: 0; }
+.gearfight { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: center; text-align: left; width: 100%; padding: 11px 14px; border-radius: 10px; border: 0; font: 600 15px var(--ui); color: var(--bone); background: rgba(255,207,122,.08); box-shadow: inset 0 0 0 1px rgba(255,207,122,.45); cursor: pointer; }
+.gearfight .gk { grid-row: span 2; font: 700 12px var(--ui); letter-spacing: .22em; text-transform: uppercase; color: var(--gold); padding: 6px 9px; border-radius: 6px; background: rgba(255,207,122,.14); }
+.gearfight b { font: 700 17px var(--ui); letter-spacing: .06em; }
+.gearfight small { color: var(--dust); font-size: 13px; }
+.gearfight.open { animation: yourmove 1.6s ease-in-out infinite; }
+.gearfight.locked { cursor: default; background: rgba(220,230,250,.04); box-shadow: inset 0 0 0 1px rgba(220,230,250,.14); }
+.gearfight.locked .gk { color: var(--dim); background: rgba(220,230,250,.06); }
