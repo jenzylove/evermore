@@ -99,7 +99,8 @@ register('raise', root => {
       }
       await engine.wait(1700);
       renderChrome();
-      go('arena');
+      app.justRaised = true;
+      go('hero');
     } catch (e) { toast((e as Error).message, true); go1.removeAttribute('disabled'); }
   }
   return () => { cv.removeEventListener('pointerdown', down); removeEventListener('pointermove', move); removeEventListener('pointerup', up); };

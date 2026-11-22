@@ -67,8 +67,16 @@ register('hero', root => {
       hero.defences ? h('span', {}, 'Your echo earned ', h('b', { class: isPractice() ? '' : 'bch-t' }, money(hero.earnedSats, f.usdPerBch)), ` from ${hero.defences} challenger${hero.defences === 1 ? '' : 's'}`)
         : h('span', { class: 'dim' }, `Its echo stands in the Arena. Every challenge pays you ${money(f.challengeSats, f.usdPerBch)}${isPractice() ? ' (practice purse)' : ''}.`),
       h('div', { class: 'dim', style: 'font-size:14px;margin-top:4px' }, `${hero.wins} win${hero.wins === 1 ? '' : 's'} · ${hero.xp} of ${xpNeed(hero.level)} XP${next ? ` · new look at level ${next}` : ''}`));
+    // a new hero is welcomed and told what to do next
+    if (app.justRaised) {
+      app.justRaised = false;
+      info.append(h('p', { class: 'welcome' }, `${hero.name} is yours. Win fights in the Arena to level up, earn gear, and get paid when others fight your echo.`));
+    }
     info.append(pick, xp, stats, earned);
-    if (gear.length) info.append(h('div', { class: 'gearline' }, 'Wearing', ...gear.slice(0, 6).map(g => { const c = gearIcon(g.kind, g.tier); c.setAttribute('aria-label', gearName(g.kind, g.tier)); const s = h('span', { title: gearName(g.kind, g.tier) }); s.append(c); return s; })));
+    info.append(gear.length
+      ? h('div', { class: 'gearline' }, 'Wearing', ...gear.slice(0, 6).map(g => { const c = gearIcon(g.kind, g.tier); c.setAttribute('aria-label', gearName(g.kind, g.tier)); const s = h('span', { title: gearName(g.kind, g.tier) }); s.append(c); return s; }))
+      : h('div', { class: 'gearline dim' }, 'Gear: none yet. Beat an echo 3 levels above you to win some.'));
+    if (hero.where === 'satchel') info.append(h('button', { class: 'btn prime', style: 'width:100%;margin:12px 0 2px', onClick: () => go('arena') }, 'Enter the arena', h('small', {}, 'find a fight')));
     const home = h('button', { class: 'btn ghost small', onClick: async () => {
       try { await app.chain.sendHome(hero.id); toast(hero.where === 'home' ? `${hero.name} is back in your satchel.` : isPractice() ? `${hero.name} is resting (practice).` : `${hero.name} is in your wallet.`); await load(); renderChrome(); }
       catch (e) { toast((e as Error).message, true); }

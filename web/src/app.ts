@@ -15,6 +15,8 @@ export const app = {
   heroId: null as number | null,
   ticket: null as Ticket | null,
   focusGhost: null as number | null,
+  /** set right after a raise, so the hero screen can welcome the new hero */
+  justRaised: false,
   route: 'front' as Route,
 };
 export function useRealChain(c: GameChain) { realChain = c; app.chain = c; }

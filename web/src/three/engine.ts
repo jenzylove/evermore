@@ -69,7 +69,12 @@ class Engine {
     this.buildComposer();
     this.fit();
     addEventListener('resize', () => this.fit());
+    visualViewport?.addEventListener('resize', () => this.fit());
     const frame = (now: number) => {
+      // phones do not always fire resize when the keyboard or the address bar goes away; check the real canvas size
+      // every frame so the picture is never left stretched
+      const el = this.renderer.domElement;
+      if (el.clientWidth !== this.fitW || el.clientHeight !== this.fitH) this.fit();
       const real = Math.min(50, now - (this.last || now)); this.last = now;
       let dt = real;
       if (this.stop > 0) { this.stop -= real; dt = 0; }
@@ -105,13 +110,19 @@ class Engine {
     if (old) requestAnimationFrame(() => requestAnimationFrame(() => old.dispose()));
   }
 
+  private fitW = 0;
+  private fitH = 0;
   fit() {
     const r = this.renderer; if (!r) return;
+    // size from the canvas as laid out (it fills the screen), not from innerWidth/innerHeight, which can lag on phones
+    const w = r.domElement.clientWidth || innerWidth, h = r.domElement.clientHeight || innerHeight;
+    if (!w || !h) return;
+    this.fitW = w; this.fitH = h;
     const dpr = Math.min(devicePixelRatio || 1, [1.5, 2, 2.25][this.tier]);
     r.setPixelRatio(dpr);
-    r.setSize(innerWidth, innerHeight, false);
-    this.composer.setSize(innerWidth, innerHeight);
-    this.camera.aspect = innerWidth / innerHeight;
+    r.setSize(w, h, false);
+    this.composer.setSize(w, h);
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
 

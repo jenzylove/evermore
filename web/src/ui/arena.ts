@@ -172,7 +172,18 @@ register('arena', root => {
     });
     list = all;
     const fi = all.findIndex(g => g.id === app.focusGhost);
-    focus = fi >= 0 ? fi : Math.max(0, all.findIndex(g => !g.mine && g.level >= (hero?.level ?? 1)));
+    // first time in, stand the player in front of an echo they can actually beat, nearest their level
+    let firstWin = -1;
+    if (fi < 0 && hero) {
+      const near = all.map((g, k) => ({ g, k })).filter(x => !x.g.mine && x.g.level <= hero!.level + 1)
+        .sort((a, b) => Math.abs(a.g.level - hero!.level) - Math.abs(b.g.level - hero!.level)).slice(0, 10);
+      for (const { g, k } of near) {
+        const ok = !!solve(hero, { ...g, ownerPkh: new Uint8Array(20) }, seedFor(g), 8);
+        beat.set(g.id, ok);
+        if (ok) { firstWin = k; break; }
+      }
+    }
+    focus = fi >= 0 ? fi : firstWin >= 0 ? firstWin : Math.max(0, all.findIndex(g => !g.mine && g.level >= (hero?.level ?? 1)));
     paintFilters();
     setFocus(focus, true);
     director.cut(shot(director.cur.pos.x * 1.4, 3, director.cur.pos.z * 1.4, director.cur.look.x, 1, director.cur.look.z, director.cur.fov));
@@ -234,7 +245,7 @@ register('arena', root => {
     }
     if (hero) {
       const mv = ghostMoves(seedFor(g));
-      const st = h('div', { class: 'style' }, h('span', { class: 'lbl' }, `How it fights ${hero.name}`));
+      const st = h('div', { class: 'style' }, h('span', { class: 'lbl' }, `${g.name}'s moves against you, in order`));
       mv.forEach(m => { const s = h('span', { class: `mv m${m}`, title: MOVE_NAME[m] }, icon(MOVE_ICON[m])); st.append(s); });
       const b = beat.get(g.id);
       if (b !== undefined) st.append(h('span', { class: `hint${b ? ' yes' : ''}` }, b ? 'Beatable' : 'No quick win'));
@@ -243,7 +254,7 @@ register('arena', root => {
         const a = hero![k], v = g[k];
         return h('span', {}, `${label} `, h('b', { class: a > v ? 'up' : a < v ? 'dn' : '' }, String(a)), ` vs ${v}`);
       };
-      info.append(h('div', { class: 'vs' }, cmp('hp', 'HP'), cmp('atk', 'ATK'), cmp('def', 'DEF'), cmp('spd', 'SPD')));
+      info.append(h('div', { class: 'vslbl' }, `${hero.name} vs ${g.name}`), h('div', { class: 'vs' }, cmp('hp', 'HP'), cmp('atk', 'ATK'), cmp('def', 'DEF'), cmp('spd', 'SPD')));
       const fee = shortCents(f.challengeSats, f.usdPerBch);
       const btn = h('button', { class: 'btn spirit', style: 'width:100%', onClick: async () => {
         btn.setAttribute('disabled', '');
@@ -251,8 +262,10 @@ register('arena', root => {
           app.ticket = await app.chain.challenge(hero!.id, g.id);
           go('duel');
         } catch (e) { toast((e as Error).message, true); btn.removeAttribute('disabled'); }
-      } }, 'Challenge', h('small', {}, isPractice() ? `${fee} to its keeper · practice` : `${fee} goes to its keeper`));
-      info.append(btn);
+      } }, `Fight ${g.name}`, h('small', {}, isPractice() ? `${fee} to its keeper · practice` : `${fee} goes to its keeper`));
+      // a plain line on what to do and what this fight is
+      const tip = b === true ? 'You can win this one. Tap Fight.' : b === false ? 'Hard fight. Pick one with a gold dot to win.' : 'Pick an echo to fight. A gold dot means you can win.';
+      info.append(h('p', { class: 'tip' }, tip), btn);
     } else {
       info.append(h('p', { class: 'dim', style: 'margin:12px 0' }, 'Raise a hero to see how this ghost fights you.'),
         h('button', { class: 'btn', style: 'width:100%', onClick: () => go('raise') }, 'Raise a hero'));

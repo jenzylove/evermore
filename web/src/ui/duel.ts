@@ -392,6 +392,8 @@ register('duel', root => {
     rite.settle(endShot());
     hero = res.hero; renderChrome();
     actions.append(h('button', { class: 'btn ghost', onClick: () => go('hero') }, 'Hero'), h('button', { class: 'btn spirit', onClick: () => go('arena') }, 'Next fight'));
+    // a practice win is the moment to offer the real thing: the same hero, kept forever on Bitcoin Cash
+    if (isPractice()) actions.after(h('button', { class: 'btn bch keep', onClick: () => import('./front').then(m => m.playForReal()) }, 'Keep a hero forever', h('small', {}, 'play for real on Bitcoin Cash')));
   }
   const endShot = () => {
     const x = A!.root.position.x;
