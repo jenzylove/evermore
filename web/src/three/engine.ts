@@ -4,9 +4,24 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import {
-  BloomEffect, BrightnessContrastEffect, EffectComposer, EffectPass, HueSaturationEffect, RenderPass,
+  BlendFunction, BloomEffect, BrightnessContrastEffect, Effect, EffectComposer, EffectPass, HueSaturationEffect, RenderPass,
   SMAAEffect, SMAAPreset, ToneMappingEffect, ToneMappingMode, VignetteEffect,
 } from 'postprocessing';
+
+/**
+ * A single NaN or Inf pixel in the lit scene (a shader taking pow() of a tiny negative number, a normalize() of a zero
+ * vector: D3D, so Intel laptops and many phones, return NaN where other GPUs return 0) is spread by the bloom's mip
+ * blur over the whole screen and the tone map turns it black: the "screen goes black for a moment" bug. Scrub the
+ * scene buffer before bloom reads it. clamp (max/min) drops NaN on D3D style hardware; isnan catches the rest.
+ */
+class Scrub extends Effect {
+  constructor() {
+    super('Scrub', `void mainImage(const in vec4 c, const in vec2 uv, out vec4 o) {
+      o = (any(isnan(c)) || any(isinf(c))) ? vec4(0.0, 0.0, 0.0, 1.0) : clamp(c, 0.0, 6.0e4); }`,
+    // SRC: write the scrubbed colour as is (the default blend mixes the input back in, NaN and all)
+    { blendFunction: BlendFunction.SRC });
+  }
+}
 
 type Job = { dur: number; age: number; fn: (t: number) => void; done: () => void };
 export type Tier = 0 | 1 | 2;
@@ -100,6 +115,7 @@ class Engine {
     const old = this.composer;
     const c = this.composer = new EffectComposer(r, { frameBufferType: THREE.HalfFloatType, multisampling: 0 });
     c.addPass(new RenderPass(this.scene, this.camera));
+    c.addPass(new EffectPass(this.camera, new Scrub()));
     // phones and weak GPUs blur the bloom at half resolution; it reads the same and costs a quarter
     this.bloom = new BloomEffect({ mipmapBlur: true, luminanceThreshold: 0.7, luminanceSmoothing: 0.22, intensity: 1.15, radius: 0.74, resolutionScale: this.tier >= 2 ? 1 : 0.5 });
     this.vignette = new VignetteEffect({ offset: 0.3, darkness: 0.5 });

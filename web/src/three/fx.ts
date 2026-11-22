@@ -74,7 +74,7 @@ export function ward(color: string) {
     uniforms: { uC: { value: new THREE.Color(color) }, uA: { value: 0 }, uT: { value: 0 } },
     vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vP = position; vec4 mv = modelViewMatrix*vec4(position,1.); vV=-mv.xyz; vN=normalMatrix*normal; gl_Position=projectionMatrix*mv; }',
     fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; uniform vec3 uC; uniform float uA; uniform float uT;
-      void main(){ float f = 1.0 - abs(dot(normalize(vN), normalize(vV))); float hex = 0.5 + 0.5*sin(vP.y*40.0 + uT*6.0) * sin(vP.x*40.0);
+      void main(){ float f = max(0.0, 1.0 - abs(dot(normalize(vN), normalize(vV)))); float hex = 0.5 + 0.5*sin(vP.y*40.0 + uT*6.0) * sin(vP.x*40.0);
         float a = uA * (pow(f, 3.0) * 0.8 + 0.03 + 0.08*hex*f); gl_FragColor = vec4(uC * a * 2.0, a); }`,
   });
   const m = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 16, -Math.PI / 2.4, Math.PI / 1.2, 0.15, Math.PI * 0.75), mat);

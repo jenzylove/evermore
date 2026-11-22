@@ -148,7 +148,7 @@ function patch(mat: THREE.MeshStandardMaterial, u: U) {
                    mix(mix(gh3(i+vec3(0,0,1)), gh3(i+vec3(1,0,1)), f.x), mix(gh3(i+vec3(0,1,1)), gh3(i+vec3(1,1,1)), f.x), f.y), f.z); }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       {
-        float fr = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 2.5);
+        float fr = pow(max(0.0, 1.0 - abs(dot(normal, normalize(vViewPosition)))), 2.5);
         vec3 p = vObj * 9.0;
         float w = sin(p.y * 2.3 + sin(p.x * 1.7 + p.z * 1.3) * 2.2) + 0.6 * sin(p.x * 3.1 - p.y * 1.1 + sin(p.z * 2.0) * 1.5);
         float mask = smoothstep(0.15, 0.7, sin(vObj.x * 13.0 + 1.3) * sin(vObj.y * 7.0 - 0.4) * sin(vObj.z * 11.0 + 2.1) * 0.5 + 0.5);
@@ -158,7 +158,7 @@ function patch(mat: THREE.MeshStandardMaterial, u: U) {
         totalEmissiveRadiance += uRim * fr * uRimK;
         totalEmissiveRadiance += vec3(1.0, 0.95, 0.9) * uFlash;
         // a ghost is a body of light: thin where it faces you, bright at its edges, with light flowing up through it
-        float flow = pow(0.5 + 0.5 * sin(vObj.y * 26.0 - uT * 2.4 + sin(vObj.x * 8.0 + vObj.z * 6.0 + uT * 0.7) * 1.6), 8.0);
+        float flow = pow(max(0.0, 0.5 + 0.5 * sin(vObj.y * 26.0 - uT * 2.4 + sin(vObj.x * 8.0 + vObj.z * 6.0 + uT * 0.7) * 1.6)), 8.0);
         diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.22, 0.3, 0.42), uGhost);
         totalEmissiveRadiance += uRim * (0.1 + flow * 0.5) * uGhost;
         diffuseColor.a *= mix(1.0, 0.1 + fr * 0.8 + flow * 0.14, uGhost);

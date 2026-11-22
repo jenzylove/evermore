@@ -177,7 +177,7 @@ async function shatter(f: Fighter, color: string) {
       P[k] += V[k] * dt; P[k + 1] += V[k + 1] * dt; P[k + 2] += V[k + 2] * dt;
       R[k] += W[k] * dt; R[k + 1] += W[k + 1] * dt; R[k + 2] += W[k + 2] * dt;
       W[k] *= Math.exp(-dt * 0.8); W[k + 1] *= Math.exp(-dt * 0.8); W[k + 2] *= Math.exp(-dt * 0.8);
-      const life = L[i] / M[i], a = Math.min(1, (1 - life) * 8) * life ** 1.4;
+      const life = Math.max(0, L[i] / M[i]), a = Math.min(1, (1 - life) * 8) * life ** 1.4;
       q.setFromEuler(e.set(R[k], R[k + 1], R[k + 2])); s3.setScalar(Sz[i] * 0.7 * (0.6 + 0.4 * life)); p3.set(P[k], P[k + 1], P[k + 2]);
       m4.compose(p3, q, s3); mesh.setMatrixAt(i, m4);
       c3.copy(C[i]).multiplyScalar(a * 3.2 * (0.75 + 0.25 * Math.sin(t * 9 + i))); mesh.setColorAt(i, c3);

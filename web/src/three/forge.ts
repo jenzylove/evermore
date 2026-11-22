@@ -19,9 +19,9 @@ const columnMaterial = () => new THREE.ShaderMaterial({
   fragmentShader: `varying vec2 vUv; varying vec3 vN; varying vec3 vV; uniform float uP, uK, uT; uniform vec3 uC;
     void main(){
       float f = abs(dot(normalize(vN), normalize(vV)));
-      float edge = pow(1.0 - f, 2.0);
-      float lines = pow(0.5 + 0.5 * sin(vUv.x * 6.2831 * 18.0 + sin(vUv.y * 9.0 - uT * 1.5) * 0.8), 10.0);
-      float flowv = pow(0.5 + 0.5 * sin(vUv.y * 40.0 - uT * 5.0 + vUv.x * 30.0), 6.0);
+      float edge = pow(max(0.0, 1.0 - f), 2.0);
+      float lines = pow(max(0.0, 0.5 + 0.5 * sin(vUv.x * 6.2831 * 18.0 + sin(vUv.y * 9.0 - uT * 1.5) * 0.8)), 10.0);
+      float flowv = pow(max(0.0, 0.5 + 0.5 * sin(vUv.y * 40.0 - uT * 5.0 + vUv.x * 30.0)), 6.0);
       float reveal = smoothstep(1.0 - uP - 0.08, 1.0 - uP, vUv.y);
       float fade = smoothstep(0.0, 0.04, vUv.y) * (1.0 - smoothstep(0.55, 1.0, vUv.y) * 0.85);
       float a = uK * reveal * fade * (0.07 + edge * 0.5 + lines * 0.2 + flowv * 0.1 * (1.0 - vUv.y));
