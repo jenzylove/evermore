@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { engine, ease } from '../three/engine';
 import { bolt, director, fitDistance, flash, pin, pop, portrait, screenFlash, shock, shot, sparks, ward } from '../three/fx';
 import { world } from '../three/world';
-import { CONTACT, ECHO, TIER_NAME, echoTint, tierOf, type Fighter } from '../three/fighter';
+import { CONTACT, ECHO, TIER_NAME, echoTint, echoVariant, tierOf, type Fighter } from '../three/fighter';
 import { GHOST_LIGHT, haunt, type GhostFx } from '../three/ghost';
 import { beginRite } from '../three/forge';
 import { glyphSvg } from '../three/runes';
@@ -130,8 +130,8 @@ register('duel', root => {
     hero = await activeHero();
     if (!hero || hero.id !== ticket.heroId) { toast('That hero is not in your satchel.', true); go('arena'); return; }
     const gear = (await app.chain.myGear()).filter(x => x.where === 'satchel');
-    [A, B] = await Promise.all([world.fighter(hero.cls, { level: hero.level, gear }), world.fighter(G.cls, { level: G.level }, ECHO)]);
-    B.tint(echoTint(G.id));
+    [A, B] = await Promise.all([world.fighter(hero.cls, { level: hero.level, gear }), world.fighter(G.cls, { level: G.level }, ECHO, echoVariant(G.id, G.cls, hero.cls))]);
+    if (echoVariant(G.id, G.cls, hero.cls) === 0) B.tint(echoTint(G.id));
     A.root.position.set(-X(), 0, 0); B.root.position.set(X(), 0, 0);
     A.face(1, 0); B.face(-1, 0);
     ghost = haunt(B, { name: G.name, owner: G.owner });
@@ -449,7 +449,7 @@ register('duel', root => {
 
   /** the next echo to fight after a win: not mine, not the one just beaten, at or above my level, one I can beat, lowest level first */
   async function nextFight(me: HeroView): Promise<GhostView | null> {
-    const all = (await app.chain.listGhosts()).filter(g => !g.mine && g.id !== G.id && g.level >= me.level).sort((a, b) => a.level - b.level).slice(0, 12);
+    const all = (await app.chain.listGhosts()).filter(g => !g.mine && g.id !== G.id && g.level >= me.level && g.level <= me.level + 2).sort((a, b) => (Number(a.cls === me.cls) - Number(b.cls === me.cls)) || (a.level - b.level)).slice(0, 12);
     for (const g of all) {
       const seed = app.chain.styleSeed?.(me.id, g) ?? seedOf(styleHash(me.id, g));
       if (solve(me as unknown as Hero, { ...g, ownerPkh: new Uint8Array(20) } as Ghost, seed, 8)) return g;
@@ -459,7 +459,7 @@ register('duel', root => {
 
   /** a gear fight: an echo 3+ levels above this hero that it can actually beat, lowest first */
   async function gearFight(me: HeroView): Promise<GhostView | null> {
-    const all = (await app.chain.listGhosts()).filter(g => !g.mine && g.level >= me.level + 3).sort((a, b) => a.level - b.level).slice(0, 5);
+    const all = (await app.chain.listGhosts()).filter(g => !g.mine && g.level >= me.level + 3).sort((a, b) => (a.level - b.level) || (Number(a.cls === me.cls) - Number(b.cls === me.cls))).slice(0, 5);
     for (const g of all) {
       const seed = app.chain.styleSeed?.(me.id, g) ?? seedOf(styleHash(me.id, g));
       if (solve(me as unknown as Hero, { ...g, ownerPkh: new Uint8Array(20) } as Ghost, seed, 10)) return g;

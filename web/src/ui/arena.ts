@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { ease } from '../three/engine';
 import { director, fitDistance, portrait, shot } from '../three/fx';
 import { world } from '../three/world';
-import { ECHO, echoTint, type Fighter } from '../three/fighter';
+import { ECHO, echoTint, echoVariant, type Fighter } from '../three/fighter';
 import { haunt, type GhostFx } from '../three/ghost';
 import { CLASS_NAMES, ghostMoves, seedOf, solve, styleHash } from '../game/sim';
 import { activeHero, app, go, isPractice, register } from '../app';
@@ -100,7 +100,8 @@ register('arena', root => {
   async function raise(id: number) {
     const g = all.find(x => x.id === id); if (!g) return;
     making.add(id);
-    const f = await world.fighter(g.cls, { level: g.level }, ECHO); f.tint(echoTint(g.id));
+    const v = g.mine ? 0 : echoVariant(g.id, g.cls, hero?.cls ?? null);
+    const f = await world.fighter(g.cls, { level: g.level }, ECHO, v); if (!g.mine && v === 0) f.tint(echoTint(g.id));
     making.delete(id);
     const i = list.findIndex(x => x.id === id);
     if (!alive || i < 0 || Math.abs(i - focus) > KEEP || slots.has(id)) { world.drop(f); return; }
@@ -186,7 +187,7 @@ register('arena', root => {
     let firstWin = -1;
     if (fi < 0 && hero) {
       const near = all.map((g, k) => ({ g, k })).filter(x => !x.g.mine && x.g.level <= hero!.level + 1)
-        .sort((a, b) => Math.abs(a.g.level - hero!.level) - Math.abs(b.g.level - hero!.level)).slice(0, 10);
+        .sort((a, b) => (Number(a.g.cls === hero!.cls) - Number(b.g.cls === hero!.cls)) || (Math.abs(a.g.level - hero!.level) - Math.abs(b.g.level - hero!.level))).slice(0, 10); // a different class first: no mirror matches
       for (const { g, k } of near) {
         const ok = !!solve(hero, { ...g, ownerPkh: new Uint8Array(20) }, seedFor(g), 8);
         beat.set(g.id, ok);

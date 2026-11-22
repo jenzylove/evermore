@@ -74,9 +74,9 @@ export const world = {
     return warmed;
   },
   /** a fighter that lives until the screen changes */
-  async fighter(cls: number, look: Look, spectral = 0): Promise<Fighter> {
+  async fighter(cls: number, look: Look, spectral = 0, variant = 0): Promise<Fighter> {
     const g = gen;
-    const f = await makeFighter(cls, look, spectral);
+    const f = await makeFighter(cls, look, spectral, variant);
     // the screen was left while this loaded: drop it, and never resume the screen's code
     if (g !== gen) { f.dispose(); return new Promise<Fighter>(() => {}); }
     owned.push(f); engine.scene.add(f.root);

@@ -20,15 +20,18 @@ const ANIM_HIP_Y = 0.956; // the clips are packed in the knight's hip space (see
 /** the Vampire mage stands about 2.2 m; bring every class to roughly one height */
 const BASE_SCALE = [1, 1, 0.84];
 
-type Kit = { scene: THREE.Object3D; clips: Map<Clip, THREE.AnimationClip>; hipY: number };
+type Kit = { scene: THREE.Object3D; clips: Map<Clip, THREE.AnimationClip>; hipY: number; height: number; fit: number };
 const kits = new Map<number, Promise<Kit>>();
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
-export function loadKit(cls: number): Promise<Kit> {
-  let p = kits.get(cls);
+/** each class has three bodies: 0 is the hero's own look, 1 and 2 are other characters that echoes wear */
+export function loadKit(cls: number, variant = 0): Promise<Kit> {
+  const key = cls * 10 + variant;
+  let p = kits.get(key);
   if (!p) {
     p = (async () => {
-      const [m, a] = await Promise.all([loader.loadAsync(`/models/${FILES[cls]}.glb`), loader.loadAsync(`/models/anims-${FILES[cls]}.glb`)]);
+      const file = variant ? `${FILES[cls]}-${'abc'[variant]}` : FILES[cls];
+      const [m, a] = await Promise.all([loader.loadAsync(`/models/${file}.glb`), loader.loadAsync(`/models/anims-${FILES[cls]}.glb`)]);
       const hips = m.scene.getObjectByName('mixamorigHips')!;
       const hipY = hips.position.y, k = hipY / ANIM_HIP_Y;
       const clips = new Map<Clip, THREE.AnimationClip>();
@@ -45,9 +48,12 @@ export function loadKit(cls: number): Promise<Kit> {
         }
         clips.set(clip.name as Clip, clip);
       }
-      return { scene: m.scene, clips, hipY };
+      // every body stands as tall as the class's own fighter
+      const height = new THREE.Box3().setFromObject(m.scene).getSize(new THREE.Vector3()).y || 1.8;
+      const fit = variant ? (await loadKit(cls, 0)).height * BASE_SCALE[cls] / height : BASE_SCALE[cls];
+      return { scene: m.scene, clips, hipY, height, fit };
     })();
-    kits.set(cls, p);
+    kits.set(key, p);
   }
   return p;
 }
@@ -196,7 +202,9 @@ export class Fighter {
   spectral = 0;
   private off: () => void;
 
+  private fit = 1;
   constructor(public cls: number, kit: Kit) {
+    this.fit = kit.fit;
     this.model = SkeletonUtils.clone(kit.scene);
     this.root.add(this.model);
     // contact shadow: soft dark pool where the feet meet the stone (stands in for ambient occlusion)
@@ -283,7 +291,7 @@ export class Fighter {
     const add = (anchor: string, o: THREE.Object3D) => { o.traverse(c => { if ((c as THREE.Mesh).isMesh) c.castShadow = true; }); this.anchors[anchor]?.add(o); this.lookGroup.push(o); };
     const size = [1, 0.85, 0.95][this.cls];
     // bigger with every level, a little, up to level 10
-    this.model.scale.setScalar(BASE_SCALE[this.cls] * (1 + Math.min(10, look.level - 1) * 0.008));
+    this.model.scale.setScalar(this.fit * (1 + Math.min(10, look.level - 1) * 0.008));
     if (t >= 1) {
       const l = pauldron(t, 1, size), r = pauldron(t, -1, size);
       l.position.set(0.03, 0.07, -0.01); r.position.set(-0.03, 0.07, -0.01);
@@ -372,8 +380,11 @@ export const echoTint = (id: number) => ECHO_TINTS[((id % ECHO_TINTS.length) + E
 /** echoes (other players' heroes) are solid fighters with a faint cold rim, not see through ghosts */
 export const ECHO = 0.45;
 
-export async function makeFighter(cls: number, look: Look = { level: 1 }, spectral = 0) {
-  const f = new Fighter(cls, await loadKit(cls));
+/** an echo's body: never the same character as the hero it faces when they share a class */
+export const echoVariant = (id: number, cls: number, heroCls: number | null) => { const v = ((id % 3) + 3) % 3; return cls === heroCls && v === 0 ? 1 + (id % 2) : v; };
+
+export async function makeFighter(cls: number, look: Look = { level: 1 }, spectral = 0, variant = 0) {
+  const f = new Fighter(cls, await loadKit(cls, variant));
   f.spectral = spectral;
   f.setLook(look);
   return f;
